@@ -16,7 +16,7 @@ export function isDatabaseConfigured() {
   return Boolean(process.env.DATABASE_URL);
 }
 
-export function getPrisma() {
+export function getPrisma(): PrismaClient {
   if (!isDatabaseConfigured()) {
     throw new DatabaseNotConfiguredError();
   }

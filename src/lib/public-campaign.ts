@@ -23,6 +23,20 @@ export type PublicCampaignTransaction = {
   creditAmount: number;
 };
 
+export async function getPublicCampaignMeta(code: string) {
+  const prisma = getPrisma();
+  const normalizedCode = makeCampaignCode(code);
+
+  return prisma.campaign.findUnique({
+    where: { code: normalizedCode },
+    select: {
+      code: true,
+      name: true,
+      description: true,
+    },
+  });
+}
+
 export async function getPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
   const prisma = getPrisma();
   const normalizedCode = makeCampaignCode(code);

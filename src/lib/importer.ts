@@ -29,7 +29,7 @@ export async function importTechcombankStatement(fileName: string, buffer: Buffe
     }
   }
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const accountNumber = parsed.meta.accountNumber ?? "TECHCOMBANK_UNKNOWN";
     const account = await tx.bankAccount.upsert({
       where: { accountNumber },

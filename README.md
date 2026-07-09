@@ -50,7 +50,7 @@ Sau khi provision database trên Vercel, lấy biến `DATABASE_URL` và cấu h
 - `Campaign`: thiện pháp, mã như `cntt10`, `kathina-pm`.
 - `CampaignKeyword`: danh sách từ khóa của từng thiện pháp, đã chuẩn hóa không dấu để match linh hoạt.
 - `BankTransaction`: giao dịch sao kê, unique theo `detail` tương ứng cột `CHI TIET`.
-- `Expense`: khoản chi ra, có thể gắn vào thiện pháp hoặc chi chung.
+- Khoản chi được lấy trực tiếp từ cột `NO` trong `BankTransaction` và gắn vào thiện pháp tương ứng.
 
 ## Chạy local
 
@@ -69,12 +69,28 @@ pnpm dev
 
 Mở `http://localhost:3000`.
 
+## Đăng nhập quản trị
+
+Trang quản trị `/` và các API quản trị được bảo vệ bằng mật khẩu trong biến môi trường:
+
+```bash
+ADMIN_PASSWORD="mật-khẩu-mạnh"
+```
+
+Tạo mật khẩu mạnh:
+
+```bash
+openssl rand -base64 32
+```
+
+Khi deploy Vercel, thêm `ADMIN_PASSWORD` vào Project Settings → Environment Variables. Các trang public `/thien-phap/[ma-thien-phap]` vẫn mở công khai cho thí chủ xem.
+
 ## Deploy Vercel
 
 1. Push project lên GitHub.
 2. Import project vào Vercel.
 3. Tạo PostgreSQL từ Vercel Marketplace hoặc kết nối resource có sẵn.
-4. Đảm bảo `DATABASE_URL` được inject vào project.
+4. Đảm bảo `DATABASE_URL` và `ADMIN_PASSWORD` được inject vào project.
 5. Chạy migration và seed:
 
 ```bash
@@ -89,4 +105,5 @@ pnpm db:seed
 3. Hệ thống parse các dòng giao dịch, bỏ qua `CHI TIET` đã tồn tại.
 4. Giao dịch được phân loại theo keyword đang active.
 5. Giao dịch chưa khớp có thể gán thủ công hoặc bổ sung keyword rồi bấm `Phân loại lại`.
-6. Nhập khoản chi để theo dõi tồn quỹ từng thiện pháp và số dư ngân hàng hiện tại.
+6. Gán các dòng cột `NO` vào thiện pháp tương ứng để theo dõi tổng chi và tồn quỹ.
+7. Gửi link public `/thien-phap/[ma-thien-phap]` cho thí chủ xem thu chi theo từng thiện pháp.

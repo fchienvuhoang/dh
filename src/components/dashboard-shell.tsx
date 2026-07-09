@@ -4,7 +4,9 @@ import {
   AlertCircle,
   ArrowUpFromLine,
   CheckCircle2,
+  ExternalLink,
   FileSpreadsheet,
+  LogOut,
   Loader2,
   Plus,
   RefreshCw,
@@ -260,6 +262,12 @@ function Dashboard({ data }: { data: DashboardData }) {
     }
   }
 
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/dang-nhap");
+    router.refresh();
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f7f4] text-zinc-950">
       <header className="border-b border-zinc-200 bg-white">
@@ -272,19 +280,29 @@ function Dashboard({ data }: { data: DashboardData }) {
               Quản lý thiện pháp và sao kê
             </h1>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-            <HeaderStat label="Giao dịch" value={data.overview.transactionCount.toLocaleString("vi-VN")} />
-            <HeaderStat label="Chưa phân loại" value={data.overview.unmatchedCount.toLocaleString("vi-VN")} />
-            <HeaderStat
-              label="TK ngân hàng"
-              value={money(data.overview.bankBalance)}
-              tone="emerald"
-            />
-            <HeaderStat
-              label="Quỹ theo thiện pháp"
-              value={money(data.overview.trackedFundBalance)}
-              tone="amber"
-            />
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+              <HeaderStat label="Giao dịch" value={data.overview.transactionCount.toLocaleString("vi-VN")} />
+              <HeaderStat label="Chưa phân loại" value={data.overview.unmatchedCount.toLocaleString("vi-VN")} />
+              <HeaderStat
+                label="TK ngân hàng"
+                value={money(data.overview.bankBalance)}
+                tone="emerald"
+              />
+              <HeaderStat
+                label="Quỹ theo thiện pháp"
+                value={money(data.overview.trackedFundBalance)}
+                tone="amber"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center gap-2 self-start rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 lg:self-end"
+            >
+              <LogOut className="h-4 w-4" />
+              Đăng xuất
+            </button>
           </div>
         </div>
       </header>
@@ -568,7 +586,7 @@ function CampaignTable({
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
       <div className="overflow-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
+        <table className="w-full min-w-[1080px] text-left text-sm">
           <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
               <th className="px-3 py-2">Mã</th>
@@ -579,6 +597,7 @@ function CampaignTable({
               <th className="px-3 py-2 text-right">Tổng chi</th>
               <th className="px-3 py-2 text-right">Còn lại</th>
               <th className="px-3 py-2 text-right">GD</th>
+              <th className="px-3 py-2 text-right">Public</th>
               <th className="px-3 py-2 text-right">Sửa</th>
             </tr>
           </thead>
@@ -639,6 +658,18 @@ function CampaignTable({
                 <td className="whitespace-nowrap px-3 py-2 text-right text-zinc-600">
                   {campaign.transactionCount.toLocaleString("vi-VN")}
                 </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right">
+                  <a
+                    href={publicCampaignPath(campaign.code)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(event) => event.stopPropagation()}
+                    className="inline-flex items-center justify-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Link
+                  </a>
+                </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right text-zinc-500">
                   <Settings className="ml-auto h-4 w-4" />
                 </td>
@@ -646,7 +677,7 @@ function CampaignTable({
             ))}
             {campaigns.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-zinc-500">
+                <td colSpan={10} className="px-3 py-8 text-center text-zinc-500">
                   Chưa có thiện pháp nào.
                 </td>
               </tr>
@@ -858,11 +889,22 @@ function CampaignModal({
               </h2>
             </div>
             {campaign ? (
-              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                <MiniStat label="Thu" value={money(campaign.income)} />
-                <MiniStat label="Chi" value={money(campaign.expenses)} />
-                <MiniStat label="GD" value={campaign.transactionCount.toLocaleString("vi-VN")} />
-              </div>
+              <>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                  <MiniStat label="Thu" value={money(campaign.income)} />
+                  <MiniStat label="Chi" value={money(campaign.expenses)} />
+                  <MiniStat label="GD" value={campaign.transactionCount.toLocaleString("vi-VN")} />
+                </div>
+                <a
+                  href={publicCampaignPath(campaign.code)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Mở link public
+                </a>
+              </>
             ) : null}
           </div>
           <button
@@ -1155,6 +1197,10 @@ function campaignPayloadFromForm(formData: FormData) {
     status: String(formData.get("status") ?? "ACTIVE"),
     keywords: splitKeywords(String(formData.get("keywords") ?? "")),
   };
+}
+
+function publicCampaignPath(code: string) {
+  return `/thien-phap/${encodeURIComponent(code)}`;
 }
 
 async function readJson<T>(response: Response): Promise<T> {
