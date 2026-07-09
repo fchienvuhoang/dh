@@ -432,7 +432,7 @@ function Dashboard({ data }: { data: DashboardData }) {
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+              <div className="mt-4 flex flex-wrap gap-2 pb-1">
                 <TabButton
                   active={activeTab === "all"}
                   count={data.overview.transactionCount}
@@ -496,26 +496,25 @@ function TransactionTable({
   onAssign: (transactionId: string, campaignId: string | null) => void;
 }) {
   return (
-    <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-      <div className="max-h-[620px] overflow-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
-          <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
-            <tr>
-              <th className="px-3 py-2">Ngày</th>
-              <th className="px-3 py-2">Diễn giải</th>
-              <th className="px-3 py-2">Chi tiết</th>
-              <th className="px-3 py-2 text-right">Có</th>
-              <th className="px-3 py-2 text-right">Nợ</th>
-              <th className="px-3 py-2">Thiện pháp</th>
-              <th className="px-3 py-2">Gán</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 bg-white">
-            {transactions.map((transaction) => (
-              <tr
-                key={transaction.id}
-                className={transaction.campaign ? "hover:bg-zinc-50" : "bg-rose-50/50 hover:bg-rose-50"}
-              >
+    <div className="mt-4 rounded-md border border-zinc-200">
+      <table className="w-full min-w-[980px] text-left text-sm">
+        <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
+          <tr>
+            <th className="px-3 py-2">Ngày</th>
+            <th className="px-3 py-2">Diễn giải</th>
+            <th className="px-3 py-2">Chi tiết</th>
+            <th className="px-3 py-2 text-right">Có</th>
+            <th className="px-3 py-2 text-right">Nợ</th>
+            <th className="px-3 py-2">Thiện pháp</th>
+            <th className="px-3 py-2">Gán</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-zinc-100 bg-white">
+          {transactions.map((transaction) => (
+            <tr
+              key={transaction.id}
+              className={transaction.campaign ? "hover:bg-zinc-50" : "bg-rose-50/50 hover:bg-rose-50"}
+            >
                 <td className="whitespace-nowrap px-3 py-2 text-zinc-600">{dateOnly(transaction.transactionDate)}</td>
                 <td className="max-w-md px-3 py-2 align-top">
                   <div className="whitespace-pre-wrap break-words font-medium text-zinc-900">
@@ -560,18 +559,17 @@ function TransactionTable({
                     ))}
                   </select>
                 </td>
-              </tr>
-            ))}
-            {transactions.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-zinc-500">
-                  Không có giao dịch phù hợp.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+            </tr>
+          ))}
+          {transactions.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="px-3 py-10 text-center text-zinc-500">
+                Không có giao dịch phù hợp.
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -584,10 +582,9 @@ function CampaignTable({
   onSelect: (campaign: CampaignSummary) => void;
 }) {
   return (
-    <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-      <div className="overflow-auto">
-        <table className="w-full min-w-[1080px] text-left text-sm">
-          <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
+    <div className="mt-4 rounded-md border border-zinc-200">
+      <table className="w-full min-w-[1080px] text-left text-sm">
+        <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
               <th className="px-3 py-2">Mã</th>
               <th className="px-3 py-2">Thiện pháp</th>
@@ -600,8 +597,8 @@ function CampaignTable({
               <th className="px-3 py-2 text-right">Public</th>
               <th className="px-3 py-2 text-right">Sửa</th>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 bg-white">
+        </thead>
+        <tbody className="divide-y divide-zinc-100 bg-white">
             {campaigns.map((campaign) => (
               <tr
                 key={campaign.id}
@@ -682,9 +679,8 @@ function CampaignTable({
                 </td>
               </tr>
             ) : null}
-          </tbody>
-        </table>
-      </div>
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -701,10 +697,9 @@ function DebitTransactionTable({
   onAssign: (transactionId: string, campaignId: string | null) => void;
 }) {
   return (
-    <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-      <div className="max-h-[420px] overflow-auto">
-        <table className="w-full min-w-[880px] text-left text-sm">
-          <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
+    <div className="mt-4 rounded-md border border-zinc-200">
+      <table className="w-full min-w-[880px] text-left text-sm">
+        <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
               <th className="px-3 py-2">Ngày</th>
               <th className="px-3 py-2">Diễn giải</th>
@@ -713,8 +708,8 @@ function DebitTransactionTable({
               <th className="px-3 py-2">Thiện pháp</th>
               <th className="px-3 py-2">Gán</th>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 bg-white">
+        </thead>
+        <tbody className="divide-y divide-zinc-100 bg-white">
             {transactions.map((transaction) => (
               <tr
                 key={transaction.id}
@@ -769,9 +764,8 @@ function DebitTransactionTable({
                 </td>
               </tr>
             ) : null}
-          </tbody>
-        </table>
-      </div>
+        </tbody>
+      </table>
     </div>
   );
 }

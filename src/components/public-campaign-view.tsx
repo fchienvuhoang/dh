@@ -86,31 +86,29 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             {filteredTransactions.length === 0 ? <EmptyState /> : null}
           </div>
 
-          <div className="mt-4 hidden overflow-hidden rounded-md border border-zinc-200 md:block">
-            <div className="max-h-[680px] overflow-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
-                <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
+          <div className="mt-4 hidden rounded-md border border-zinc-200 md:block">
+            <table className="w-full min-w-[760px] text-left text-sm">
+              <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
+                <tr>
+                  <th className="px-3 py-2">Ngày</th>
+                  <th className="px-3 py-2">Diễn giải</th>
+                  <th className="px-3 py-2">Loại</th>
+                  <th className="px-3 py-2 text-right">Số tiền</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 bg-white">
+                {filteredTransactions.map((transaction) => (
+                  <PublicTransactionRow key={transaction.id} transaction={transaction} />
+                ))}
+                {filteredTransactions.length === 0 ? (
                   <tr>
-                    <th className="px-3 py-2">Ngày</th>
-                    <th className="px-3 py-2">Diễn giải</th>
-                    <th className="px-3 py-2">Loại</th>
-                    <th className="px-3 py-2 text-right">Số tiền</th>
+                    <td colSpan={4}>
+                      <EmptyState />
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 bg-white">
-                  {filteredTransactions.map((transaction) => (
-                    <PublicTransactionRow key={transaction.id} transaction={transaction} />
-                  ))}
-                  {filteredTransactions.length === 0 ? (
-                    <tr>
-                      <td colSpan={4}>
-                        <EmptyState />
-                      </td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
+                ) : null}
+              </tbody>
+            </table>
           </div>
         </section>
       </main>
