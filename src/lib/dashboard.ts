@@ -22,6 +22,7 @@ export type DashboardData = {
     transactionCount: number;
     unmatchedCount: number;
     unmatchedIncome: number;
+    unmatchedDebit: number;
   };
   bankAccount: {
     accountNumber: string;
@@ -33,6 +34,7 @@ export type DashboardData = {
   } | null;
   campaigns: CampaignSummary[];
   transactions: TransactionSummary[];
+  debitTransactions: TransactionSummary[];
   expenses: ExpenseSummary[];
   latestImport: {
     fileName: string;
@@ -104,12 +106,12 @@ export async function getDashboardState(): Promise<DashboardState> {
     const [
       campaigns,
       transactionSums,
-      expenseSums,
       overallTransactionSums,
-      overallExpenseSums,
       unmatchedIncome,
+      unmatchedDebit,
+      unmatchedTransactionCount,
       transactions,
-      expenses,
+      debitTransactions,
       bankAccount,
       latestImport,
     ] = await Promise.all([
@@ -137,26 +139,12 @@ export async function getDashboardState(): Promise<DashboardState> {
           _all: true,
         },
       }),
-      prisma.expense.groupBy({
-        by: ["campaignId"],
-        _sum: {
-          amount: true,
-        },
-        _count: {
-          _all: true,
-        },
-      }),
       prisma.bankTransaction.aggregate({
         _sum: {
           creditAmount: true,
           debitAmount: true,
         },
         _count: true,
-      }),
-      prisma.expense.aggregate({
-        _sum: {
-          amount: true,
-        },
       }),
       prisma.bankTransaction.aggregate({
         where: {
@@ -169,6 +157,23 @@ export async function getDashboardState(): Promise<DashboardState> {
           creditAmount: true,
         },
         _count: true,
+      }),
+      prisma.bankTransaction.aggregate({
+        where: {
+          campaignId: null,
+          debitAmount: {
+            gt: 0,
+          },
+        },
+        _sum: {
+          debitAmount: true,
+        },
+        _count: true,
+      }),
+      prisma.bankTransaction.count({
+        where: {
+          campaignId: null,
+        },
       }),
       prisma.bankTransaction.findMany({
         include: {
@@ -183,7 +188,12 @@ export async function getDashboardState(): Promise<DashboardState> {
         orderBy: [{ transactionDate: "desc" }, { statementRow: "desc" }, { createdAt: "desc" }],
         take: 500,
       }),
-      prisma.expense.findMany({
+      prisma.bankTransaction.findMany({
+        where: {
+          debitAmount: {
+            gt: 0,
+          },
+        },
         include: {
           campaign: {
             select: {
@@ -193,8 +203,8 @@ export async function getDashboardState(): Promise<DashboardState> {
             },
           },
         },
-        orderBy: [{ spentAt: "desc" }, { createdAt: "desc" }],
-        take: 100,
+        orderBy: [{ transactionDate: "desc" }, { statementRow: "desc" }, { createdAt: "desc" }],
+        take: 500,
       }),
       prisma.bankAccount.findFirst({
         orderBy: { updatedAt: "desc" },
@@ -214,22 +224,12 @@ export async function getDashboardState(): Promise<DashboardState> {
         },
       ]),
     );
-    const expensesByCampaign = new Map(
-      expenseSums.map((item) => [
-        item.campaignId,
-        {
-          amount: decimalToNumber(item._sum.amount),
-          count: item._count._all,
-        },
-      ]),
-    );
 
     const campaignSummaries = campaigns.map((campaign) => {
       const tx = txByCampaign.get(campaign.id);
-      const expense = expensesByCampaign.get(campaign.id);
       const income = tx?.income ?? 0;
       const debit = tx?.debit ?? 0;
-      const expensesAmount = expense?.amount ?? 0;
+      const expensesAmount = debit;
 
       return {
         id: campaign.id,
@@ -255,7 +255,7 @@ export async function getDashboardState(): Promise<DashboardState> {
 
     const totalIncome = decimalToNumber(overallTransactionSums._sum.creditAmount);
     const totalDebit = decimalToNumber(overallTransactionSums._sum.debitAmount);
-    const totalExpenses = decimalToNumber(overallExpenseSums._sum.amount);
+    const totalExpenses = totalDebit;
 
     return {
       ok: true,
@@ -267,8 +267,9 @@ export async function getDashboardState(): Promise<DashboardState> {
           trackedFundBalance: campaignSummaries.reduce((sum, campaign) => sum + campaign.balance, 0),
           bankBalance: decimalToNumber(bankAccount?.currentBalance),
           transactionCount: overallTransactionSums._count,
-          unmatchedCount: unmatchedIncome._count,
+          unmatchedCount: unmatchedTransactionCount,
           unmatchedIncome: decimalToNumber(unmatchedIncome._sum.creditAmount),
+          unmatchedDebit: decimalToNumber(unmatchedDebit._sum.debitAmount),
         },
         bankAccount: bankAccount
           ? {
@@ -295,15 +296,21 @@ export async function getDashboardState(): Promise<DashboardState> {
           classificationStatus: transaction.classificationStatus,
           campaign: transaction.campaign,
         })),
-        expenses: expenses.map((expense) => ({
-          id: expense.id,
-          title: expense.title,
-          amount: decimalToNumber(expense.amount),
-          spentAt: expense.spentAt.toISOString(),
-          payee: expense.payee,
-          note: expense.note,
-          campaign: expense.campaign,
+        debitTransactions: debitTransactions.map((transaction) => ({
+          id: transaction.id,
+          transactionDate: transaction.transactionDate.toISOString(),
+          statementRow: transaction.statementRow,
+          description: transaction.description,
+          detail: transaction.detail,
+          debitAmount: decimalToNumber(transaction.debitAmount),
+          creditAmount: decimalToNumber(transaction.creditAmount),
+          balanceAfter:
+            transaction.balanceAfter == null ? null : decimalToNumber(transaction.balanceAfter),
+          matchedKeyword: transaction.matchedKeyword,
+          classificationStatus: transaction.classificationStatus,
+          campaign: transaction.campaign,
         })),
+        expenses: [],
         latestImport: latestImport
           ? {
               fileName: latestImport.fileName,

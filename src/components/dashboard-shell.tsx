@@ -3,7 +3,6 @@
 import {
   AlertCircle,
   ArrowUpFromLine,
-  Banknote,
   CheckCircle2,
   FileSpreadsheet,
   Loader2,
@@ -15,6 +14,7 @@ import {
   Trash2,
   Upload,
   Wallet,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
@@ -40,6 +40,15 @@ type ImportResponse = {
   accountNumber: string | null;
   closingBalance: number | null;
 };
+
+type CampaignModalState =
+  | {
+      mode: "create";
+    }
+  | {
+      mode: "edit";
+      campaign: CampaignSummary;
+    };
 
 const statusLabels = {
   ACTIVE: "Đang chạy",
@@ -71,10 +80,10 @@ function Dashboard({ data }: { data: DashboardData }) {
   const [importResult, setImportResult] = useState<ImportResponse | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isSavingCampaign, setIsSavingCampaign] = useState(false);
-  const [isSavingExpense, setIsSavingExpense] = useState(false);
   const [isReclassifying, setIsReclassifying] = useState(false);
   const [deletingCampaignId, setDeletingCampaignId] = useState<string | null>(null);
   const [pendingTransactionId, setPendingTransactionId] = useState<string | null>(null);
+  const [campaignModal, setCampaignModal] = useState<CampaignModalState | null>(null);
 
   const filteredTransactions = useMemo(() => {
     const normalizedQuery = normalizeTransferText(query);
@@ -143,6 +152,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       );
       setMessage(`Đã tạo thiện pháp ${payload.code}.`);
       form.reset();
+      setCampaignModal(null);
       router.refresh();
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -168,6 +178,7 @@ function Dashboard({ data }: { data: DashboardData }) {
         }),
       );
       setMessage(`Đã cập nhật thiện pháp ${payload.code}.`);
+      setCampaignModal(null);
       router.refresh();
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -177,8 +188,8 @@ function Dashboard({ data }: { data: DashboardData }) {
   }
 
   async function handleCampaignDelete(campaign: CampaignSummary) {
-    if (campaign.transactionCount > 0 || campaign.expenseCount > 0) {
-      setError("Chỉ có thể xóa thiện pháp chưa có giao dịch và chưa có khoản chi.");
+    if (campaign.transactionCount > 0) {
+      setError("Chỉ có thể xóa thiện pháp chưa có giao dịch sao kê.");
       setMessage(null);
       return;
     }
@@ -199,44 +210,12 @@ function Dashboard({ data }: { data: DashboardData }) {
         }),
       );
       setMessage(`Đã xóa thiện pháp ${campaign.code}.`);
+      setCampaignModal(null);
       router.refresh();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
       setDeletingCampaignId(null);
-    }
-  }
-
-  async function handleExpenseCreate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setMessage(null);
-    setIsSavingExpense(true);
-
-    try {
-      const form = event.currentTarget;
-      const formData = new FormData(form);
-      await readJson(
-        await fetch("/api/expenses", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: formData.get("title"),
-            amount: formData.get("amount"),
-            spentAt: formData.get("spentAt"),
-            campaignId: formData.get("campaignId") || null,
-            payee: formData.get("payee") || null,
-            note: formData.get("note") || null,
-          }),
-        }),
-      );
-      setMessage("Đã ghi nhận khoản chi.");
-      form.reset();
-      router.refresh();
-    } catch (caught) {
-      setError(getErrorMessage(caught));
-    } finally {
-      setIsSavingExpense(false);
     }
   }
 
@@ -408,10 +387,18 @@ function Dashboard({ data }: { data: DashboardData }) {
           <StatusMessages message={message} error={error} />
 
           <div className="flex gap-2 rounded-md border border-zinc-200 bg-white p-1">
-            <MainTabButton active={mainTab === "overview"} onClick={() => setMainTab("overview")}>
+            <MainTabButton
+              active={mainTab === "overview"}
+              count={data.campaigns.length}
+              onClick={() => setMainTab("overview")}
+            >
               Tổng quan thiện pháp
             </MainTabButton>
-            <MainTabButton active={mainTab === "transactions"} onClick={() => setMainTab("transactions")}>
+            <MainTabButton
+              active={mainTab === "transactions"}
+              count={data.overview.transactionCount}
+              onClick={() => setMainTab("transactions")}
+            >
               Giao dịch sao kê
             </MainTabButton>
           </div>
@@ -443,6 +430,16 @@ function Dashboard({ data }: { data: DashboardData }) {
                 <PanelTitle icon={Wallet} title="Tổng hợp thu chi" />
                 <FundSummaryTable data={data} />
               </Panel>
+
+              <Panel>
+                <PanelTitle icon={ArrowUpFromLine} title="Danh sách khoản chi từ sao kê" />
+                <DebitTransactionTable
+                  transactions={data.debitTransactions}
+                  campaigns={data.campaigns}
+                  pendingTransactionId={pendingTransactionId}
+                  onAssign={assignTransaction}
+                />
+              </Panel>
             </>
           ) : (
             <Panel>
@@ -460,16 +457,25 @@ function Dashboard({ data }: { data: DashboardData }) {
               </div>
 
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-                <TabButton active={activeTab === "all"} onClick={() => setActiveTab("all")}>
+                <TabButton
+                  active={activeTab === "all"}
+                  count={data.overview.transactionCount}
+                  onClick={() => setActiveTab("all")}
+                >
                   Tất cả
                 </TabButton>
-                <TabButton active={activeTab === "unmatched"} onClick={() => setActiveTab("unmatched")}>
+                <TabButton
+                  active={activeTab === "unmatched"}
+                  count={data.overview.unmatchedCount}
+                  onClick={() => setActiveTab("unmatched")}
+                >
                   Chưa phân loại
                 </TabButton>
                 {data.campaigns.map((campaign) => (
                   <TabButton
                     key={campaign.id}
                     active={activeTab === campaign.id}
+                    count={campaign.transactionCount}
                     onClick={() => setActiveTab(campaign.id)}
                   >
                     {campaign.code}
@@ -525,8 +531,10 @@ function TransactionTable({
                 className={transaction.campaign ? "hover:bg-zinc-50" : "bg-rose-50/50 hover:bg-rose-50"}
               >
                 <td className="whitespace-nowrap px-3 py-2 text-zinc-600">{dateOnly(transaction.transactionDate)}</td>
-                <td className="max-w-md px-3 py-2">
-                  <div className="line-clamp-2 font-medium text-zinc-900">{transaction.description}</div>
+                <td className="max-w-md px-3 py-2 align-top">
+                  <div className="whitespace-pre-wrap break-words font-medium text-zinc-900">
+                    {transaction.description}
+                  </div>
                   <div className="mt-1 text-xs text-zinc-500">
                     {transaction.matchedKeyword ?? "Chưa có keyword khớp"}
                   </div>
@@ -694,6 +702,93 @@ function CampaignTable({
   );
 }
 
+function DebitTransactionTable({
+  transactions,
+  campaigns,
+  pendingTransactionId,
+  onAssign,
+}: {
+  transactions: TransactionSummary[];
+  campaigns: CampaignSummary[];
+  pendingTransactionId: string | null;
+  onAssign: (transactionId: string, campaignId: string | null) => void;
+}) {
+  return (
+    <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
+      <div className="max-h-[420px] overflow-auto">
+        <table className="w-full min-w-[880px] text-left text-sm">
+          <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
+            <tr>
+              <th className="px-3 py-2">Ngày</th>
+              <th className="px-3 py-2">Diễn giải</th>
+              <th className="px-3 py-2">Chi tiết</th>
+              <th className="px-3 py-2 text-right">Nợ</th>
+              <th className="px-3 py-2">Thiện pháp</th>
+              <th className="px-3 py-2">Gán</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100 bg-white">
+            {transactions.map((transaction) => (
+              <tr
+                key={transaction.id}
+                className={transaction.campaign ? "hover:bg-zinc-50" : "bg-amber-50/60 hover:bg-amber-50"}
+              >
+                <td className="whitespace-nowrap px-3 py-2 align-top text-zinc-600">
+                  {dateOnly(transaction.transactionDate)}
+                </td>
+                <td className="max-w-md px-3 py-2 align-top">
+                  <div className="whitespace-pre-wrap break-words font-medium text-zinc-900">
+                    {transaction.description}
+                  </div>
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 align-top font-mono text-xs text-zinc-600">
+                  {transaction.detail}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right align-top font-medium text-amber-700">
+                  {money(transaction.debitAmount)}
+                </td>
+                <td className="px-3 py-2 align-top">
+                  {transaction.campaign ? (
+                    <span className="inline-flex rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+                      {transaction.campaign.code}
+                    </span>
+                  ) : (
+                    <span className="inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
+                      Chưa gán
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-2 align-top">
+                  <select
+                    value={transaction.campaign?.id ?? ""}
+                    disabled={pendingTransactionId === transaction.id}
+                    onChange={(event) => onAssign(transaction.id, event.target.value || null)}
+                    className="w-44 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                  >
+                    <option value="">Chưa gán</option>
+                    {campaigns.map((campaign) => (
+                      <option key={campaign.id} value={campaign.id}>
+                        {campaign.code}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+            ))}
+            {transactions.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-3 py-10 text-center text-zinc-500">
+                  Chưa có khoản chi nào từ cột NỢ trong sao kê.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function FundSummaryTable({ data }: { data: DashboardData }) {
   const totalCampaignIncome = data.campaigns.reduce((sum, campaign) => sum + campaign.income, 0);
   const totalExpenses = data.overview.totalExpenses;
@@ -710,7 +805,7 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
     {
       label: "Tổng chi đã ghi nhận",
       value: totalExpenses,
-      note: "Cộng tất cả bản ghi chi tiền ra.",
+      note: "Cộng cột NỢ trong sao kê và các khoản chi nhập tay.",
       className: "text-amber-700",
     },
     {
@@ -738,6 +833,12 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
       value: data.overview.unmatchedIncome,
       note: "Khoản thu chưa nằm trong tổng thu thiện pháp.",
       className: "text-rose-700",
+    },
+    {
+      label: "Chi từ sao kê chưa gán",
+      value: data.overview.unmatchedDebit,
+      note: "Dòng NỢ chưa được gán vào thiện pháp nào.",
+      className: "text-amber-700",
     },
   ];
 
@@ -910,22 +1011,25 @@ function PanelTitle({ icon: Icon, title }: { icon: typeof Upload; title: string 
 function TabButton({
   active,
   children,
+  count,
   onClick,
 }: {
   active: boolean;
   children: React.ReactNode;
+  count?: number;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium ${
+      className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium ${
         active
           ? "border-zinc-950 bg-zinc-950 text-white"
           : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
       }`}
     >
       {children}
+      {typeof count === "number" ? <TabCountBadge active={active} count={count} /> : null}
     </button>
   );
 }
@@ -933,21 +1037,36 @@ function TabButton({
 function MainTabButton({
   active,
   children,
+  count,
   onClick,
 }: {
   active: boolean;
   children: React.ReactNode;
+  count?: number;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
+      className={`inline-flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium ${
         active ? "bg-zinc-950 text-white" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950"
       }`}
     >
       {children}
+      {typeof count === "number" ? <TabCountBadge active={active} count={count} /> : null}
     </button>
+  );
+}
+
+function TabCountBadge({ active, count }: { active: boolean; count: number }) {
+  return (
+    <span
+      className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold ${
+        active ? "bg-white/15 text-white" : "bg-zinc-100 text-zinc-600"
+      }`}
+    >
+      {count.toLocaleString("vi-VN")}
+    </span>
   );
 }
 

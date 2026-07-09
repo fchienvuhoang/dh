@@ -10,6 +10,10 @@ export function normalizeTransferText(value: unknown) {
     .replace(/\s+/g, " ");
 }
 
+export function compactTransferText(value: unknown) {
+  return normalizeTransferText(value).replace(/\s+/g, "");
+}
+
 export function splitKeywords(value: string) {
   return value
     .split(/\r?\n|,/)

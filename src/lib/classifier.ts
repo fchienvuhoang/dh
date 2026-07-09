@@ -1,5 +1,5 @@
 import type { KeywordMatchType } from "@prisma/client";
-import { normalizeTransferText } from "@/lib/text";
+import { compactTransferText, normalizeTransferText } from "@/lib/text";
 
 export type KeywordRule = {
   campaignId: string;
@@ -21,12 +21,13 @@ export function classifyDescription(
   rules: KeywordRule[],
 ): ClassificationResult {
   const normalizedDescription = normalizeTransferText(description);
+  const compactDescription = compactTransferText(description);
   const sortedRules = [...rules].sort((a, b) => {
-    return b.normalizedKeyword.length - a.normalizedKeyword.length;
+    return compactTransferText(b.normalizedKeyword).length - compactTransferText(a.normalizedKeyword).length;
   });
 
   for (const rule of sortedRules) {
-    if (matchesRule(description, normalizedDescription, rule)) {
+    if (matchesRule(description, normalizedDescription, compactDescription, rule)) {
       return {
         campaignId: rule.campaignId,
         matchedKeyword: rule.keyword,
@@ -42,9 +43,19 @@ export function classifyDescription(
   };
 }
 
-function matchesRule(rawDescription: string, normalizedDescription: string, rule: KeywordRule) {
+function matchesRule(
+  rawDescription: string,
+  normalizedDescription: string,
+  compactDescription: string,
+  rule: KeywordRule,
+) {
+  const compactKeyword = compactTransferText(rule.normalizedKeyword);
+  if (!compactKeyword) {
+    return false;
+  }
+
   if (rule.matchType === "EXACT") {
-    return normalizedDescription === rule.normalizedKeyword;
+    return normalizedDescription === rule.normalizedKeyword || compactDescription === compactKeyword;
   }
 
   if (rule.matchType === "REGEX") {
@@ -58,5 +69,5 @@ function matchesRule(rawDescription: string, normalizedDescription: string, rule
     }
   }
 
-  return normalizedDescription.includes(rule.normalizedKeyword);
+  return normalizedDescription.includes(rule.normalizedKeyword) || compactDescription.includes(compactKeyword);
 }

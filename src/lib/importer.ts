@@ -144,26 +144,28 @@ export async function reclassifyImportedTransactions() {
   let matchedRows = 0;
   let unmatchedRows = 0;
 
-  await prisma.$transaction(
-    transactions.map((transaction) => {
-      const classification = classifyDescription(transaction.description, rules);
-      if (classification.status === "MATCHED") {
-        matchedRows += 1;
-      } else {
-        unmatchedRows += 1;
-      }
+  const updates = transactions.map((transaction) => {
+    const classification = classifyDescription(transaction.description, rules);
+    if (classification.status === "MATCHED") {
+      matchedRows += 1;
+    } else {
+      unmatchedRows += 1;
+    }
 
-      return prisma.bankTransaction.update({
-        where: { id: transaction.id },
-        data: {
-          campaignId: classification.campaignId,
-          matchedKeyword: classification.matchedKeyword,
-          classificationStatus: classification.status,
-          normalizedDescription: normalizeTransferText(transaction.description),
-        },
-      });
-    }),
-  );
+    return prisma.bankTransaction.update({
+      where: { id: transaction.id },
+      data: {
+        campaignId: classification.campaignId,
+        matchedKeyword: classification.matchedKeyword,
+        classificationStatus: classification.status,
+        normalizedDescription: normalizeTransferText(transaction.description),
+      },
+    });
+  });
+
+  for (let index = 0; index < updates.length; index += 20) {
+    await Promise.all(updates.slice(index, index + 20));
+  }
 
   return {
     totalRows: transactions.length,

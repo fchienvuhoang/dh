@@ -65,7 +65,6 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
         _count: {
           select: {
             transactions: true,
-            expenses: true,
           },
         },
       },
@@ -75,10 +74,10 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
       return NextResponse.json({ error: "Không tìm thấy thiện pháp." }, { status: 404 });
     }
 
-    if (campaign._count.transactions > 0 || campaign._count.expenses > 0) {
+    if (campaign._count.transactions > 0) {
       return NextResponse.json(
         {
-          error: "Chỉ có thể xóa thiện pháp chưa có giao dịch và chưa có khoản chi.",
+          error: "Chỉ có thể xóa thiện pháp chưa có giao dịch sao kê.",
         },
         { status: 409 },
       );
