@@ -1,0 +1,91 @@
+import { decimalToNumber } from "@/lib/money";
+import { getPrisma } from "@/lib/prisma";
+import { redactPhoneNumbers } from "@/lib/privacy";
+import { makeCampaignCode } from "@/lib/text";
+
+export type PublicCampaignData = {
+  code: string;
+  name: string;
+  description: string | null;
+  status: "ACTIVE" | "PAUSED" | "COMPLETED";
+  income: number;
+  expenses: number;
+  balance: number;
+  transactionCount: number;
+  transactions: PublicCampaignTransaction[];
+};
+
+export type PublicCampaignTransaction = {
+  id: string;
+  transactionDate: string;
+  description: string;
+  debitAmount: number;
+  creditAmount: number;
+};
+
+export async function getPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
+  const prisma = getPrisma();
+  const normalizedCode = makeCampaignCode(code);
+  const campaign = await prisma.campaign.findUnique({
+    where: { code: normalizedCode },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      description: true,
+      status: true,
+    },
+  });
+
+  if (!campaign) {
+    return null;
+  }
+
+  const [transactionSums, transactions] = await Promise.all([
+    prisma.bankTransaction.aggregate({
+      where: {
+        campaignId: campaign.id,
+      },
+      _sum: {
+        creditAmount: true,
+        debitAmount: true,
+      },
+      _count: true,
+    }),
+    prisma.bankTransaction.findMany({
+      where: {
+        campaignId: campaign.id,
+      },
+      select: {
+        id: true,
+        transactionDate: true,
+        description: true,
+        debitAmount: true,
+        creditAmount: true,
+      },
+      orderBy: [{ transactionDate: "desc" }, { statementRow: "desc" }, { createdAt: "desc" }],
+      take: 1000,
+    }),
+  ]);
+
+  const income = decimalToNumber(transactionSums._sum.creditAmount);
+  const expenses = decimalToNumber(transactionSums._sum.debitAmount);
+
+  return {
+    code: campaign.code,
+    name: campaign.name,
+    description: campaign.description,
+    status: campaign.status,
+    income,
+    expenses,
+    balance: income - expenses,
+    transactionCount: transactionSums._count,
+    transactions: transactions.map((transaction) => ({
+      id: transaction.id,
+      transactionDate: transaction.transactionDate.toISOString(),
+      description: redactPhoneNumbers(transaction.description),
+      debitAmount: decimalToNumber(transaction.debitAmount),
+      creditAmount: decimalToNumber(transaction.creditAmount),
+    })),
+  };
+}
