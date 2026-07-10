@@ -107,7 +107,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       return normalizeTransferText(
         `${transaction.description} ${transaction.detail} ${transaction.campaign?.name ?? ""}`,
       ).includes(normalizedQuery);
-    });
+    }).sort(compareTransactionNewestFirst);
   }, [activeTab, data.transactions, query]);
 
   async function handleImport(event: FormEvent<HTMLFormElement>) {
@@ -774,6 +774,15 @@ function DebitTransactionTable({
       </div>
     </div>
   );
+}
+
+function compareTransactionNewestFirst(left: TransactionSummary, right: TransactionSummary) {
+  const dateDifference = new Date(right.transactionDate).getTime() - new Date(left.transactionDate).getTime();
+  if (dateDifference !== 0) {
+    return dateDifference;
+  }
+
+  return (right.statementRow ?? 0) - (left.statementRow ?? 0);
 }
 
 function FundSummaryTable({ data }: { data: DashboardData }) {

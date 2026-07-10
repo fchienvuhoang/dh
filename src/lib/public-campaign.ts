@@ -18,6 +18,7 @@ export type PublicCampaignData = {
 export type PublicCampaignTransaction = {
   id: string;
   transactionDate: string;
+  statementRow: number | null;
   description: string;
   debitAmount: number;
   creditAmount: number;
@@ -73,6 +74,7 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
       select: {
         id: true,
         transactionDate: true,
+        statementRow: true,
         description: true,
         debitAmount: true,
         creditAmount: true,
@@ -97,6 +99,7 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
     transactions: transactions.map((transaction) => ({
       id: transaction.id,
       transactionDate: transaction.transactionDate.toISOString(),
+      statementRow: transaction.statementRow,
       description: redactPhoneNumbers(transaction.description),
       debitAmount: decimalToNumber(transaction.debitAmount),
       creditAmount: decimalToNumber(transaction.creditAmount),

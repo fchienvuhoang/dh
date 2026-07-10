@@ -23,12 +23,12 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
 
   const filteredTransactions = useMemo(() => {
     if (!normalizedQuery) {
-      return data.transactions;
+      return [...data.transactions].sort(compareTransactionNewestFirst);
     }
 
     return data.transactions.filter((transaction) => {
       return normalizeTransferText(transaction.description).includes(normalizedQuery);
-    });
+    }).sort(compareTransactionNewestFirst);
   }, [data.transactions, normalizedQuery]);
 
   return (
@@ -193,6 +193,15 @@ function transactionMeta(transaction: PublicCampaignTransaction) {
     className: "border-amber-200 bg-amber-50 text-amber-700",
     amountClassName: "text-amber-700",
   };
+}
+
+function compareTransactionNewestFirst(left: PublicCampaignTransaction, right: PublicCampaignTransaction) {
+  const dateDifference = new Date(right.transactionDate).getTime() - new Date(left.transactionDate).getTime();
+  if (dateDifference !== 0) {
+    return dateDifference;
+  }
+
+  return (right.statementRow ?? 0) - (left.statementRow ?? 0);
 }
 
 function money(value: number) {
