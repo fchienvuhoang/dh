@@ -597,7 +597,7 @@ function CampaignTable({
               <th className="px-3 py-2 text-right">Tổng chi</th>
               <th className="px-3 py-2 text-right">Còn lại</th>
               <th className="px-3 py-2 text-right">GD</th>
-              <th className="px-3 py-2 text-right">Public</th>
+              <th className="px-3 py-2 text-right">Link công khai</th>
               <th className="px-3 py-2 text-right">Sửa</th>
             </tr>
           </thead>
@@ -667,7 +667,7 @@ function CampaignTable({
                     className="inline-flex items-center justify-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    Link
+                    Thí chủ xem
                   </a>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right text-zinc-500">
@@ -780,6 +780,11 @@ function compareTransactionNewestFirst(left: TransactionSummary, right: Transact
   const dateDifference = new Date(right.transactionDate).getTime() - new Date(left.transactionDate).getTime();
   if (dateDifference !== 0) {
     return dateDifference;
+  }
+
+  const createdAtDifference = new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+  if (createdAtDifference !== 0) {
+    return createdAtDifference;
   }
 
   return (right.statementRow ?? 0) - (left.statementRow ?? 0);

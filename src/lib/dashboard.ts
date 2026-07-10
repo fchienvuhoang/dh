@@ -68,6 +68,7 @@ export type CampaignSummary = {
 export type TransactionSummary = {
   id: string;
   transactionDate: string;
+  createdAt: string;
   statementRow: number | null;
   description: string;
   detail: string;
@@ -168,7 +169,7 @@ export async function getDashboardState(): Promise<DashboardState> {
             },
           },
         },
-        orderBy: [{ transactionDate: "desc" }, { statementRow: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
         take: 500,
       }),
       prisma.bankTransaction.findMany({
@@ -186,7 +187,7 @@ export async function getDashboardState(): Promise<DashboardState> {
             },
           },
         },
-        orderBy: [{ transactionDate: "desc" }, { statementRow: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
         take: 500,
       }),
       prisma.bankAccount.findFirst({
@@ -267,6 +268,7 @@ export async function getDashboardState(): Promise<DashboardState> {
         transactions: transactions.map((transaction) => ({
           id: transaction.id,
           transactionDate: transaction.transactionDate.toISOString(),
+          createdAt: transaction.createdAt.toISOString(),
           statementRow: transaction.statementRow,
           description: transaction.description,
           detail: transaction.detail,
@@ -281,6 +283,7 @@ export async function getDashboardState(): Promise<DashboardState> {
         debitTransactions: debitTransactions.map((transaction) => ({
           id: transaction.id,
           transactionDate: transaction.transactionDate.toISOString(),
+          createdAt: transaction.createdAt.toISOString(),
           statementRow: transaction.statementRow,
           description: transaction.description,
           detail: transaction.detail,

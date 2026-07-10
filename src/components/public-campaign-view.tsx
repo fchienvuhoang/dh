@@ -188,7 +188,7 @@ function transactionMeta(transaction: PublicCampaignTransaction) {
   }
 
   return {
-    label: "Chi",
+    label: "Cúng dường",
     amount: transaction.debitAmount,
     className: "border-amber-200 bg-amber-50 text-amber-700",
     amountClassName: "text-amber-700",
@@ -199,6 +199,11 @@ function compareTransactionNewestFirst(left: PublicCampaignTransaction, right: P
   const dateDifference = new Date(right.transactionDate).getTime() - new Date(left.transactionDate).getTime();
   if (dateDifference !== 0) {
     return dateDifference;
+  }
+
+  const createdAtDifference = new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+  if (createdAtDifference !== 0) {
+    return createdAtDifference;
   }
 
   return (right.statementRow ?? 0) - (left.statementRow ?? 0);
