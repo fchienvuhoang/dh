@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { decimalToNumber } from "@/lib/money";
 import { getPrisma } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
@@ -38,6 +39,12 @@ export async function getPublicCampaignMeta(code: string) {
     },
   });
 }
+
+export const getCachedPublicCampaignMeta = unstable_cache(
+  getPublicCampaignMeta,
+  ["public-campaign-meta"],
+  { revalidate: 30 },
+);
 
 export async function getPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
   const prisma = getPrisma();
@@ -109,3 +116,9 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
     })),
   };
 }
+
+export const getCachedPublicCampaignData = unstable_cache(
+  getPublicCampaignData,
+  ["public-campaign-data"],
+  { revalidate: 30 },
+);

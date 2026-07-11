@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!.*\\..*).*)", "/favicon.ico"],
+  matcher: ["/((?!_next|dang-nhap|thien-phap|api/auth|favicon.ico|.*\\..*).*)"],
 };
 
 function isPublicPath(pathname: string) {

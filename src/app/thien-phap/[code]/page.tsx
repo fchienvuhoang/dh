@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PublicCampaignView } from "@/components/public-campaign-view";
-import { getPublicCampaignData, getPublicCampaignMeta } from "@/lib/public-campaign";
+import { getCachedPublicCampaignData, getCachedPublicCampaignMeta } from "@/lib/public-campaign";
 
 type Props = {
   params: Promise<{
@@ -13,7 +13,7 @@ export const revalidate = 30;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
-  const data = await getPublicCampaignMeta(code);
+  const data = await getCachedPublicCampaignMeta(code);
 
   if (!data) {
     return {
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicCampaignPage({ params }: Props) {
   const { code } = await params;
-  const data = await getPublicCampaignData(code);
+  const data = await getCachedPublicCampaignData(code);
 
   if (!data) {
     notFound();
