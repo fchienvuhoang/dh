@@ -3,6 +3,7 @@
 import {
   AlertCircle,
   ArrowUpFromLine,
+  Ban,
   CheckCircle2,
   ExternalLink,
   FileSpreadsheet,
@@ -634,14 +635,34 @@ function CampaignTable({
                 </td>
                 <td className="max-w-xs px-3 py-2">
                   <div className="flex flex-wrap gap-1">
-                    {campaign.keywords.slice(0, 4).map((keyword) => (
-                      <span key={keyword.id} className="rounded-md bg-zinc-100 px-2 py-1 text-xs text-zinc-600">
-                        {keyword.keyword}
-                      </span>
-                    ))}
+                    {campaign.keywords.slice(0, 4).map((keyword) => {
+                      const isDisabled = !keyword.active || campaign.status === "COMPLETED";
+
+                      return (
+                        <span
+                          key={keyword.id}
+                          title={isDisabled ? "Từ khóa đã bị vô hiệu hóa" : "Từ khóa đang hoạt động"}
+                          className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs ${
+                            isDisabled
+                              ? "bg-zinc-100 text-zinc-400 line-through"
+                              : "bg-emerald-50 text-emerald-700"
+                          }`}
+                        >
+                          {isDisabled ? <Ban className="h-3 w-3" /> : null}
+                          {keyword.keyword}
+                        </span>
+                      );
+                    })}
                     {campaign.keywords.length > 4 ? (
                       <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs text-zinc-500">
                         +{campaign.keywords.length - 4}
+                      </span>
+                    ) : null}
+                    {campaign.keywords.length > 0 &&
+                    (campaign.status === "COMPLETED" || campaign.keywords.every((keyword) => !keyword.active)) ? (
+                      <span className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-500">
+                        <Ban className="h-3 w-3" />
+                        Đã vô hiệu hóa
                       </span>
                     ) : null}
                   </div>

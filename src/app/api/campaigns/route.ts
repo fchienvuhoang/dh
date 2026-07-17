@@ -49,6 +49,7 @@ export async function POST(request: Request) {
             data: keywords.map((keyword) => ({
               keyword,
               normalizedKeyword: normalizeTransferText(keyword),
+              active: body.status !== "COMPLETED",
             })),
             skipDuplicates: true,
           },
