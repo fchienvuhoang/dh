@@ -3,7 +3,12 @@ import { z } from "zod";
 import { apiError } from "@/lib/api";
 import { getPrisma } from "@/lib/prisma";
 import { makeCampaignCode, normalizeTransferText } from "@/lib/text";
-import { invalidatePublicCampaignCache, warmPublicCampaignCaches } from "@/lib/public-campaign";
+import {
+  invalidatePublicCampaignCache,
+  invalidatePublicCampaignListCache,
+  warmPublicCampaignCaches,
+  warmPublicCampaignListCache,
+} from "@/lib/public-campaign";
 
 const campaignSchema = z.object({
   code: z.string().min(1),
@@ -60,7 +65,11 @@ export async function POST(request: Request) {
       },
     });
     const affectedCodes = invalidatePublicCampaignCache([campaign.code]);
-    await warmPublicCampaignCaches(affectedCodes);
+    invalidatePublicCampaignListCache();
+    await Promise.all([
+      warmPublicCampaignCaches(affectedCodes),
+      warmPublicCampaignListCache(),
+    ]);
 
     return NextResponse.json(campaign, { status: 201 });
   } catch (error) {

@@ -85,6 +85,19 @@ openssl rand -base64 32
 
 Khi deploy Vercel, thêm `ADMIN_PASSWORD` vào Project Settings → Environment Variables. Các trang public `/thien-phap/[ma-thien-phap]` vẫn mở công khai cho thí chủ xem.
 
+## Báo cáo chỉ xem
+
+Trang `/bao-cao/[token]` hiển thị số dư tài khoản, danh sách thiện pháp, tổng thu và link công khai. Trang này không có chức năng thêm, sửa, xóa hoặc import và không cấp quyền gọi API quản trị.
+
+Tạo token URL dài và cấu hình mật khẩu cố định bằng biến môi trường, không lưu database:
+
+```bash
+READONLY_VIEW_TOKEN="chuỗi-token-tối-thiểu-32-ký-tự"
+READONLY_VIEW_PASSWORD="mật-khẩu-tối-thiểu-8-ký-tự"
+```
+
+Có thể tạo token mạnh bằng `openssl rand -hex 32`. Link gửi cho người xem có dạng `/bao-cao/[READONLY_VIEW_TOKEN]`. Trang được đặt `noindex`, `nofollow`, `noarchive`, không gửi referrer và không được cache.
+
 ## Deploy Vercel
 
 1. Push project lên GitHub.

@@ -1,7 +1,10 @@
 export const ADMIN_SESSION_COOKIE = "dhamma_admin_session";
+export const READONLY_SESSION_COOKIE = "dhamma_readonly_session";
 
 const SESSION_MESSAGE = "dhamma-admin-session-v1";
+const READONLY_SESSION_MESSAGE = "dhamma-readonly-session-v1";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+const READONLY_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
 
 export function isAdminPasswordConfigured() {
   return Boolean(process.env.ADMIN_PASSWORD);
@@ -9,6 +12,47 @@ export function isAdminPasswordConfigured() {
 
 export function getAdminSessionMaxAge() {
   return SESSION_MAX_AGE_SECONDS;
+}
+
+export function isReadonlyViewConfigured() {
+  return Boolean(
+    process.env.READONLY_VIEW_TOKEN &&
+      process.env.READONLY_VIEW_TOKEN.length >= 32 &&
+      process.env.READONLY_VIEW_PASSWORD &&
+      process.env.READONLY_VIEW_PASSWORD.length >= 8,
+  );
+}
+
+export function getReadonlySessionMaxAge() {
+  return READONLY_SESSION_MAX_AGE_SECONDS;
+}
+
+export function verifyReadonlyViewToken(token: string) {
+  const expectedToken = process.env.READONLY_VIEW_TOKEN;
+  return Boolean(expectedToken && constantTimeEqual(token, expectedToken));
+}
+
+export function verifyReadonlyPassword(password: string) {
+  const expectedPassword = process.env.READONLY_VIEW_PASSWORD;
+  return Boolean(expectedPassword && constantTimeEqual(password, expectedPassword));
+}
+
+export async function createReadonlySessionToken() {
+  const password = process.env.READONLY_VIEW_PASSWORD;
+  const viewToken = process.env.READONLY_VIEW_TOKEN;
+  if (!password || !viewToken) {
+    throw new Error("Readonly view is not configured.");
+  }
+
+  return hmacHex(password, `${READONLY_SESSION_MESSAGE}:${viewToken}`);
+}
+
+export async function verifyReadonlySessionToken(token: string | undefined) {
+  if (!token || !isReadonlyViewConfigured()) {
+    return false;
+  }
+
+  return constantTimeEqual(token, await createReadonlySessionToken());
 }
 
 export async function createAdminSessionToken() {

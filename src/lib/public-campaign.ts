@@ -5,6 +5,13 @@ import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 
 const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "phone-last-three-v4";
+const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
+
+export type ActivePublicCampaign = {
+  code: string;
+  name: string;
+  description: string | null;
+};
 
 export type PublicCampaignData = {
   code: string;
@@ -40,6 +47,34 @@ export async function getPublicCampaignMeta(code: string) {
       description: true,
     },
   });
+}
+
+export async function getActivePublicCampaigns(): Promise<ActivePublicCampaign[]> {
+  const prisma = getPrisma();
+  return prisma.campaign.findMany({
+    where: { status: "ACTIVE" },
+    select: {
+      code: true,
+      name: true,
+      description: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export function getCachedActivePublicCampaigns() {
+  return unstable_cache(getActivePublicCampaigns, ["active-public-campaigns"], {
+    revalidate: false,
+    tags: [PUBLIC_CAMPAIGN_LIST_TAG],
+  })();
+}
+
+export function invalidatePublicCampaignListCache() {
+  revalidateTag(PUBLIC_CAMPAIGN_LIST_TAG, { expire: 0 });
+}
+
+export async function warmPublicCampaignListCache() {
+  await getCachedActivePublicCampaigns();
 }
 
 function publicCampaignTag(code: string) {

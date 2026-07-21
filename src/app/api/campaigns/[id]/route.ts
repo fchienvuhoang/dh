@@ -4,7 +4,12 @@ import { z } from "zod";
 import { apiError } from "@/lib/api";
 import { getPrisma } from "@/lib/prisma";
 import { makeCampaignCode, normalizeTransferText } from "@/lib/text";
-import { invalidatePublicCampaignCache, warmPublicCampaignCaches } from "@/lib/public-campaign";
+import {
+  invalidatePublicCampaignCache,
+  invalidatePublicCampaignListCache,
+  warmPublicCampaignCaches,
+  warmPublicCampaignListCache,
+} from "@/lib/public-campaign";
 
 const updateCampaignSchema = z.object({
   code: z.string().min(1),
@@ -60,7 +65,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       });
     });
     const affectedCodes = invalidatePublicCampaignCache([previousCampaign?.code, campaign.code]);
-    await warmPublicCampaignCaches(affectedCodes);
+    invalidatePublicCampaignListCache();
+    await Promise.all([
+      warmPublicCampaignCaches(affectedCodes),
+      warmPublicCampaignListCache(),
+    ]);
 
     return NextResponse.json(campaign);
   } catch (error) {
@@ -100,6 +109,8 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
 
     await prisma.campaign.delete({ where: { id } });
     invalidatePublicCampaignCache([campaign.code]);
+    invalidatePublicCampaignListCache();
+    await warmPublicCampaignListCache();
 
     return NextResponse.json({ ok: true });
   } catch (error) {
