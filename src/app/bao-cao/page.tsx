@@ -97,7 +97,7 @@ export default async function ReadonlyReportPage() {
               <Clock3 className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <div className="text-sm font-medium text-zinc-600">Cập nhật sao kê gần nhất</div>
+              <div className="text-sm font-medium text-zinc-600">Cập nhật sao kê gần nhất (UTC+7)</div>
               <div className="mt-1 text-xl font-semibold text-zinc-950 sm:text-2xl">
                 {data.latestImport ? dateTime(data.latestImport.importedAt) : "Chưa có lần import nào"}
               </div>
@@ -356,6 +356,7 @@ function dateTime(value: string) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hourCycle: "h23",
   })
     .formatToParts(new Date(value))
@@ -366,5 +367,5 @@ function dateTime(value: string) {
 
   const hour = Number(parts.hour);
   const period = hour >= 18 ? "tối" : hour >= 12 ? "chiều" : "sáng";
-  return `${parts.day}/${parts.month}/${parts.year} vào lúc ${parts.hour}h${parts.minute} ${period}`;
+  return `${parts.day}/${parts.month}/${parts.year} vào lúc ${parts.hour}h${parts.minute}p${parts.second}s ${period}`;
 }

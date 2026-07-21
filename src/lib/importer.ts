@@ -23,7 +23,11 @@ type TransactionClient = Omit<
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
 >;
 
-export async function importTechcombankStatement(fileName: string, buffer: Buffer) {
+export async function importTechcombankStatement(
+  fileName: string,
+  buffer: Buffer,
+  uploadedAt = new Date(),
+) {
   const prisma = getPrisma();
   const parsed = parseTechcombankStatement(buffer);
   const rules = await loadKeywordRules(prisma);
@@ -59,6 +63,7 @@ export async function importTechcombankStatement(fileName: string, buffer: Buffe
     const batch = await tx.importBatch.create({
       data: {
         fileName,
+        importedAt: uploadedAt,
         sourceBank: parsed.meta.sourceBank,
         accountId: account.id,
         fromDate: parsed.meta.fromDate,

@@ -9,6 +9,8 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const uploadedAt = new Date();
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");
@@ -18,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const result = await importTechcombankStatement(file.name, buffer);
+    const result = await importTechcombankStatement(file.name, buffer, uploadedAt);
     const affectedCodes = invalidatePublicCampaignCache(result.affectedCampaignCodes);
     await warmPublicCampaignCaches(affectedCodes);
 
