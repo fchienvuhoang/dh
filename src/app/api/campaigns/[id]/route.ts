@@ -89,6 +89,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
         _count: {
           select: {
             transactions: true,
+            allocations: true,
           },
         },
       },
@@ -98,7 +99,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
       return NextResponse.json({ error: "Không tìm thấy thiện pháp." }, { status: 404 });
     }
 
-    if (campaign._count.transactions > 0) {
+    if (campaign._count.transactions > 0 || campaign._count.allocations > 0) {
       return NextResponse.json(
         {
           error: "Chỉ có thể xóa thiện pháp chưa có giao dịch sao kê.",

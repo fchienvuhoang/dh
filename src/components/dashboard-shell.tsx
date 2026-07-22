@@ -962,6 +962,172 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
   );
 }
 
+function AllocationModal({
+  transaction,
+  campaigns,
+  isSaving,
+  onClose,
+  onSave,
+}: {
+  transaction: TransactionSummary;
+  campaigns: CampaignSummary[];
+  isSaving: boolean;
+  onClose: () => void;
+  onSave: (
+    transactionId: string,
+    allocations: { campaignId: string; amount: number }[],
+  ) => Promise<void>;
+}) {
+  const availableCampaigns = campaigns.filter((campaign) => campaign.status !== "COMPLETED");
+  const [rows, setRows] = useState<AllocationRow[]>(() =>
+    transaction.allocations.length >= 2
+      ? transaction.allocations.map((allocation) => ({
+          campaignId: allocation.campaign.id,
+          amount: String(allocation.amount),
+        }))
+      : [
+          { campaignId: "", amount: "" },
+          { campaignId: "", amount: "" },
+        ],
+  );
+  const allocatedTotal = rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+  const remaining = transaction.creditAmount - allocatedTotal;
+  const selectedCampaignIds = rows.map((row) => row.campaignId).filter(Boolean);
+  const isValid =
+    rows.length >= 2 &&
+    rows.every((row) => row.campaignId && Number(row.amount) > 0) &&
+    new Set(selectedCampaignIds).size === selectedCampaignIds.length &&
+    Math.round(allocatedTotal * 100) === Math.round(transaction.creditAmount * 100);
+
+  function updateRow(index: number, patch: Partial<AllocationRow>) {
+    setRows((current) =>
+      current.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row)),
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-zinc-950/40 px-4 py-8">
+      <div className="w-full max-w-2xl rounded-md border border-zinc-200 bg-white shadow-xl">
+        <div className="flex items-start justify-between gap-3 border-b border-zinc-200 px-5 py-4">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-950">Chia giao dịch cho nhiều thiện pháp</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Số tiền giao dịch: <strong className="text-zinc-900">{money(transaction.creditAmount)}</strong>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
+            aria-label="Đóng"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form
+          className="space-y-4 px-5 py-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!isValid) return;
+            void onSave(
+              transaction.id,
+              rows.map((row) => ({ campaignId: row.campaignId, amount: Number(row.amount) })),
+            );
+          }}
+        >
+          <p className="rounded-md bg-zinc-50 p-3 text-sm leading-6 text-zinc-600">
+            {transaction.description}
+          </p>
+
+          <div className="space-y-2">
+            {rows.map((row, index) => (
+              <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                <select
+                  value={row.campaignId}
+                  onChange={(event) => updateRow(index, { campaignId: event.target.value })}
+                  className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                  required
+                >
+                  <option value="">Chọn thiện pháp</option>
+                  {availableCampaigns.map((campaign) => (
+                    <option
+                      key={campaign.id}
+                      value={campaign.id}
+                      disabled={selectedCampaignIds.includes(campaign.id) && campaign.id !== row.campaignId}
+                    >
+                      {campaign.code} — {campaign.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={row.amount}
+                  onChange={(event) => updateRow(index, { amount: event.target.value })}
+                  placeholder="Số tiền"
+                  className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                  required
+                />
+                <button
+                  type="button"
+                  disabled={rows.length <= 2}
+                  onClick={() => setRows((current) => current.filter((_, rowIndex) => rowIndex !== index))}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-zinc-200 text-zinc-500 hover:bg-zinc-50 disabled:opacity-30"
+                  aria-label="Xóa phần phân bổ"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setRows((current) => [...current, { campaignId: "", amount: "" }])}
+            className="inline-flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            <Plus className="h-4 w-4" />
+            Thêm thiện pháp
+          </button>
+
+          <div className="grid grid-cols-2 gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm">
+            <div>
+              <div className="text-zinc-500">Đã phân bổ</div>
+              <div className="mt-1 font-semibold text-zinc-950">{money(allocatedTotal)}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-zinc-500">Còn lại</div>
+              <div className={`mt-1 font-semibold ${remaining === 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                {money(remaining)}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={!isValid || isSaving}
+              className="inline-flex items-center gap-2 rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Lưu phân bổ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function CampaignModal({
   state,
   isSaving,
