@@ -293,10 +293,11 @@ export async function getDashboardState(): Promise<DashboardState> {
       const tx = txByCampaign.get(campaign.id);
       const allocation = allocationsByCampaign.get(campaign.id);
       const refund = refundsByCampaign.get(campaign.id);
-      const income = (tx?.income ?? 0) + (allocation?.income ?? 0);
+      const grossIncome = (tx?.income ?? 0) + (allocation?.income ?? 0);
       const debit = tx?.debit ?? 0;
       const expensesAmount = debit;
       const refunds = refund?.amount ?? 0;
+      const income = grossIncome - refunds;
 
       return {
         id: campaign.id,
@@ -308,7 +309,7 @@ export async function getDashboardState(): Promise<DashboardState> {
         debit,
         expenses: expensesAmount,
         refunds,
-        balance: income - expensesAmount - refunds,
+        balance: income - expensesAmount,
         transactionCount: (tx?.count ?? 0) + (refund?.count ?? 0) + (allocation?.count ?? 0),
         keywords: campaign.keywords.map((keyword) => ({
           id: keyword.id,

@@ -53,7 +53,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           ) : null}
 
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
-            <PublicStat label="Hùn phước" value={money(data.income)} tone="emerald" />
+            <PublicStat label="Hùn phước sau hoàn lại" value={money(data.income)} tone="emerald" />
             <PublicStat label="Đã cúng dường" value={money(data.expenses)} tone="amber" />
             <PublicStat label="Đã hoàn lại" value={money(data.refunds)} tone="amber" />
             <PublicStat label="Tịnh tài còn lại" value={money(data.balance)} />

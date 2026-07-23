@@ -204,11 +204,12 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
     }),
   ]);
 
-  const income =
+  const grossIncome =
     decimalToNumber(transactionSums._sum.creditAmount) +
     decimalToNumber(allocationSums._sum.amount);
   const expenses = decimalToNumber(transactionSums._sum.debitAmount);
   const refunds = decimalToNumber(refundSums._sum.debitAmount);
+  const income = grossIncome - refunds;
   const publicTransactions: PublicCampaignTransaction[] = [
     ...transactions.map((transaction) => ({
       id: transaction.id,
@@ -266,7 +267,7 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
     income,
     expenses,
     refunds,
-    balance: income - expenses - refunds,
+    balance: income - expenses,
     transactionCount: transactionSums._count + allocationSums._count,
     transactions: publicTransactions,
   };

@@ -728,7 +728,7 @@ function CampaignTable({
               <th className="px-3 py-2">Thiện pháp</th>
               <th className="px-3 py-2">Trạng thái</th>
               <th className="px-3 py-2">Từ khóa</th>
-              <th className="px-3 py-2 text-right">Tổng thu</th>
+              <th className="px-3 py-2 text-right">Hùn phước</th>
               <th className="px-3 py-2 text-right">Tổng chi</th>
               <th className="px-3 py-2 text-right">Hoàn lại</th>
               <th className="px-3 py-2 text-right">Còn lại</th>
@@ -987,15 +987,16 @@ function compareTransactionNewestFirst(left: TransactionSummary, right: Transact
 
 function FundSummaryTable({ data }: { data: DashboardData }) {
   const totalCampaignIncome = data.campaigns.reduce((sum, campaign) => sum + campaign.income, 0);
+  const totalCampaignRefunds = data.campaigns.reduce((sum, campaign) => sum + campaign.refunds, 0);
   const totalExpenses = data.overview.totalExpenses;
-  const currentAmount = totalCampaignIncome - totalExpenses;
+  const currentAmount = totalCampaignIncome + totalCampaignRefunds - totalExpenses;
   const bankDifference = data.overview.bankBalance - currentAmount;
 
   const rows = [
     {
-      label: "Tổng thu các thiện pháp",
+      label: "Tổng hùn phước sau hoàn lại",
       value: totalCampaignIncome,
-      note: "Cộng tổng thu của toàn bộ thiện pháp trong bảng 1.",
+      note: "Tổng tiền vào của các thiện pháp sau khi trừ hoàn lại.",
       className: "text-emerald-700",
     },
     {
@@ -1007,7 +1008,7 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
     {
       label: "Số tiền hiện tại",
       value: currentAmount,
-      note: "Tổng thu các thiện pháp trừ tổng chi.",
+      note: "Hùn phước cộng hoàn lại rồi trừ toàn bộ cột NỢ, để không trừ hoàn hai lần.",
       className: "text-zinc-950",
     },
     {

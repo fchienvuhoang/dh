@@ -94,12 +94,13 @@ export async function getReadonlyDashboardData(): Promise<ReadonlyDashboardData>
     const allocatedIncome = decimalToNumber(allocation?._sum.amount);
     const refunds = decimalToNumber(refund?._sum.debitAmount);
     const allocationCount = allocation?._count._all ?? 0;
+    const income = (sums?.income ?? 0) + allocatedIncome - refunds;
     return {
       ...campaign,
-      income: (sums?.income ?? 0) + allocatedIncome,
+      income,
       expenses: sums?.expenses ?? 0,
       refunds,
-      balance: (sums?.income ?? 0) + allocatedIncome - (sums?.expenses ?? 0) - refunds,
+      balance: income - (sums?.expenses ?? 0),
       transactionCount: (sums?.transactionCount ?? 0) + allocationCount,
     };
   });

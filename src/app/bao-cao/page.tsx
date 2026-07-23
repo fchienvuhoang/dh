@@ -72,7 +72,7 @@ export default async function ReadonlyReportPage() {
           />
           <div className="grid gap-3 sm:grid-cols-4">
             <CompactSummaryStat
-              label="Tổng thu các thiện pháp"
+              label="Tổng hùn phước sau hoàn lại"
               value={money(data.totalCampaignIncome)}
               icon={Eye}
             />
@@ -146,7 +146,7 @@ export default async function ReadonlyReportPage() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-zinc-500">Tổng thu</dt>
+                    <dt className="text-xs text-zinc-500">Hùn phước</dt>
                     <dd className="mt-1 break-words text-sm font-semibold text-emerald-700">
                       {money(campaign.income)}
                     </dd>
@@ -196,7 +196,7 @@ export default async function ReadonlyReportPage() {
                   <th className="px-4 py-3">Thiện pháp</th>
                   <th className="px-4 py-3">Trạng thái</th>
                   <th className="px-4 py-3 text-right">Lượt hùn phước</th>
-                  <th className="px-4 py-3 text-right">Tổng thu</th>
+                  <th className="px-4 py-3 text-right">Hùn phước</th>
                   <th className="px-4 py-3 text-right">Tổng chi</th>
                   <th className="px-4 py-3 text-right">Hoàn lại</th>
                   <th className="px-4 py-3 text-right">Còn thừa</th>
