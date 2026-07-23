@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { CircleCheck, Info, Link2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
 import { normalizeTransferText } from "@/lib/text";
@@ -27,7 +27,9 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
     }
 
     return data.transactions.filter((transaction) => {
-      return normalizeTransferText(transaction.description).includes(normalizedQuery);
+      return normalizeTransferText(
+        `${transaction.description} ${transaction.refundLinks.map((link) => link.description).join(" ")}`,
+      ).includes(normalizedQuery);
     }).sort(compareTransactionNewestFirst);
   }, [data.transactions, normalizedQuery]);
 
@@ -56,6 +58,13 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             <PublicStat label="Đã hoàn lại" value={money(data.refunds)} tone="amber" />
             <PublicStat label="Tịnh tài còn lại" value={money(data.balance)} />
             <PublicStat label="Lượt hùn phước" value={data.transactionCount.toLocaleString("vi-VN")} />
+          </div>
+          <div className="mt-3 flex items-start gap-2 text-xs leading-5 text-zinc-500">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-600" />
+            <p>
+              Hoàn lại là những khoản chuyển trả cho thí chủ để thí chủ tác ý lại,
+              hoặc do thí chủ chuyển nhầm thiện pháp nên được hoàn lại.
+            </p>
           </div>
         </div>
       </header>
@@ -138,6 +147,7 @@ function PublicTransactionCard({ transaction }: { transaction: PublicCampaignTra
       <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-800">
         {transaction.description}
       </p>
+      <RefundRelationship transaction={transaction} />
     </article>
   );
 }
@@ -150,6 +160,7 @@ function PublicTransactionRow({ transaction }: { transaction: PublicCampaignTran
       <td className="whitespace-nowrap px-3 py-2 align-top text-zinc-600">{dateOnly(transaction.transactionDate)}</td>
       <td className="max-w-2xl px-3 py-2 align-top">
         <div className="whitespace-pre-wrap break-words font-medium text-zinc-900">{transaction.description}</div>
+        <RefundRelationship transaction={transaction} />
       </td>
       <td className="whitespace-nowrap px-3 py-2 align-top">
         <span className={`inline-flex rounded-md border px-2 py-1 text-xs font-medium ${meta.className}`}>
@@ -160,6 +171,47 @@ function PublicTransactionRow({ transaction }: { transaction: PublicCampaignTran
         {money(meta.amount)}
       </td>
     </tr>
+  );
+}
+
+function RefundRelationship({ transaction }: { transaction: PublicCampaignTransaction }) {
+  const linkedAmount = transaction.refundLinks.reduce((sum, link) => sum + link.amount, 0);
+  const isIncoming = transaction.creditAmount > 0;
+
+  if (isIncoming && linkedAmount <= 0) {
+    return null;
+  }
+  if (!isIncoming && transaction.outflowType !== "REFUND") {
+    return null;
+  }
+
+  const fullyRefunded = isIncoming &&
+    Math.round(linkedAmount * 100) >= Math.round(transaction.creditAmount * 100);
+
+  return (
+    <div className={`mt-2 border-l-2 pl-2.5 text-xs leading-5 ${
+      fullyRefunded ? "border-rose-400 text-rose-700" : "border-violet-300 text-violet-700"
+    }`}>
+      <div className="flex items-center gap-1.5 font-semibold">
+        {fullyRefunded ? <CircleCheck className="h-3.5 w-3.5 shrink-0" /> : <Link2 className="h-3.5 w-3.5 shrink-0" />}
+        {isIncoming
+          ? fullyRefunded
+            ? `Đã hoàn hết ${money(linkedAmount)}`
+            : `Đã hoàn ${money(linkedAmount)} / ${money(transaction.creditAmount)}`
+          : linkedAmount > 0
+            ? `Đã liên kết ${money(linkedAmount)} / ${money(transaction.debitAmount)}`
+            : "Chưa liên kết khoản nhận"}
+      </div>
+      {transaction.refundLinks.length > 0 ? (
+        <ul className="mt-1 space-y-1 text-zinc-600">
+          {transaction.refundLinks.map((link, index) => (
+            <li key={`${link.transactionDate}-${link.amount}-${index}`} className="break-words">
+              {isIncoming ? "Hoàn ngày" : "Hoàn cho khoản nhận ngày"} {dateOnly(link.transactionDate)}: {link.description} ({money(link.amount)})
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 

@@ -4,7 +4,7 @@ import { getPrisma } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "refund-links-v1";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "public-refund-links-v2";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
@@ -35,6 +35,13 @@ export type PublicCampaignTransaction = {
   debitAmount: number;
   creditAmount: number;
   outflowType: "DONATION" | "REFUND";
+  refundLinks: PublicRefundLink[];
+};
+
+export type PublicRefundLink = {
+  amount: number;
+  transactionDate: string;
+  description: string;
 };
 
 export async function getPublicCampaignMeta(code: string) {
@@ -145,6 +152,25 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
         debitAmount: true,
         creditAmount: true,
         outflowType: true,
+        refundLinks: {
+          select: {
+            amount: true,
+            originalTransaction: {
+              select: { transactionDate: true, description: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+        receivedRefundLinks: {
+          where: { refundTransaction: { campaignId: campaign.id } },
+          select: {
+            amount: true,
+            refundTransaction: {
+              select: { transactionDate: true, description: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
       },
       orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
       take: 1000,
@@ -160,6 +186,16 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
             createdAt: true,
             statementRow: true,
             description: true,
+            receivedRefundLinks: {
+              where: { refundTransaction: { campaignId: campaign.id } },
+              select: {
+                amount: true,
+                refundTransaction: {
+                  select: { transactionDate: true, description: true },
+                },
+              },
+              orderBy: { createdAt: "asc" },
+            },
           },
         },
       },
@@ -183,6 +219,17 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
       debitAmount: decimalToNumber(transaction.debitAmount),
       creditAmount: decimalToNumber(transaction.creditAmount),
       outflowType: transaction.outflowType,
+      refundLinks: transaction.creditAmount.greaterThan(0)
+        ? transaction.receivedRefundLinks.map((link) => ({
+            amount: decimalToNumber(link.amount),
+            transactionDate: link.refundTransaction.transactionDate.toISOString(),
+            description: redactPhoneNumbers(link.refundTransaction.description),
+          }))
+        : transaction.refundLinks.map((link) => ({
+            amount: decimalToNumber(link.amount),
+            transactionDate: link.originalTransaction.transactionDate.toISOString(),
+            description: redactPhoneNumbers(link.originalTransaction.description),
+          })),
     })),
     ...allocations.map((allocation) => ({
       id: allocation.id,
@@ -193,6 +240,11 @@ export async function getPublicCampaignData(code: string): Promise<PublicCampaig
       debitAmount: 0,
       creditAmount: decimalToNumber(allocation.amount),
       outflowType: "DONATION" as const,
+      refundLinks: allocation.transaction.receivedRefundLinks.map((link) => ({
+        amount: decimalToNumber(link.amount),
+        transactionDate: link.refundTransaction.transactionDate.toISOString(),
+        description: redactPhoneNumbers(link.refundTransaction.description),
+      })),
     })),
   ]
     .sort((left, right) => {
