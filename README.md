@@ -43,6 +43,12 @@ Dùng PostgreSQL managed trên Vercel Marketplace. Các lựa chọn phù hợp:
 
 Sau khi provision database trên Vercel, lấy biến `DATABASE_URL` và cấu hình cho Production/Preview/Development.
 
+Ứng dụng dùng một Prisma client dùng chung trong mỗi instance và giới hạn pool mặc định ở 2 kết nối để tránh vượt `max connections` trên serverless. Có thể cấu hình lại khi cần:
+
+```bash
+DATABASE_POOL_MAX="2"
+```
+
 ## Schema chính
 
 - `BankAccount`: thông tin tài khoản ngân hàng, số dư hiện tại theo kỳ import mới nhất.
