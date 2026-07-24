@@ -4,10 +4,7 @@ import { z } from "zod";
 import { apiError } from "@/lib/api";
 import { toPrismaDecimal } from "@/lib/money";
 import { getPrisma } from "@/lib/prisma";
-import {
-  invalidatePublicCampaignCache,
-  warmPublicCampaignCaches,
-} from "@/lib/public-campaign";
+import { invalidatePublicCampaignCache } from "@/lib/public-campaign";
 
 const allocationSchema = z.object({
   allocations: z.array(
@@ -101,12 +98,11 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       });
     });
 
-    const affectedCodes = invalidatePublicCampaignCache([
+    invalidatePublicCampaignCache([
       transaction.campaign?.code,
       ...transaction.allocations.map((allocation) => allocation.campaign.code),
       ...campaigns.map((campaign) => campaign.code),
     ]);
-    await warmPublicCampaignCaches(affectedCodes);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

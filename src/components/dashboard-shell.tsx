@@ -92,6 +92,18 @@ const statusClassNames = {
   COMPLETED: "border-zinc-200 bg-zinc-50 text-zinc-600",
 };
 
+const selectionStatusLabels = {
+  ACTIVE: "Đang hoạt động",
+  PAUSED: "Tạm dừng",
+  COMPLETED: "Hoàn tất",
+};
+
+const selectionStatusPriority = {
+  ACTIVE: 0,
+  PAUSED: 1,
+  COMPLETED: 2,
+};
+
 export function DashboardShell({ state }: Props) {
   if (!state.ok) {
     return <SetupScreen state={state} />;
@@ -600,6 +612,8 @@ function TransactionTable({
   onAssign: (transactionId: string, campaignId: string | null, outflowType?: "DONATION" | "REFUND") => void;
   onSplit: (transaction: TransactionSummary) => void;
 }) {
+  const sortedCampaigns = sortCampaignsForSelection(campaigns);
+
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
       <div className="max-h-[620px] overflow-auto">
@@ -676,12 +690,18 @@ function TransactionTable({
                       <option value="">
                         {transaction.allocations.length > 0 ? "Đã chia" : "Chưa phân loại"}
                       </option>
-                      {campaigns.map((campaign) => (
+                      {sortedCampaigns.map((campaign) => (
                         <option key={campaign.id} value={campaign.id}>
-                          {campaign.code}
+                          {campaignOptionLabel(campaign)}
                         </option>
                       ))}
                     </select>
+                    {pendingTransactionId === transaction.id ? (
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-emerald-700">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Đang lưu...
+                      </span>
+                    ) : null}
                     {transaction.creditAmount > 0 ? (
                       <button
                         type="button"
@@ -861,6 +881,8 @@ function DebitTransactionTable({
   onAssign: (transactionId: string, campaignId: string | null, outflowType?: "DONATION" | "REFUND") => void;
   onLinkRefund: (transaction: TransactionSummary) => void;
 }) {
+  const sortedCampaigns = sortCampaignsForSelection(campaigns);
+
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
       <div className="max-h-[420px] overflow-auto">
@@ -935,12 +957,18 @@ function DebitTransactionTable({
                       className="w-44 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                     >
                       <option value="">Chưa gán</option>
-                      {campaigns.map((campaign) => (
+                      {sortedCampaigns.map((campaign) => (
                         <option key={campaign.id} value={campaign.id}>
-                          {campaign.code}
+                          {campaignOptionLabel(campaign)}
                         </option>
                       ))}
                     </select>
+                    {pendingTransactionId === transaction.id ? (
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-emerald-700">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Đang lưu...
+                      </span>
+                    ) : null}
                     {transaction.outflowType === "REFUND" && transaction.campaign ? (
                       <button
                         type="button"
@@ -1315,7 +1343,9 @@ function AllocationModal({
     allocations: { campaignId: string; amount: number }[],
   ) => Promise<void>;
 }) {
-  const availableCampaigns = campaigns.filter((campaign) => campaign.status !== "COMPLETED");
+  const availableCampaigns = sortCampaignsForSelection(
+    campaigns.filter((campaign) => campaign.status !== "COMPLETED"),
+  );
   const [rows, setRows] = useState<AllocationRow[]>(() =>
     transaction.allocations.length >= 2
       ? transaction.allocations.map((allocation) => ({
@@ -1393,7 +1423,7 @@ function AllocationModal({
                       value={campaign.id}
                       disabled={selectedCampaignIds.includes(campaign.id) && campaign.id !== row.campaignId}
                     >
-                      {campaign.code} — {campaign.name}
+                      {campaign.code} — {selectionStatusLabels[campaign.status]} — {campaign.name}
                     </option>
                   ))}
                 </select>
@@ -1463,6 +1493,19 @@ function AllocationModal({
       </div>
     </div>
   );
+}
+
+function sortCampaignsForSelection(campaigns: CampaignSummary[]) {
+  return [...campaigns].sort((left, right) => {
+    const statusDifference =
+      selectionStatusPriority[left.status] - selectionStatusPriority[right.status];
+    if (statusDifference !== 0) return statusDifference;
+    return left.code.localeCompare(right.code, "vi");
+  });
+}
+
+function campaignOptionLabel(campaign: CampaignSummary) {
+  return `${campaign.code} — ${selectionStatusLabels[campaign.status]}`;
 }
 
 function CampaignModal({
