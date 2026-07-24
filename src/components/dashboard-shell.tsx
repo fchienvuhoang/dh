@@ -685,16 +685,12 @@ function TransactionTable({
                       value={transaction.campaign?.id ?? ""}
                       disabled={pendingTransactionId === transaction.id}
                       onChange={(event) => onAssign(transaction.id, event.target.value || null)}
-                      className="w-36 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                      className={`w-56 rounded-md border px-3 py-2 text-xs font-medium shadow-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-wait disabled:opacity-70 ${campaignSelectClassName(transaction.campaign?.id, sortedCampaigns)}`}
                     >
                       <option value="">
                         {transaction.allocations.length > 0 ? "Đã chia" : "Chưa phân loại"}
                       </option>
-                      {sortedCampaigns.map((campaign) => (
-                        <option key={campaign.id} value={campaign.id}>
-                          {campaignOptionLabel(campaign)}
-                        </option>
-                      ))}
+                      <CampaignOptionGroups campaigns={sortedCampaigns} />
                     </select>
                     {pendingTransactionId === transaction.id ? (
                       <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-emerald-700">
@@ -954,14 +950,10 @@ function DebitTransactionTable({
                       onChange={(event) =>
                         onAssign(transaction.id, event.target.value || null, transaction.outflowType)
                       }
-                      className="w-44 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                      className={`w-56 rounded-md border px-3 py-2 text-xs font-medium shadow-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-wait disabled:opacity-70 ${campaignSelectClassName(transaction.campaign?.id, sortedCampaigns)}`}
                     >
                       <option value="">Chưa gán</option>
-                      {sortedCampaigns.map((campaign) => (
-                        <option key={campaign.id} value={campaign.id}>
-                          {campaignOptionLabel(campaign)}
-                        </option>
-                      ))}
+                      <CampaignOptionGroups campaigns={sortedCampaigns} />
                     </select>
                     {pendingTransactionId === transaction.id ? (
                       <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-emerald-700">
@@ -1413,19 +1405,16 @@ function AllocationModal({
                 <select
                   value={row.campaignId}
                   onChange={(event) => updateRow(index, { campaignId: event.target.value })}
-                  className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                  className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium shadow-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                   required
                 >
                   <option value="">Chọn thiện pháp</option>
-                  {availableCampaigns.map((campaign) => (
-                    <option
-                      key={campaign.id}
-                      value={campaign.id}
-                      disabled={selectedCampaignIds.includes(campaign.id) && campaign.id !== row.campaignId}
-                    >
-                      {campaign.code} — {selectionStatusLabels[campaign.status]} — {campaign.name}
-                    </option>
-                  ))}
+                  <CampaignOptionGroups
+                    campaigns={availableCampaigns}
+                    currentCampaignId={row.campaignId}
+                    disabledCampaignIds={selectedCampaignIds}
+                    showName
+                  />
                 </select>
                 <input
                   type="number"
@@ -1505,7 +1494,62 @@ function sortCampaignsForSelection(campaigns: CampaignSummary[]) {
 }
 
 function campaignOptionLabel(campaign: CampaignSummary) {
-  return `${campaign.code} — ${selectionStatusLabels[campaign.status]}`;
+  const marker = campaign.status === "ACTIVE" ? "●" : "○";
+  return `${marker} ${campaign.code} — ${selectionStatusLabels[campaign.status]}`;
+}
+
+function CampaignOptionGroups({
+  campaigns,
+  currentCampaignId,
+  disabledCampaignIds = [],
+  showName = false,
+}: {
+  campaigns: CampaignSummary[];
+  currentCampaignId?: string;
+  disabledCampaignIds?: string[];
+  showName?: boolean;
+}) {
+  const activeCampaigns = campaigns.filter((campaign) => campaign.status === "ACTIVE");
+  const inactiveCampaigns = campaigns.filter((campaign) => campaign.status !== "ACTIVE");
+
+  const renderOption = (campaign: CampaignSummary) => (
+    <option
+      key={campaign.id}
+      value={campaign.id}
+      disabled={
+        disabledCampaignIds.includes(campaign.id) && campaign.id !== currentCampaignId
+      }
+    >
+      {campaignOptionLabel(campaign)}{showName ? ` — ${campaign.name}` : ""}
+    </option>
+  );
+
+  return (
+    <>
+      {activeCampaigns.length > 0 ? (
+        <optgroup label="● ĐANG HOẠT ĐỘNG">
+          {activeCampaigns.map(renderOption)}
+        </optgroup>
+      ) : null}
+      {inactiveCampaigns.length > 0 ? (
+        <optgroup label="○ KHÔNG HOẠT ĐỘNG">
+          {inactiveCampaigns.map(renderOption)}
+        </optgroup>
+      ) : null}
+    </>
+  );
+}
+
+function campaignSelectClassName(campaignId: string | undefined, campaigns: CampaignSummary[]) {
+  const campaign = campaigns.find((item) => item.id === campaignId);
+  if (!campaign) return "border-zinc-300 bg-white text-zinc-700";
+  if (campaign.status === "ACTIVE") {
+    return "border-emerald-300 bg-emerald-50 text-emerald-800";
+  }
+  if (campaign.status === "PAUSED") {
+    return "border-amber-300 bg-amber-50 text-amber-800";
+  }
+  return "border-zinc-300 bg-zinc-100 text-zinc-600";
 }
 
 function CampaignModal({
