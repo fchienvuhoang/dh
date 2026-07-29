@@ -45,7 +45,7 @@ const expenses = rows.reduce((total, row) => total + row[2], 0);
 
 export const tvdToanThuanVcbStatement: PublicCampaignData = {
   code: "tvd-toanthuan-vcb",
-  name: "Toàn Thuận Myanmar 28/7/2026",
+  name: "Toàn Thuận 26/07/2026",
   description: "Sao kê riêng từ tài khoản Vietcombank trong kỳ 22/07/2026 - 29/07/2026.",
   status: "ACTIVE",
   income,
