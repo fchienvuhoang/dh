@@ -220,7 +220,6 @@ export async function getDashboardState(): Promise<DashboardState> {
           },
         },
         orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
-        take: 500,
       }),
       prisma.bankTransaction.findMany({
         where: {
