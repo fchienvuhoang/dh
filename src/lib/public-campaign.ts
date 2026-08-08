@@ -4,7 +4,7 @@ import { getPrisma } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "techcombank-only-v3";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "removed-pre-charity-transactions-v4";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
