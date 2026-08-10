@@ -38,6 +38,16 @@ const rows: StatementRow[] = [
   [26, "2026-07-29", 0, 200_000, "6210IBT1kCL21LF9.PHAN THI NGOC hun Phuoc cd tu vat dung FT26211189611034.20260729.220118.19030852227998.VND-TGTT-VU HOANG CHIEN.970407"],
   [27, "2026-07-29", 0, 100_000, "6210IBT1kCL2SES5.nandi cd tvd hop luat FT26211270009910.20260729.221959.19030852227998.VND-TGTT-VU HOANG CHIEN.970407"],
   [28, "2026-07-29", 0, 100_000, "6210SHBAP2YYTDG7.Nguyen Thi Thu Trang cd tvd va trai tang chu tang va co tu nu thang 8.20260729.224824.1015535585.NGUYEN THI THU TRANG.970443"],
+  [29, "2026-08-09", 0, 300_000, "6221IBT1kC3SJN2W.TQT cung duong trung Chu Tang POL FT26222824147490.20260809.075513.19031335666686.VND-TGTT-TRAN THI QUYNH TRANG.970407"],
+  [30, "2026-08-09", 0, 200_000, "6221IBT1kC3S1U46.CD trung luoc den chu tang FT26222060738239.20260809.075655.19036788078019.VND-TGTT-NGUYEN KIM ANH.970407"],
+  [31, "2026-08-09", 0, 100_000, "MBVCB.15489569913.Ngoc Linh chuyen khoan nhanh qua Zalo.CT tu 0021000404553 LE THI SOI toi 1069851047 VU HOANG CHIEN"],
+  [32, "2026-08-09", 0, 50_000, "NGUYEN THUY HUONG hun phuoc cd trung luoc#SP#0200970488080909011220269aro462526.5387.62442.090049"],
+  [33, "2026-08-09", 0, 100_000, "6221IBT1kC3DPDHP.e kim tuyen hun phuoc CDTVDHL toi chu tang FT26222628798580.20260809.101138.19030662927888.VND-TGTT-HOANG KIM TUYEN.970407"],
+  [34, "2026-08-09", 0, 50_000, "QR - Nguyen Thanh Thuy hun phuoc cung duong trung luoc#SP#020097041508091019372026yMdd812480.5390.44228.101914"],
+  [35, "2026-08-09", 0, 100_000, "MBVCB.15491995589.NGUYEN THI LIEN hun phuong cung duong toi chu tang.CT tu 0691000444340 NGUYEN THI LIEN toi 1069851047 VU HOANG CHIEN"],
+  [36, "2026-08-09", 0, 200_000, "6221IBT1iJLCEK11.Thuy Linh Pham chuyen khoan nhanh qua Zalo.20260809.111004.60615121999.PHAM THUY LINH.970432"],
+  [37, "2026-08-09", 0, 100_000, "MBVCB.15494185410.LE THU HANG chuyen tien.CT tu 0011003971603 LE THU HANG toi 1069851047 VU HOANG CHIEN"],
+  [38, "2026-08-09", 0, 400_000, "QR - Minh Tuyet .MinhTam .Thanh Huyen .Hang Meta CD  trung den qui Chu Tang#SP#020097041508091519352026tnfj822662.5390.16722.151912"],
 ];
 
 const income = rows.reduce((total, row) => total + row[3], 0);
@@ -46,7 +56,7 @@ const expenses = rows.reduce((total, row) => total + row[2], 0);
 export const tvdToanThuanVcbStatement: PublicCampaignData = {
   code: "tvd-toanthuan-vcb",
   name: "Toàn Thuận 26/07/2026",
-  description: "Sao kê riêng từ tài khoản Vietcombank trong kỳ 22/07/2026 - 29/07/2026.",
+  description: "Sao kê riêng từ tài khoản Vietcombank trong các kỳ 22/07/2026 - 10/08/2026.",
   status: "ACTIVE",
   income,
   expenses,
