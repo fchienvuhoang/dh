@@ -78,7 +78,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
               </div>
 
               <p className="mt-6 text-xs font-bold uppercase text-[#a43d6a] sm:text-sm">
-                DĀNA
+                DĀNA PUÑÑA
               </p>
               <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/70 bg-white/50 px-4 py-3 text-2xl font-bold leading-tight text-[#4a1838] shadow-[0_8px_22px_rgba(76,23,59,0.1)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
                 {data.name}
