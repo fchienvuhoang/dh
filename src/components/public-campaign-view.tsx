@@ -40,7 +40,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
         className="public-campaign-hero relative isolate overflow-hidden border-b border-[#dba8bf] bg-[#f7eaf0]"
       >
         <Image
-          src="/assets/dhamma-celestial-mangosteen-deva-mobile.jpg"
+          src="/assets/dhamma-celestial-mangosteen-painted-mobile.jpg"
           alt=""
           fill
           priority
@@ -48,7 +48,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           className="object-cover object-top md:hidden"
         />
         <Image
-          src="/assets/dhamma-celestial-mangosteen-deva.jpg"
+          src="/assets/dhamma-celestial-mangosteen-painted.jpg"
           alt=""
           fill
           priority
