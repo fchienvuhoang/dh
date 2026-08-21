@@ -13,9 +13,9 @@ const statusLabels = {
 };
 
 const statusClassNames = {
-  ACTIVE: "border-[#9fc9bb] bg-[#eef8f4] text-[#256957]",
+  ACTIVE: "border-[#9fd3bd] bg-[#effaf5] text-[#256b52]",
   PAUSED: "border-amber-200 bg-amber-50 text-amber-700",
-  COMPLETED: "border-zinc-200 bg-zinc-50 text-zinc-600",
+  COMPLETED: "border-[#dbc7d1] bg-[#fbf6f8] text-[#725967]",
 };
 
 export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
@@ -35,12 +35,12 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   }, [data.transactions, normalizedQuery]);
 
   return (
-    <div className="min-h-screen bg-[#f2f6f4] text-[#172522]">
+    <div className="min-h-screen bg-[#fff8fb] text-[#2d1726]">
       <header
-        className="public-campaign-hero relative isolate overflow-hidden border-b border-[#d4c07b] bg-[#e8f0ed] bg-cover bg-center"
+        className="public-campaign-hero relative isolate overflow-hidden border-b border-[#dba8bf] bg-[#f7eaf0]"
       >
         <Image
-          src="/assets/dhamma-celestial-hero-mobile.jpg"
+          src="/assets/dhamma-celestial-mangosteen-hero-mobile.jpg"
           alt=""
           fill
           priority
@@ -48,22 +48,22 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           className="object-cover object-top md:hidden"
         />
         <Image
-          src="/assets/dhamma-celestial-hero.jpg"
+          src="/assets/dhamma-celestial-mangosteen-hero.jpg"
           alt=""
           fill
           priority
           sizes="(min-width: 768px) 100vw, 1px"
           className="hidden object-cover object-center md:block"
         />
-        <div className="absolute inset-0 bg-[#f8fbf9]/55 sm:bg-[#f8fbf9]/75" />
+        <div className="absolute inset-0 bg-[#fff8fb]/48 sm:bg-[#fff8fb]/68" />
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-9 lg:py-12">
           <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-10">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#d7bd64] bg-[#164b42] text-[#f7e7a8] shadow-sm">
+                <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#d89ab6] bg-[#4c173b] text-[#ffdce9] shadow-sm">
                   <Landmark className="h-6 w-6" />
                 </span>
-                <span className="rounded-md bg-[#164b42] px-3 py-1.5 font-mono text-xs font-semibold text-white">
+                <span className="rounded-md bg-[#4c173b] px-3 py-1.5 font-mono text-xs font-semibold text-white shadow-sm">
                   Thiện pháp {data.code}
                 </span>
                 <span className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${statusClassNames[data.status]}`}>
@@ -71,25 +71,25 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                 </span>
               </div>
 
-              <p className="mt-6 text-xs font-bold uppercase text-[#8a6b1f] sm:text-sm">
+              <p className="mt-6 text-xs font-bold uppercase text-[#a43d6a] sm:text-sm">
                 DĀNA
               </p>
-              <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/80 bg-white/72 px-4 py-3 text-3xl font-bold leading-tight text-[#123f38] shadow-[0_10px_28px_rgba(20,63,56,0.12)] backdrop-blur-md sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
+              <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/85 bg-white/75 px-4 py-3 text-3xl font-bold leading-tight text-[#4a1838] shadow-[0_10px_28px_rgba(76,23,59,0.14)] backdrop-blur-md sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
                 {data.name}
               </h1>
               {data.description ? (
-                <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-[#465c57] sm:text-base">
+                <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-[#624b59] sm:text-base">
                   {data.description}
                 </p>
               ) : null}
             </div>
 
-            <section className="overflow-hidden rounded-lg border border-[#c9ad52] bg-white/95 shadow-lg shadow-[#143e35]/10" aria-label="Tổng quan tịnh tài">
-              <div className="bg-[#143f38] px-5 py-5 text-white sm:px-6">
-                <p className="text-xs font-semibold uppercase text-[#e7d493]">Tịnh tài hiện còn</p>
+            <section className="overflow-hidden rounded-lg border border-[#d79bb8] bg-white/95 shadow-lg shadow-[#4c173b]/12" aria-label="Tổng quan tịnh tài">
+              <div className="bg-[#4c173b] px-5 py-5 text-white sm:px-6">
+                <p className="text-xs font-semibold uppercase text-[#f2c5d8]">Tịnh tài hiện còn</p>
                 <p className="mt-2 break-words text-3xl font-bold leading-tight sm:text-4xl">{money(data.balance)}</p>
               </div>
-              <div className="grid grid-cols-2 divide-x divide-y divide-[#eadca9]">
+              <div className="grid grid-cols-2 divide-x divide-y divide-[#efd3df]">
                 <SummaryStat label="Hùn phước sau hoàn lại" value={money(data.income)} tone="jade" />
                 <SummaryStat label="Đã cúng dường" value={money(data.expenses)} tone="gold" />
                 <SummaryStat label="Đã hoàn lại" value={money(data.refunds)} tone="gold" />
@@ -98,8 +98,8 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             </section>
           </div>
 
-          <div className="mt-5 flex max-w-3xl items-start gap-2 border-l-2 border-[#b9942e] pl-3 text-xs leading-5 text-[#405651]">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8a6b1f]" />
+          <div className="mt-5 flex max-w-3xl items-start gap-2 border-l-2 border-[#b94f79] pl-3 text-xs leading-5 text-[#624b59]">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#a43d6a]" />
             <p>
               Hoàn lại là những khoản chuyển trả cho thí chủ để thí chủ tác ý lại,
               hoặc do thí chủ chuyển nhầm thiện pháp nên được hoàn lại.
@@ -109,28 +109,28 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
-        <section className="rounded-lg border border-[#f0dfaa] bg-white p-3 shadow-[0_10px_30px_rgba(181,137,25,0.08)] sm:p-5">
+        <section className="rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#e6a817] text-white shadow-sm">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#b63f70] text-white shadow-sm">
                 <HeartHandshake className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h2 className="text-lg font-bold leading-6 text-[#173f37]">
+                <h2 className="text-lg font-bold leading-6 text-[#4a1838]">
                   Phương danh thí chủ hùn phước
                 </h2>
-                <p className="mt-1 text-xs text-[#6c736e]">
+                <p className="mt-1 text-xs text-[#78636f]">
                   {filteredTransactions.length.toLocaleString("vi-VN")} / {data.transactions.length.toLocaleString("vi-VN")} giao dịch công khai
                 </p>
               </div>
             </div>
             <div className="relative w-full sm:max-w-md">
-              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#8e8c83]" />
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#9b7c8b]" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Tìm theo phương danh hoặc nội dung"
-                className="min-h-10 w-full rounded-md border border-[#efd27a] bg-[#fffef9] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#e6a817] focus:ring-2 focus:ring-[#fff0b8]"
+                className="min-h-10 w-full rounded-md border border-[#e4b2c8] bg-[#fffafd] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#b63f70] focus:ring-2 focus:ring-[#f8dce8]"
               />
             </div>
           </div>
@@ -142,10 +142,10 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             {filteredTransactions.length === 0 ? <EmptyState /> : null}
           </div>
 
-          <div className="mt-5 hidden overflow-hidden rounded-lg border border-[#f0dfaa] md:block">
+          <div className="mt-5 hidden overflow-hidden rounded-lg border border-[#edcddb] md:block">
             <div className="max-h-[720px] overflow-auto">
               <table className="w-full min-w-[820px] text-left text-sm">
-                <thead className="sticky top-0 bg-[#fff8dc] text-xs uppercase text-[#5d5a50]">
+                <thead className="sticky top-0 bg-[#fff1f6] text-xs uppercase text-[#684e5b]">
                   <tr>
                     <th className="px-4 py-3">Ngày</th>
                     <th className="px-4 py-3">Phương danh thí chủ hùn phước</th>
@@ -153,7 +153,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                     <th className="px-4 py-3 text-right">Số tiền</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f4ecd3] bg-white">
+                <tbody className="divide-y divide-[#f3dfe7] bg-white">
                   {filteredTransactions.map((transaction) => (
                     <PublicTransactionRow key={transaction.id} transaction={transaction} />
                   ))}
@@ -184,26 +184,26 @@ function PublicTransactionCard({
   const meta = transactionMeta(transaction);
 
   return (
-    <article className="overflow-hidden rounded-lg border border-[#f0d377] bg-white shadow-[0_6px_18px_rgba(205,151,13,0.09)]">
-      <div className={`grid grid-cols-[auto_minmax(0,1fr)] gap-3 border-b border-[#f3dfa0] p-3 ${meta.cardHeaderClassName}`}>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f1c952] bg-[#fffdf5] text-sm font-bold text-[#c47d00] shadow-sm">
+    <article className="overflow-hidden rounded-lg border border-[#e8b8cc] bg-white shadow-[0_6px_18px_rgba(76,23,59,0.09)]">
+      <div className={`grid grid-cols-[auto_minmax(0,1fr)] gap-3 border-b border-[#efd0dd] p-3 ${meta.cardHeaderClassName}`}>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d887a9] bg-[#fffafd] text-sm font-bold text-[#a3315f] shadow-sm">
           {index.toLocaleString("vi-VN")}
         </span>
         <div className="flex min-w-0 items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-xs font-medium text-[#6c6a61]">{dateOnly(transaction.transactionDate)}</div>
+            <div className="text-xs font-medium text-[#75616c]">{dateOnly(transaction.transactionDate)}</div>
             <div className={`mt-1 inline-flex rounded-md border px-2 py-1 text-xs font-semibold ${meta.className}`}>
               {meta.label}
             </div>
           </div>
-          <div className="shrink-0 rounded-full border border-[#f0d377] bg-white px-3 py-2 text-right shadow-[0_3px_10px_rgba(205,151,13,0.1)]">
+          <div className="shrink-0 rounded-full border border-[#e5afc6] bg-white px-3 py-2 text-right shadow-[0_3px_10px_rgba(76,23,59,0.1)]">
             <span className={`whitespace-nowrap text-sm font-bold ${meta.amountClassName}`}>
               {money(meta.amount)}
             </span>
           </div>
         </div>
       </div>
-      <p className="whitespace-pre-wrap break-words px-3 py-4 text-sm font-semibold leading-6 text-[#202522]">
+      <p className="whitespace-pre-wrap break-words px-3 py-4 text-sm font-semibold leading-6 text-[#31222b]">
         {transaction.description}
       </p>
       <div className="px-3 pb-3">
@@ -217,10 +217,10 @@ function PublicTransactionRow({ transaction }: { transaction: PublicCampaignTran
   const meta = transactionMeta(transaction);
 
   return (
-    <tr className="transition-colors hover:bg-[#fffdf4]">
-      <td className="whitespace-nowrap px-4 py-3 align-top text-[#676b67]">{dateOnly(transaction.transactionDate)}</td>
+    <tr className="transition-colors hover:bg-[#fff7fa]">
+      <td className="whitespace-nowrap px-4 py-3 align-top text-[#75616c]">{dateOnly(transaction.transactionDate)}</td>
       <td className="max-w-2xl px-4 py-3 align-top">
-        <div className="whitespace-pre-wrap break-words font-semibold text-[#222724]">{transaction.description}</div>
+        <div className="whitespace-pre-wrap break-words font-semibold text-[#31222b]">{transaction.description}</div>
         <RefundRelationship transaction={transaction} />
       </td>
       <td className="whitespace-nowrap px-4 py-3 align-top">
@@ -277,7 +277,7 @@ function RefundRelationship({ transaction }: { transaction: PublicCampaignTransa
 }
 
 function EmptyState() {
-  return <div className="px-3 py-10 text-center text-sm text-[#73756f]">Không có giao dịch phù hợp.</div>;
+  return <div className="px-3 py-10 text-center text-sm text-[#806b76]">Không có giao dịch phù hợp.</div>;
 }
 
 function SummaryStat({
@@ -289,11 +289,11 @@ function SummaryStat({
   value: string;
   tone: "jade" | "gold" | "dark";
 }) {
-  const color = tone === "jade" ? "text-[#246b58]" : tone === "gold" ? "text-[#8b6713]" : "text-[#183d36]";
+  const color = tone === "jade" ? "text-[#2d765b]" : tone === "gold" ? "text-[#a93d68]" : "text-[#4a1838]";
 
   return (
-    <div className="min-w-0 bg-[#fffdf8] px-4 py-3 sm:px-5 sm:py-4">
-      <div className="text-xs leading-5 text-[#6f716b]">{label}</div>
+    <div className="min-w-0 bg-[#fffafd] px-4 py-3 sm:px-5 sm:py-4">
+      <div className="text-xs leading-5 text-[#75606e]">{label}</div>
       <div className={`mt-1 break-words text-sm font-bold ${color}`}>{value}</div>
     </div>
   );
@@ -304,9 +304,9 @@ function transactionMeta(transaction: PublicCampaignTransaction) {
     return {
       label: "Hùn phước",
       amount: transaction.creditAmount,
-      className: "border-[#8be0c1] bg-[#eafff7] text-[#08785c]",
-      amountClassName: "text-[#d88b00]",
-      cardHeaderClassName: "bg-[#fffdf5]",
+      className: "border-[#9fd9c0] bg-[#effbf5] text-[#247257]",
+      amountClassName: "text-[#b33969]",
+      cardHeaderClassName: "bg-[#fff5f9]",
     };
   }
 
@@ -314,18 +314,18 @@ function transactionMeta(transaction: PublicCampaignTransaction) {
     return {
       label: "Hoàn lại",
       amount: transaction.debitAmount,
-      className: "border-violet-200 bg-violet-50 text-violet-700",
-      amountClassName: "text-violet-700",
-      cardHeaderClassName: "bg-violet-50",
+      className: "border-[#cfb4e8] bg-[#f7f0fd] text-[#7543a0]",
+      amountClassName: "text-[#7543a0]",
+      cardHeaderClassName: "bg-[#faf5fe]",
     };
   }
 
   return {
     label: "Cúng dường",
     amount: transaction.debitAmount,
-    className: "border-amber-200 bg-amber-50 text-amber-700",
-    amountClassName: "text-amber-700",
-    cardHeaderClassName: "bg-amber-50",
+    className: "border-[#e7c27d] bg-[#fff8e9] text-[#9a6417]",
+    amountClassName: "text-[#9a6417]",
+    cardHeaderClassName: "bg-[#fffaf0]",
   };
 }
 
