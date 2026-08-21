@@ -1,6 +1,7 @@
 "use client";
 
 import { CircleCheck, HeartHandshake, Info, Landmark, Link2, Search } from "lucide-react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
 import { normalizeTransferText } from "@/lib/text";
@@ -36,11 +37,26 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   return (
     <div className="min-h-screen bg-[#f2f6f4] text-[#172522]">
       <header
-        className="relative isolate overflow-hidden border-b border-[#d4c07b] bg-[#e8f0ed] bg-cover bg-center"
-        style={{ backgroundImage: "url('/assets/dhamma-celestial-hero.jpg')" }}
+        className="public-campaign-hero relative isolate overflow-hidden border-b border-[#d4c07b] bg-[#e8f0ed] bg-cover bg-center"
       >
-        <div className="absolute inset-0 -z-10 bg-[#f8fbf9]/80" />
-        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-9 lg:py-12">
+        <Image
+          src="/assets/dhamma-celestial-hero-mobile.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(max-width: 767px) 100vw, 1px"
+          className="object-cover object-top md:hidden"
+        />
+        <Image
+          src="/assets/dhamma-celestial-hero.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 768px) 100vw, 1px"
+          className="hidden object-cover object-center md:block"
+        />
+        <div className="absolute inset-0 bg-[#f8fbf9]/55 sm:bg-[#f8fbf9]/75" />
+        <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-9 lg:py-12">
           <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-10">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -56,9 +72,9 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
               </div>
 
               <p className="mt-6 text-xs font-bold uppercase text-[#8a6b1f] sm:text-sm">
-                Công khai tịnh tài · Cùng gieo duyên lành
+                DĀNA
               </p>
-              <h1 className="mt-2 max-w-3xl break-words text-3xl font-bold leading-tight text-[#123f38] sm:text-4xl">
+              <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/80 bg-white/72 px-4 py-3 text-3xl font-bold leading-tight text-[#123f38] shadow-[0_10px_28px_rgba(20,63,56,0.12)] backdrop-blur-md sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
                 {data.name}
               </h1>
               {data.description ? (
@@ -93,10 +109,10 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
-        <section className="rounded-lg border border-[#dfd4ad] bg-white p-3 shadow-sm sm:p-5">
+        <section className="rounded-lg border border-[#f0dfaa] bg-white p-3 shadow-[0_10px_30px_rgba(181,137,25,0.08)] sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#9a7721] text-white shadow-sm">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#e6a817] text-white shadow-sm">
                 <HeartHandshake className="h-5 w-5" />
               </span>
               <div className="min-w-0">
@@ -114,7 +130,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Tìm theo phương danh hoặc nội dung"
-                className="min-h-10 w-full rounded-md border border-[#d8bd63] bg-[#fffdf7] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#9a7721] focus:ring-2 focus:ring-[#f3e7bd]"
+                className="min-h-10 w-full rounded-md border border-[#efd27a] bg-[#fffef9] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#e6a817] focus:ring-2 focus:ring-[#fff0b8]"
               />
             </div>
           </div>
@@ -126,10 +142,10 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             {filteredTransactions.length === 0 ? <EmptyState /> : null}
           </div>
 
-          <div className="mt-5 hidden overflow-hidden rounded-lg border border-[#dfd4ad] md:block">
+          <div className="mt-5 hidden overflow-hidden rounded-lg border border-[#f0dfaa] md:block">
             <div className="max-h-[720px] overflow-auto">
               <table className="w-full min-w-[820px] text-left text-sm">
-                <thead className="sticky top-0 bg-[#f8f1d8] text-xs uppercase text-[#5d5a50]">
+                <thead className="sticky top-0 bg-[#fff8dc] text-xs uppercase text-[#5d5a50]">
                   <tr>
                     <th className="px-4 py-3">Ngày</th>
                     <th className="px-4 py-3">Phương danh thí chủ hùn phước</th>
@@ -137,7 +153,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                     <th className="px-4 py-3 text-right">Số tiền</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#eee7d2] bg-white">
+                <tbody className="divide-y divide-[#f4ecd3] bg-white">
                   {filteredTransactions.map((transaction) => (
                     <PublicTransactionRow key={transaction.id} transaction={transaction} />
                   ))}
@@ -168,9 +184,9 @@ function PublicTransactionCard({
   const meta = transactionMeta(transaction);
 
   return (
-    <article className="overflow-hidden rounded-lg border border-[#d5b759] bg-white shadow-sm">
-      <div className={`grid grid-cols-[auto_minmax(0,1fr)] gap-3 border-b border-[#e2cc82] p-3 ${meta.cardHeaderClassName}`}>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d0ad43] bg-white text-sm font-bold text-[#806117] shadow-sm">
+    <article className="overflow-hidden rounded-lg border border-[#f0d377] bg-white shadow-[0_6px_18px_rgba(205,151,13,0.09)]">
+      <div className={`grid grid-cols-[auto_minmax(0,1fr)] gap-3 border-b border-[#f3dfa0] p-3 ${meta.cardHeaderClassName}`}>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f1c952] bg-[#fffdf5] text-sm font-bold text-[#c47d00] shadow-sm">
           {index.toLocaleString("vi-VN")}
         </span>
         <div className="flex min-w-0 items-start justify-between gap-2">
@@ -180,7 +196,7 @@ function PublicTransactionCard({
               {meta.label}
             </div>
           </div>
-          <div className="shrink-0 rounded-full border border-[#dbc474] bg-white px-3 py-2 text-right shadow-sm">
+          <div className="shrink-0 rounded-full border border-[#f0d377] bg-white px-3 py-2 text-right shadow-[0_3px_10px_rgba(205,151,13,0.1)]">
             <span className={`whitespace-nowrap text-sm font-bold ${meta.amountClassName}`}>
               {money(meta.amount)}
             </span>
@@ -201,7 +217,7 @@ function PublicTransactionRow({ transaction }: { transaction: PublicCampaignTran
   const meta = transactionMeta(transaction);
 
   return (
-    <tr className="hover:bg-[#fffaf0]">
+    <tr className="transition-colors hover:bg-[#fffdf4]">
       <td className="whitespace-nowrap px-4 py-3 align-top text-[#676b67]">{dateOnly(transaction.transactionDate)}</td>
       <td className="max-w-2xl px-4 py-3 align-top">
         <div className="whitespace-pre-wrap break-words font-semibold text-[#222724]">{transaction.description}</div>
@@ -288,9 +304,9 @@ function transactionMeta(transaction: PublicCampaignTransaction) {
     return {
       label: "Hùn phước",
       amount: transaction.creditAmount,
-      className: "border-[#c9aa45] bg-[#fff8df] text-[#765713]",
-      amountClassName: "text-[#6d5111]",
-      cardHeaderClassName: "bg-[#fff9e8]",
+      className: "border-[#8be0c1] bg-[#eafff7] text-[#08785c]",
+      amountClassName: "text-[#d88b00]",
+      cardHeaderClassName: "bg-[#fffdf5]",
     };
   }
 
