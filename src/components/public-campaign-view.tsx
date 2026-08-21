@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, Info, Link2, Search } from "lucide-react";
+import { CircleCheck, HeartHandshake, Info, Link2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
 import { normalizeTransferText } from "@/lib/text";
@@ -72,11 +72,18 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
       <main className="mx-auto max-w-5xl space-y-4 px-4 py-4 sm:px-6">
         <section className="rounded-md border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-zinc-950">Danh sách giao dịch</h2>
-              <p className="mt-1 text-xs text-zinc-500">
-                {filteredTransactions.length.toLocaleString("vi-VN")} / {data.transactions.length.toLocaleString("vi-VN")} giao dịch
-              </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700">
+                <HeartHandshake className="h-4.5 w-4.5" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold leading-6 text-zinc-950">
+                  Phương danh thí chủ hùn phước
+                </h2>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  {filteredTransactions.length.toLocaleString("vi-VN")} / {data.transactions.length.toLocaleString("vi-VN")} giao dịch
+                </p>
+              </div>
             </div>
             <div className="relative w-full sm:max-w-sm">
               <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />

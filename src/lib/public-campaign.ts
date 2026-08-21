@@ -296,10 +296,10 @@ export function invalidatePublicCampaignCache(codes: Iterable<string | null | un
 
 export async function warmPublicCampaignCaches(codes: Iterable<string>) {
   const normalizedCodes = [...new Set([...codes].map(makeCampaignCode))];
-  await Promise.all(
-    normalizedCodes.flatMap((code) => [
-      getCachedPublicCampaignMeta(code),
-      getCachedPublicCampaignData(code),
-    ]),
-  );
+  // Imports can affect many campaigns. Warm them sequentially so refreshing the
+  // public cache does not create a burst of database connections.
+  for (const code of normalizedCodes) {
+    await getCachedPublicCampaignMeta(code);
+    await getCachedPublicCampaignData(code);
+  }
 }
