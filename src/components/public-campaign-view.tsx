@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, HeartHandshake, Info, Landmark, Link2, Search } from "lucide-react";
+import { CircleCheck, HeartHandshake, Info, Link2, Search } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
@@ -40,7 +40,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
         className="public-campaign-hero relative isolate overflow-hidden border-b border-[#dba8bf] bg-[#f7eaf0]"
       >
         <Image
-          src="/assets/dhamma-celestial-mangosteen-hero-mobile.jpg"
+          src="/assets/dhamma-celestial-mangosteen-deva-mobile.jpg"
           alt=""
           fill
           priority
@@ -48,20 +48,26 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           className="object-cover object-top md:hidden"
         />
         <Image
-          src="/assets/dhamma-celestial-mangosteen-hero.jpg"
+          src="/assets/dhamma-celestial-mangosteen-deva.jpg"
           alt=""
           fill
           priority
           sizes="(min-width: 768px) 100vw, 1px"
           className="hidden object-cover object-center md:block"
         />
-        <div className="absolute inset-0 bg-[#fff8fb]/48 sm:bg-[#fff8fb]/68" />
+        <div className="absolute inset-0 bg-[#fff8fb]/35 sm:bg-[#fff8fb]/58" />
         <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-9 lg:py-12">
           <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-10">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#d89ab6] bg-[#4c173b] text-[#ffdce9] shadow-sm">
-                  <Landmark className="h-6 w-6" />
+                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.2)] sm:h-16 sm:w-16">
+                  <Image
+                    src="/assets/dhamma-group-logo.jpg"
+                    alt="Logo Dhamma Group"
+                    fill
+                    sizes="64px"
+                    className="scale-[1.16] object-cover"
+                  />
                 </span>
                 <span className="rounded-md bg-[#4c173b] px-3 py-1.5 font-mono text-xs font-semibold text-white shadow-sm">
                   Thiện pháp {data.code}
@@ -74,7 +80,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
               <p className="mt-6 text-xs font-bold uppercase text-[#a43d6a] sm:text-sm">
                 DĀNA
               </p>
-              <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/85 bg-white/75 px-4 py-3 text-3xl font-bold leading-tight text-[#4a1838] shadow-[0_10px_28px_rgba(76,23,59,0.14)] backdrop-blur-md sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
+              <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/70 bg-white/50 px-4 py-3 text-2xl font-bold leading-tight text-[#4a1838] shadow-[0_8px_22px_rgba(76,23,59,0.1)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
                 {data.name}
               </h1>
               {data.description ? (
