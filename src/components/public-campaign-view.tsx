@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, HeartHandshake, Info, Link2, Search, Sparkles, X } from "lucide-react";
+import { CircleCheck, HeartHandshake, Info, Link2, Search, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
@@ -212,7 +212,19 @@ function PublicTransactionCard({
   const meta = transactionMeta(transaction);
 
   return (
-    <article className="overflow-hidden rounded-lg border border-[#e8b8cc] bg-white shadow-[0_6px_18px_rgba(76,23,59,0.09)]">
+    <article
+      className="cursor-pointer overflow-hidden rounded-lg border border-[#e8b8cc] bg-white shadow-[0_6px_18px_rgba(76,23,59,0.09)] transition hover:border-[#cf7da1] hover:shadow-[0_8px_24px_rgba(76,23,59,0.14)]"
+      role="button"
+      tabIndex={0}
+      onClick={onViewDetails}
+      onKeyDown={(event) => {
+        if ((event.key === "Enter" || event.key === " ") && onViewDetails) {
+          event.preventDefault();
+          onViewDetails();
+        }
+      }}
+      aria-label="Xem chi tiết giao dịch"
+    >
       <div className={`grid grid-cols-[auto_minmax(0,1fr)] gap-3 border-b border-[#efd0dd] p-3 ${meta.cardHeaderClassName}`}>
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d887a9] bg-[#fffafd] text-sm font-bold text-[#a3315f] shadow-sm">
           {index.toLocaleString("vi-VN")}
@@ -260,7 +272,18 @@ function PublicTransactionRow({
   const meta = transactionMeta(transaction);
 
   return (
-    <tr className="transition-colors hover:bg-[#fff7fa]">
+    <tr
+      className="cursor-pointer transition-colors hover:bg-[#fff7fa]"
+      onClick={onViewDetails}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onViewDetails();
+        }
+      }}
+      aria-label="Xem chi tiết giao dịch"
+    >
       <td className="whitespace-nowrap px-4 py-3 align-top text-[#75616c]">{dateOnly(transaction.transactionDate)}</td>
       <td className="max-w-2xl px-4 py-3 align-top">
         <div className="whitespace-pre-wrap break-words font-semibold text-[#31222b]">{transaction.description}</div>
@@ -328,13 +351,14 @@ function TransactionReceiptModal({
         className="relative max-h-[calc(100vh-2rem)] w-full max-w-[420px] overflow-y-auto rounded-2xl border border-emerald-900/10 bg-[#fffdf7] shadow-2xl"
       >
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
-          <div className="absolute -right-10 top-20 rotate-[-18deg] select-none text-center text-emerald-900/[0.045]">
-            <Sparkles className="mx-auto h-36 w-36 stroke-[0.8]" />
-            <div className="mt-1 text-xl font-bold tracking-[0.32em]">CÁC CHƯ THIÊN</div>
-          </div>
-          <div className="absolute -bottom-8 -left-8 rotate-12 select-none text-emerald-900/[0.035]">
-            <Sparkles className="h-40 w-40 stroke-[0.7]" />
-          </div>
+          <Image
+            src="/assets/dhamma-celestial-mangosteen-deva-mobile.jpg"
+            alt=""
+            fill
+            sizes="420px"
+            className="object-cover object-top opacity-35 saturate-[0.85]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf7]/65 via-[#fffdf7]/72 to-[#fffdf7]/82" />
         </div>
 
         <div className="relative p-5 sm:p-6">
