@@ -797,9 +797,9 @@ function StatementReceiptModal({
             alt=""
             fill
             sizes="430px"
-            className="object-cover object-top opacity-45 saturate-[0.9]"
+            className="object-cover object-top opacity-70 saturate-[0.95]"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf9]/55 via-[#fffdf9]/64 to-[#fffdf9]/76" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf9]/35 via-[#fffdf9]/58 to-[#fffdf9]/72" />
         </div>
 
         <div className="relative p-5 sm:p-6">
@@ -814,6 +814,15 @@ function StatementReceiptModal({
           </button>
 
           <div className="pr-10 text-center">
+            <span className="mx-auto mb-3 block h-14 w-14 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.18)]">
+              <Image
+                src="/assets/dhamma-group-logo.jpg"
+                alt="Logo Dhamma Group"
+                width={56}
+                height={56}
+                className="h-full w-full scale-[1.12] object-cover"
+              />
+            </span>
             <span className={`mx-auto inline-flex h-11 w-11 items-center justify-center rounded-full ${isCredit ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
               {isCredit ? <ArrowUpFromLine className="h-5 w-5 rotate-180" /> : <ArrowUpFromLine className="h-5 w-5" />}
             </span>
@@ -844,7 +853,7 @@ function StatementReceiptModal({
 
           <div className="my-5 border-t border-dashed border-zinc-300" />
 
-          <dl className="space-y-4 text-sm">
+          <dl className="space-y-4 rounded-xl border border-white/80 bg-white/72 p-4 text-sm shadow-sm backdrop-blur-[2px]">
             <StatementReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
             <StatementReceiptRow label="Mã giao dịch" value={transaction.detail || "—"} mono />
             <StatementReceiptRow label="Thiện pháp" value={campaignText} />
