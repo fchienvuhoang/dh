@@ -1,6 +1,7 @@
 "use client";
 
-import { CircleCheck, Info, Link2, Search, Sparkles, X } from "lucide-react";
+import { CircleCheck, HeartHandshake, Info, Link2, Search, Sparkles, X } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
 import { normalizeTransferText } from "@/lib/text";
@@ -12,9 +13,9 @@ const statusLabels = {
 };
 
 const statusClassNames = {
-  ACTIVE: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  ACTIVE: "border-[#9fd3bd] bg-[#effaf5] text-[#256b52]",
   PAUSED: "border-amber-200 bg-amber-50 text-amber-700",
-  COMPLETED: "border-zinc-200 bg-zinc-50 text-zinc-600",
+  COMPLETED: "border-[#dbc7d1] bg-[#fbf6f8] text-[#725967]",
 };
 
 export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
@@ -35,33 +36,77 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   }, [data.transactions, normalizedQuery]);
 
   return (
-    <div className="min-h-screen bg-[#f7f7f4] text-zinc-950">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-zinc-950 px-2 py-1 font-mono text-xs font-medium text-white">
-              {data.code}
-            </span>
-            <span className={`rounded-md border px-2 py-1 text-xs font-medium ${statusClassNames[data.status]}`}>
-              {statusLabels[data.status]}
-            </span>
-          </div>
-          <h1 className="mt-3 text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
-            {data.name}
-          </h1>
-          {data.description ? (
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">{data.description}</p>
-          ) : null}
+    <div className="min-h-screen bg-[#fff8fb] text-[#2d1726]">
+      <header
+        className="public-campaign-hero relative isolate overflow-hidden border-b border-[#dba8bf] bg-[#f7eaf0]"
+      >
+        <Image
+          src="/assets/dhamma-celestial-mangosteen-painted-mobile.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(max-width: 767px) 100vw, 1px"
+          className="object-cover object-top md:hidden"
+        />
+        <Image
+          src="/assets/dhamma-celestial-mangosteen-painted.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 768px) 100vw, 1px"
+          className="hidden object-cover object-center md:block"
+        />
+        <div className="absolute inset-0 bg-[#fff8fb]/35 sm:bg-[#fff8fb]/58" />
+        <div className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-9 lg:py-12">
+          <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-10">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.2)] sm:h-16 sm:w-16">
+                  <Image
+                    src="/assets/dhamma-group-logo.jpg"
+                    alt="Logo Dhamma Group"
+                    fill
+                    sizes="64px"
+                    className="scale-[1.16] object-cover"
+                  />
+                </span>
+                <span className="rounded-md bg-[#4c173b] px-3 py-1.5 font-mono text-xs font-semibold text-white shadow-sm">
+                  Thiện pháp {data.code}
+                </span>
+                <span className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${statusClassNames[data.status]}`}>
+                  {statusLabels[data.status]}
+                </span>
+              </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
-            <PublicStat label="Hùn phước sau hoàn lại" value={money(data.income)} tone="emerald" />
-            <PublicStat label="Đã cúng dường" value={money(data.expenses)} tone="amber" />
-            <PublicStat label="Đã hoàn lại" value={money(data.refunds)} tone="amber" />
-            <PublicStat label="Tịnh tài còn lại" value={money(data.balance)} />
-            <PublicStat label="Lượt hùn phước" value={data.transactionCount.toLocaleString("vi-VN")} />
+              <p className="mt-6 text-xs font-bold uppercase text-[#a43d6a] sm:text-sm">
+                DĀNA PUÑÑA
+              </p>
+              <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/70 bg-white/50 px-4 py-3 text-2xl font-bold leading-tight text-[#4a1838] shadow-[0_8px_22px_rgba(76,23,59,0.1)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
+                {data.name}
+              </h1>
+              {data.description ? (
+                <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-[#624b59] sm:text-base">
+                  {data.description}
+                </p>
+              ) : null}
+            </div>
+
+            <section className="overflow-hidden rounded-lg border border-[#d79bb8] bg-white/95 shadow-lg shadow-[#4c173b]/12" aria-label="Tổng quan tịnh tài">
+              <div className="bg-[#4c173b] px-5 py-5 text-white sm:px-6">
+                <p className="text-xs font-semibold uppercase text-[#f2c5d8]">Tịnh tài hiện còn</p>
+                <p className="mt-2 break-words text-3xl font-bold leading-tight sm:text-4xl">{money(data.balance)}</p>
+              </div>
+              <div className="grid grid-cols-2 divide-x divide-y divide-[#efd3df]">
+                <SummaryStat label="Hùn phước sau hoàn lại" value={money(data.income)} tone="jade" />
+                <SummaryStat label="Đã cúng dường" value={money(data.expenses)} tone="gold" />
+                <SummaryStat label="Đã hoàn lại" value={money(data.refunds)} tone="gold" />
+                <SummaryStat label="Lượt hùn phước" value={data.transactionCount.toLocaleString("vi-VN")} tone="dark" />
+              </div>
+            </section>
           </div>
-          <div className="mt-3 flex items-start gap-2 text-xs leading-5 text-zinc-500">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-600" />
+
+          <div className="mt-5 flex max-w-3xl items-start gap-2 border-l-2 border-[#b94f79] pl-3 text-xs leading-5 text-[#624b59]">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#a43d6a]" />
             <p>
               Hoàn lại là những khoản chuyển trả cho thí chủ để thí chủ tác ý lại,
               hoặc do thí chủ chuyển nhầm thiện pháp nên được hoàn lại.
@@ -70,50 +115,58 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-4 px-4 py-4 sm:px-6">
-        <section className="rounded-md border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-zinc-950">Danh sách giao dịch</h2>
-              <p className="mt-1 text-xs text-zinc-500">
-                {filteredTransactions.length.toLocaleString("vi-VN")} / {data.transactions.length.toLocaleString("vi-VN")} giao dịch
-              </p>
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
+        <section className="rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#b63f70] text-white shadow-sm">
+                <HeartHandshake className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold leading-6 text-[#4a1838]">
+                  Phương danh thí chủ hùn phước
+                </h2>
+                <p className="mt-1 text-xs text-[#78636f]">
+                  {filteredTransactions.length.toLocaleString("vi-VN")} / {data.transactions.length.toLocaleString("vi-VN")} giao dịch công khai
+                </p>
+              </div>
             </div>
-            <div className="relative w-full sm:max-w-sm">
-              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+            <div className="relative w-full sm:max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#9b7c8b]" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Tìm theo tên hoặc nội dung"
-                className="w-full rounded-md border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                placeholder="Tìm theo phương danh hoặc nội dung"
+                className="min-h-10 w-full rounded-md border border-[#e4b2c8] bg-[#fffafd] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#b63f70] focus:ring-2 focus:ring-[#f8dce8]"
               />
             </div>
           </div>
 
-          <div className="mt-4 space-y-2 md:hidden">
-            {filteredTransactions.map((transaction) => (
+          <div className="mt-5 space-y-3 md:hidden">
+            {filteredTransactions.map((transaction, index) => (
               <PublicTransactionCard
                 key={transaction.id}
                 transaction={transaction}
+                index={index + 1}
                 onViewDetails={() => setSelectedTransaction(transaction)}
               />
             ))}
             {filteredTransactions.length === 0 ? <EmptyState /> : null}
           </div>
 
-          <div className="mt-4 hidden overflow-hidden rounded-md border border-zinc-200 md:block">
-            <div className="max-h-[680px] overflow-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
-                <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
+          <div className="mt-5 hidden overflow-hidden rounded-lg border border-[#edcddb] md:block">
+            <div className="max-h-[720px] overflow-auto">
+              <table className="w-full min-w-[820px] text-left text-sm">
+                <thead className="sticky top-0 bg-[#fff1f6] text-xs uppercase text-[#684e5b]">
                   <tr>
-                    <th className="px-3 py-2">Ngày</th>
-                    <th className="px-3 py-2">Nội dung chuyển khoản</th>
-                    <th className="px-3 py-2">Loại</th>
-                    <th className="px-3 py-2 text-right">Số tiền</th>
-                    <th className="px-3 py-2 text-right">Thao tác</th>
+                    <th className="px-4 py-3">Ngày</th>
+                    <th className="px-4 py-3">Phương danh thí chủ hùn phước</th>
+                    <th className="px-4 py-3">Loại</th>
+                    <th className="px-4 py-3 text-right">Số tiền</th>
+                    <th className="px-4 py-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 bg-white">
+                <tbody className="divide-y divide-[#f3dfe7] bg-white">
                   {filteredTransactions.map((transaction) => (
                     <PublicTransactionRow
                       key={transaction.id}
@@ -149,37 +202,51 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
 
 function PublicTransactionCard({
   transaction,
+  index,
   onViewDetails,
 }: {
   transaction: PublicCampaignTransaction;
-  onViewDetails: () => void;
+  index?: number;
+  onViewDetails?: () => void;
+}
 }) {
   const meta = transactionMeta(transaction);
 
   return (
-    <article className="rounded-md border border-zinc-200 bg-white p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-xs text-zinc-500">{dateOnly(transaction.transactionDate)}</div>
-          <div className={`mt-1 inline-flex rounded-md border px-2 py-1 text-xs font-medium ${meta.className}`}>
-            {meta.label}
+    <article className="overflow-hidden rounded-lg border border-[#e8b8cc] bg-white shadow-[0_6px_18px_rgba(76,23,59,0.09)]">
+      <div className={`grid grid-cols-[auto_minmax(0,1fr)] gap-3 border-b border-[#efd0dd] p-3 ${meta.cardHeaderClassName}`}>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d887a9] bg-[#fffafd] text-sm font-bold text-[#a3315f] shadow-sm">
+          {index.toLocaleString("vi-VN")}
+        </span>
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-[#75616c]">{dateOnly(transaction.transactionDate)}</div>
+            <div className={`mt-1 inline-flex rounded-md border px-2 py-1 text-xs font-semibold ${meta.className}`}>
+              {meta.label}
+            </div>
+          </div>
+          <div className="shrink-0 rounded-full border border-[#e5afc6] bg-white px-3 py-2 text-right shadow-[0_3px_10px_rgba(76,23,59,0.1)]">
+            <span className={`whitespace-nowrap text-sm font-bold ${meta.amountClassName}`}>
+              {money(meta.amount)}
+            </span>
           </div>
         </div>
-        <div className={`whitespace-nowrap text-right text-sm font-semibold ${meta.amountClassName}`}>
-          {money(meta.amount)}
-        </div>
       </div>
-      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-800">
+      <p className="whitespace-pre-wrap break-words px-3 py-4 text-sm font-semibold leading-6 text-[#31222b]">
         {transaction.description}
       </p>
-      <RefundRelationship transaction={transaction} />
-      <button
-        type="button"
-        onClick={onViewDetails}
-        className="mt-3 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
-      >
-        Xem chi tiết
-      </button>
+      <div className="px-3 pb-3">
+        <RefundRelationship transaction={transaction} />
+        {onViewDetails ? (
+          <button
+            type="button"
+            onClick={onViewDetails}
+            className="mt-3 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+          >
+            Xem chi tiết
+          </button>
+        ) : null}
+      </div>
     </article>
   );
 }
@@ -194,18 +261,18 @@ function PublicTransactionRow({
   const meta = transactionMeta(transaction);
 
   return (
-    <tr className="hover:bg-zinc-50">
-      <td className="whitespace-nowrap px-3 py-2 align-top text-zinc-600">{dateOnly(transaction.transactionDate)}</td>
-      <td className="max-w-2xl px-3 py-2 align-top">
-        <div className="whitespace-pre-wrap break-words font-medium text-zinc-900">{transaction.description}</div>
+    <tr className="transition-colors hover:bg-[#fff7fa]">
+      <td className="whitespace-nowrap px-4 py-3 align-top text-[#75616c]">{dateOnly(transaction.transactionDate)}</td>
+      <td className="max-w-2xl px-4 py-3 align-top">
+        <div className="whitespace-pre-wrap break-words font-semibold text-[#31222b]">{transaction.description}</div>
         <RefundRelationship transaction={transaction} />
       </td>
-      <td className="whitespace-nowrap px-3 py-2 align-top">
+      <td className="whitespace-nowrap px-4 py-3 align-top">
         <span className={`inline-flex rounded-md border px-2 py-1 text-xs font-medium ${meta.className}`}>
           {meta.label}
         </span>
       </td>
-      <td className={`whitespace-nowrap px-3 py-2 text-right align-top font-semibold ${meta.amountClassName}`}>
+      <td className={`whitespace-nowrap px-4 py-3 text-right align-top font-bold ${meta.amountClassName}`}>
         {money(meta.amount)}
       </td>
       <td className="whitespace-nowrap px-3 py-2 text-right align-top">
@@ -377,16 +444,24 @@ function RefundRelationship({ transaction }: { transaction: PublicCampaignTransa
 }
 
 function EmptyState() {
-  return <div className="px-3 py-10 text-center text-sm text-zinc-500">Không có giao dịch phù hợp.</div>;
+  return <div className="px-3 py-10 text-center text-sm text-[#806b76]">Không có giao dịch phù hợp.</div>;
 }
 
-function PublicStat({ label, value, tone = "zinc" }: { label: string; value: string; tone?: "zinc" | "emerald" | "amber" }) {
-  const color = tone === "emerald" ? "text-emerald-700" : tone === "amber" ? "text-amber-700" : "text-zinc-950";
+function SummaryStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "jade" | "gold" | "dark";
+}) {
+  const color = tone === "jade" ? "text-[#2d765b]" : tone === "gold" ? "text-[#a93d68]" : "text-[#4a1838]";
 
   return (
-    <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2">
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div className={`mt-1 text-sm font-semibold ${color}`}>{value}</div>
+    <div className="min-w-0 bg-[#fffafd] px-4 py-3 sm:px-5 sm:py-4">
+      <div className="text-xs leading-5 text-[#75606e]">{label}</div>
+      <div className={`mt-1 break-words text-sm font-bold ${color}`}>{value}</div>
     </div>
   );
 }
@@ -396,8 +471,9 @@ function transactionMeta(transaction: PublicCampaignTransaction) {
     return {
       label: "Hùn phước",
       amount: transaction.creditAmount,
-      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
-      amountClassName: "text-emerald-700",
+      className: "border-[#9fd9c0] bg-[#effbf5] text-[#247257]",
+      amountClassName: "text-[#b33969]",
+      cardHeaderClassName: "bg-[#fff5f9]",
     };
   }
 
@@ -405,16 +481,18 @@ function transactionMeta(transaction: PublicCampaignTransaction) {
     return {
       label: "Hoàn lại",
       amount: transaction.debitAmount,
-      className: "border-violet-200 bg-violet-50 text-violet-700",
-      amountClassName: "text-violet-700",
+      className: "border-[#cfb4e8] bg-[#f7f0fd] text-[#7543a0]",
+      amountClassName: "text-[#7543a0]",
+      cardHeaderClassName: "bg-[#faf5fe]",
     };
   }
 
   return {
     label: "Cúng dường",
     amount: transaction.debitAmount,
-    className: "border-amber-200 bg-amber-50 text-amber-700",
-    amountClassName: "text-amber-700",
+    className: "border-[#e7c27d] bg-[#fff8e9] text-[#9a6417]",
+    amountClassName: "text-[#9a6417]",
+    cardHeaderClassName: "bg-[#fffaf0]",
   };
 }
 

@@ -4,7 +4,7 @@ import { getPrisma } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "techcombank-only-v3";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "removed-pre-charity-transactions-v4";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
@@ -296,10 +296,10 @@ export function invalidatePublicCampaignCache(codes: Iterable<string | null | un
 
 export async function warmPublicCampaignCaches(codes: Iterable<string>) {
   const normalizedCodes = [...new Set([...codes].map(makeCampaignCode))];
-  await Promise.all(
-    normalizedCodes.flatMap((code) => [
-      getCachedPublicCampaignMeta(code),
-      getCachedPublicCampaignData(code),
-    ]),
-  );
+  // Imports can affect many campaigns. Warm them sequentially so refreshing the
+  // public cache does not create a burst of database connections.
+  for (const code of normalizedCodes) {
+    await getCachedPublicCampaignMeta(code);
+    await getCachedPublicCampaignData(code);
+  }
 }
