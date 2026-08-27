@@ -1,7 +1,7 @@
 "use client";
 
-import { CircleCheck, Info, Link2, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CircleCheck, Info, Link2, Search, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
 import { normalizeTransferText } from "@/lib/text";
 
@@ -19,6 +19,7 @@ const statusClassNames = {
 
 export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   const [query, setQuery] = useState("");
+  const [selectedTransaction, setSelectedTransaction] = useState<PublicCampaignTransaction | null>(null);
   const normalizedQuery = normalizeTransferText(query);
 
   const filteredTransactions = useMemo(() => {
@@ -91,7 +92,11 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
 
           <div className="mt-4 space-y-2 md:hidden">
             {filteredTransactions.map((transaction) => (
-              <PublicTransactionCard key={transaction.id} transaction={transaction} />
+              <PublicTransactionCard
+                key={transaction.id}
+                transaction={transaction}
+                onViewDetails={() => setSelectedTransaction(transaction)}
+              />
             ))}
             {filteredTransactions.length === 0 ? <EmptyState /> : null}
           </div>
@@ -105,15 +110,20 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                     <th className="px-3 py-2">Nội dung chuyển khoản</th>
                     <th className="px-3 py-2">Loại</th>
                     <th className="px-3 py-2 text-right">Số tiền</th>
+                    <th className="px-3 py-2 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 bg-white">
                   {filteredTransactions.map((transaction) => (
-                    <PublicTransactionRow key={transaction.id} transaction={transaction} />
+                    <PublicTransactionRow
+                      key={transaction.id}
+                      transaction={transaction}
+                      onViewDetails={() => setSelectedTransaction(transaction)}
+                    />
                   ))}
                   {filteredTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={4}>
+                      <td colSpan={5}>
                         <EmptyState />
                       </td>
                     </tr>
@@ -124,11 +134,26 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           </div>
         </section>
       </main>
+
+      {selectedTransaction ? (
+        <TransactionReceiptModal
+          campaignName={data.name}
+          campaignCode={data.code}
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+        />
+      ) : null}
     </div>
   );
 }
 
-function PublicTransactionCard({ transaction }: { transaction: PublicCampaignTransaction }) {
+function PublicTransactionCard({
+  transaction,
+  onViewDetails,
+}: {
+  transaction: PublicCampaignTransaction;
+  onViewDetails: () => void;
+}) {
   const meta = transactionMeta(transaction);
 
   return (
@@ -148,11 +173,24 @@ function PublicTransactionCard({ transaction }: { transaction: PublicCampaignTra
         {transaction.description}
       </p>
       <RefundRelationship transaction={transaction} />
+      <button
+        type="button"
+        onClick={onViewDetails}
+        className="mt-3 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+      >
+        Xem chi tiết
+      </button>
     </article>
   );
 }
 
-function PublicTransactionRow({ transaction }: { transaction: PublicCampaignTransaction }) {
+function PublicTransactionRow({
+  transaction,
+  onViewDetails,
+}: {
+  transaction: PublicCampaignTransaction;
+  onViewDetails: () => void;
+}) {
   const meta = transactionMeta(transaction);
 
   return (
@@ -170,7 +208,130 @@ function PublicTransactionRow({ transaction }: { transaction: PublicCampaignTran
       <td className={`whitespace-nowrap px-3 py-2 text-right align-top font-semibold ${meta.amountClassName}`}>
         {money(meta.amount)}
       </td>
+      <td className="whitespace-nowrap px-3 py-2 text-right align-top">
+        <button
+          type="button"
+          onClick={onViewDetails}
+          className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+        >
+          Chi tiết
+        </button>
+      </td>
     </tr>
+  );
+}
+
+function TransactionReceiptModal({
+  campaignName,
+  campaignCode,
+  transaction,
+  onClose,
+}: {
+  campaignName: string;
+  campaignCode: string;
+  transaction: PublicCampaignTransaction;
+  onClose: () => void;
+}) {
+  const meta = transactionMeta(transaction);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/55 p-4 backdrop-blur-[2px]"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transaction-receipt-title"
+        className="relative max-h-[calc(100vh-2rem)] w-full max-w-[420px] overflow-y-auto rounded-2xl border border-emerald-900/10 bg-[#fffdf7] shadow-2xl"
+      >
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+          <div className="absolute -right-10 top-20 rotate-[-18deg] select-none text-center text-emerald-900/[0.045]">
+            <Sparkles className="mx-auto h-36 w-36 stroke-[0.8]" />
+            <div className="mt-1 text-xl font-bold tracking-[0.32em]">CÁC CHƯ THIÊN</div>
+          </div>
+          <div className="absolute -bottom-8 -left-8 rotate-12 select-none text-emerald-900/[0.035]">
+            <Sparkles className="h-40 w-40 stroke-[0.7]" />
+          </div>
+        </div>
+
+        <div className="relative p-5 sm:p-6">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng chi tiết giao dịch"
+            className="absolute right-3 top-3 rounded-full bg-white/80 p-2 text-zinc-500 shadow-sm ring-1 ring-zinc-200 transition hover:text-zinc-900"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="pr-9 text-center">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <CircleCheck className="h-6 w-6" />
+            </div>
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+              Chi tiết giao dịch
+            </p>
+            <h2 id="transaction-receipt-title" className="mt-1 text-lg font-semibold leading-6 text-zinc-950">
+              {campaignName}
+            </h2>
+            <p className="mt-1 font-mono text-xs text-zinc-500">{campaignCode}</p>
+          </div>
+
+          <div className="my-5 border-t border-dashed border-zinc-300" />
+
+          <div className="text-center">
+            <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.className}`}>
+              {meta.label}
+            </span>
+            <div className={`mt-2 text-3xl font-bold tracking-tight ${meta.amountClassName}`}>
+              {money(meta.amount)}
+            </div>
+          </div>
+
+          <dl className="mt-6 space-y-4 text-sm">
+            <ReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
+            <div>
+              <dt className="text-xs text-zinc-500">Nội dung chuyển khoản</dt>
+              <dd className="mt-1 whitespace-pre-wrap break-words font-medium leading-6 text-zinc-900">
+                {transaction.description}
+              </dd>
+            </div>
+          </dl>
+
+          <RefundRelationship transaction={transaction} />
+
+          <div className="mt-6 border-t border-dashed border-zinc-300 pt-4 text-center text-[11px] leading-5 text-zinc-500">
+            Thông tin được trích từ danh sách giao dịch công khai
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ReceiptRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-5">
+      <dt className="shrink-0 text-xs text-zinc-500">{label}</dt>
+      <dd className="text-right font-medium text-zinc-900">{value}</dd>
+    </div>
   );
 }
 
