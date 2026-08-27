@@ -395,14 +395,22 @@ function TransactionReceiptModal({
             </div>
           </div>
 
-          <dl className="mt-6 space-y-4 text-sm">
-            <ReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
-            <div>
-              <dt className="text-xs text-zinc-500">Nội dung chuyển khoản</dt>
-              <dd className="mt-1 whitespace-pre-wrap break-words font-medium leading-6 text-zinc-900">
-                {transaction.description}
-              </dd>
+          <div className="mt-6 rounded-xl border-2 border-[#b63f70] bg-white/90 p-4 shadow-[0_8px_24px_rgba(76,23,59,0.12)]">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#b63f70]" />
+              <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a3315f]">
+                Nội dung chuyển khoản
+              </div>
             </div>
+            <div className="mt-2.5 whitespace-pre-wrap break-words text-[17px] font-bold leading-7 text-zinc-950">
+              {transaction.description}
+            </div>
+          </div>
+
+          <div className="my-5 border-t border-dashed border-zinc-300" />
+
+          <dl className="space-y-4 text-sm">
+            <ReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
           </dl>
 
           <RefundRelationship transaction={transaction} />

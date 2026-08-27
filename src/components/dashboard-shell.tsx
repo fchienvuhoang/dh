@@ -824,16 +824,24 @@ function StatementReceiptModal({
 
           <div className="my-5 border-t border-dashed border-zinc-300" />
 
+          <div className="rounded-xl border-2 border-[#b63f70] bg-white/90 p-4 shadow-[0_8px_24px_rgba(76,23,59,0.12)]">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#b63f70]" />
+              <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a3315f]">
+                Nội dung chuyển khoản
+              </div>
+            </div>
+            <div className="mt-2.5 whitespace-pre-wrap break-words text-[17px] font-bold leading-7 text-zinc-950">
+              {transaction.description}
+            </div>
+          </div>
+
+          <div className="my-5 border-t border-dashed border-zinc-300" />
+
           <dl className="space-y-4 text-sm">
             <StatementReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
             <StatementReceiptRow label="Mã giao dịch" value={transaction.detail || "—"} mono />
             <StatementReceiptRow label="Thiện pháp" value={campaignText} />
-            <div>
-              <dt className="text-xs text-zinc-500">Nội dung chuyển khoản</dt>
-              <dd className="mt-1.5 whitespace-pre-wrap break-words rounded-lg border border-white/80 bg-white/65 p-3 font-semibold leading-6 text-zinc-900 shadow-sm">
-                {transaction.description}
-              </dd>
-            </div>
           </dl>
 
           <div className="mt-5 border-t border-dashed border-zinc-300 pt-4 text-center text-[11px] leading-5 text-zinc-500">
