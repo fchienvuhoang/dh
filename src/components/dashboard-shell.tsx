@@ -792,9 +792,9 @@ function StatementReceiptModal({
             alt=""
             fill
             sizes="430px"
-            className="object-cover object-top opacity-35 saturate-[0.85]"
+            className="object-cover object-top opacity-45 saturate-[0.9]"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf9]/65 via-[#fffdf9]/72 to-[#fffdf9]/82" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf9]/55 via-[#fffdf9]/64 to-[#fffdf9]/76" />
         </div>
 
         <div className="relative p-5 sm:p-6">

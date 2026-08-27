@@ -356,9 +356,9 @@ function TransactionReceiptModal({
             alt=""
             fill
             sizes="420px"
-            className="object-cover object-top opacity-35 saturate-[0.85]"
+            className="object-cover object-top opacity-45 saturate-[0.9]"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf7]/65 via-[#fffdf7]/72 to-[#fffdf7]/82" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf7]/55 via-[#fffdf7]/64 to-[#fffdf7]/76" />
         </div>
 
         <div className="relative p-5 sm:p-6">
