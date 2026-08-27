@@ -1,6 +1,6 @@
 import { revalidateTag, unstable_cache } from "next/cache";
 import { decimalToNumber } from "@/lib/money";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withDatabaseReadRetry } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 
@@ -48,19 +48,19 @@ export async function getPublicCampaignMeta(code: string) {
   const prisma = getPrisma();
   const normalizedCode = makeCampaignCode(code);
 
-  return prisma.campaign.findUnique({
+  return withDatabaseReadRetry(() => prisma.campaign.findUnique({
     where: { code: normalizedCode },
     select: {
       code: true,
       name: true,
       description: true,
     },
-  });
+  }));
 }
 
 export async function getActivePublicCampaigns(): Promise<ActivePublicCampaign[]> {
   const prisma = getPrisma();
-  return prisma.campaign.findMany({
+  return withDatabaseReadRetry(() => prisma.campaign.findMany({
     where: { status: "ACTIVE" },
     select: {
       code: true,
@@ -68,7 +68,7 @@ export async function getActivePublicCampaigns(): Promise<ActivePublicCampaign[]
       description: true,
     },
     orderBy: { createdAt: "desc" },
-  });
+  }));
 }
 
 export function getCachedActivePublicCampaigns() {
@@ -99,7 +99,11 @@ export function getCachedPublicCampaignMeta(code: string) {
   )();
 }
 
-export async function getPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
+export function getPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
+  return withDatabaseReadRetry(() => loadPublicCampaignData(code));
+}
+
+async function loadPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
   const prisma = getPrisma();
   const normalizedCode = makeCampaignCode(code);
   const campaign = await prisma.campaign.findUnique({

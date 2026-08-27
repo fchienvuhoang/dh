@@ -1,5 +1,5 @@
 import { decimalToNumber } from "@/lib/money";
-import { DatabaseNotConfiguredError, getPrisma } from "@/lib/prisma";
+import { DatabaseNotConfiguredError, getPrisma, isTransientDatabaseError } from "@/lib/prisma";
 
 export type DashboardState =
   | {
@@ -105,7 +105,11 @@ export type TransactionSummary = {
   }[];
 };
 
-export async function getDashboardState(): Promise<DashboardState> {
+export function getDashboardState(): Promise<DashboardState> {
+  return getDashboardStateAttempt(0);
+}
+
+async function getDashboardStateAttempt(attempt: number): Promise<DashboardState> {
   try {
     const prisma = getPrisma();
 
@@ -428,6 +432,11 @@ export async function getDashboardState(): Promise<DashboardState> {
         reason: "DATABASE_NOT_CONFIGURED",
         message: "DATABASE_URL chưa được cấu hình.",
       };
+    }
+
+    if (attempt < 2 && isTransientDatabaseError(error)) {
+      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 750));
+      return getDashboardStateAttempt(attempt + 1);
     }
 
     return {

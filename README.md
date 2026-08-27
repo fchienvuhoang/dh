@@ -41,9 +41,23 @@ Dùng PostgreSQL managed trên Vercel Marketplace. Các lựa chọn phù hợp:
 - Prisma Postgres: phù hợp nếu muốn đi theo hệ sinh thái Prisma.
 - Supabase: Postgres có dashboard và auth/storage nếu sau này cần mở rộng.
 
-Sau khi provision database trên Vercel, lấy biến `DATABASE_URL` và cấu hình cho Production/Preview/Development.
+Sau khi provision database trên Vercel, dùng URL qua pooler cho traffic ứng dụng. Ứng dụng ưu tiên
+`DATABASE_POOL_URL`, sau đó `POSTGRES_PRISMA_URL`, `POSTGRES_URL`, và cuối cùng mới tới
+`DATABASE_URL`. Không dùng URL direct/non-pooling làm `DATABASE_POOL_URL` trên Vercel.
 
-Ứng dụng dùng một Prisma client dùng chung trong mỗi instance và giới hạn pool mặc định ở 2 kết nối để tránh vượt `max connections` trên serverless. Có thể cấu hình lại khi cần:
+Nếu nhà cung cấp cấp riêng hai URL, cấu hình:
+
+```bash
+DATABASE_POOL_URL="postgresql://...pooler-host.../database?sslmode=require"
+DATABASE_URL="postgresql://...direct-host.../database?sslmode=require"
+```
+
+Áp dụng biến cho cả Production, Preview và Development rồi redeploy. Nên chọn database region
+gần Vercel Functions để tránh timeout do độ trễ mạng.
+
+Ứng dụng dùng một Prisma client và một PostgreSQL pool dùng chung trong mỗi instance. Pool được
+đăng ký với Vercel Fluid Compute để đóng kết nối idle đúng cách khi function bị suspend, đồng thời
+giới hạn mặc định ở 2 kết nối để tránh vượt `max connections` trên serverless. Có thể cấu hình lại khi cần:
 
 ```bash
 DATABASE_POOL_MAX="2"
