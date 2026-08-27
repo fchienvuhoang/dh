@@ -1,9 +1,10 @@
 "use client";
 
-import { CircleCheck, HeartHandshake, Info, Link2, Search, X } from "lucide-react";
+import { CircleCheck, Download, HeartHandshake, Info, Link2, Loader2, Search, X } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
+import { downloadElementAsPng } from "@/lib/download-element-image";
 import { normalizeTransferText } from "@/lib/text";
 
 const statusLabels = {
@@ -321,6 +322,8 @@ function TransactionReceiptModal({
   transaction: PublicCampaignTransaction;
   onClose: () => void;
 }) {
+  const receiptRef = useRef<HTMLElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const meta = transactionMeta(transaction);
 
   useEffect(() => {
@@ -345,6 +348,7 @@ function TransactionReceiptModal({
       }}
     >
       <section
+        ref={receiptRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="transaction-receipt-title"
@@ -366,6 +370,7 @@ function TransactionReceiptModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng chi tiết giao dịch"
+            data-image-export-ignore="true"
             className="absolute right-3 top-3 rounded-full bg-white/80 p-2 text-zinc-500 shadow-sm ring-1 ring-zinc-200 transition hover:text-zinc-900"
           >
             <X className="h-4 w-4" />
@@ -418,6 +423,28 @@ function TransactionReceiptModal({
           <div className="mt-6 border-t border-dashed border-zinc-300 pt-4 text-center text-[11px] leading-5 text-zinc-500">
             Thông tin được trích từ danh sách giao dịch công khai
           </div>
+
+          <button
+            type="button"
+            data-image-export-ignore="true"
+            disabled={isDownloading}
+            onClick={async () => {
+              if (!receiptRef.current) return;
+              setIsDownloading(true);
+              try {
+                await downloadElementAsPng(
+                  receiptRef.current,
+                  `giao-dich-${campaignCode}-${transaction.id}`,
+                );
+              } finally {
+                setIsDownloading(false);
+              }
+            }}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#4c173b] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#612149] disabled:cursor-wait disabled:opacity-70"
+          >
+            {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh giao dịch"}
+          </button>
         </div>
       </section>
     </div>

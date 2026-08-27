@@ -5,6 +5,7 @@ import {
   ArrowUpFromLine,
   Ban,
   CheckCircle2,
+  Download,
   ExternalLink,
   FileSpreadsheet,
   LogOut,
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type React from "react";
 import type {
   CampaignSummary,
@@ -30,6 +31,7 @@ import type {
   DashboardState,
   TransactionSummary,
 } from "@/lib/dashboard";
+import { downloadElementAsPng } from "@/lib/download-element-image";
 import { normalizeTransferText, splitKeywords } from "@/lib/text";
 
 type Props = {
@@ -748,6 +750,8 @@ function StatementReceiptModal({
   transaction: TransactionSummary;
   onClose: () => void;
 }) {
+  const receiptRef = useRef<HTMLElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const isCredit = transaction.creditAmount > 0;
   const amount = isCredit ? transaction.creditAmount : transaction.debitAmount;
   const transactionType = isCredit
@@ -781,6 +785,7 @@ function StatementReceiptModal({
       }}
     >
       <section
+        ref={receiptRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="statement-receipt-title"
@@ -802,6 +807,7 @@ function StatementReceiptModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng chi tiết giao dịch"
+            data-image-export-ignore="true"
             className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 text-zinc-500 shadow-sm hover:text-zinc-900"
           >
             <X className="h-4 w-4" />
@@ -847,6 +853,28 @@ function StatementReceiptModal({
           <div className="mt-5 border-t border-dashed border-zinc-300 pt-4 text-center text-[11px] leading-5 text-zinc-500">
             Dhamma Group · Thông tin trích từ sao kê
           </div>
+
+          <button
+            type="button"
+            data-image-export-ignore="true"
+            disabled={isDownloading}
+            onClick={async () => {
+              if (!receiptRef.current) return;
+              setIsDownloading(true);
+              try {
+                await downloadElementAsPng(
+                  receiptRef.current,
+                  `giao-dich-${transaction.detail || transaction.id}`,
+                );
+              } finally {
+                setIsDownloading(false);
+              }
+            }}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#4c173b] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#612149] disabled:cursor-wait disabled:opacity-70"
+          >
+            {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh giao dịch"}
+          </button>
         </div>
       </section>
     </div>
