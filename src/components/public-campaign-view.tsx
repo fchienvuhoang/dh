@@ -206,9 +206,8 @@ function PublicTransactionCard({
   onViewDetails,
 }: {
   transaction: PublicCampaignTransaction;
-  index?: number;
+  index: number;
   onViewDetails?: () => void;
-}
 }) {
   const meta = transactionMeta(transaction);
 
