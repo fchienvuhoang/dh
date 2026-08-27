@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type React from "react";
 import type {
@@ -613,10 +614,12 @@ function TransactionTable({
   onSplit: (transaction: TransactionSummary) => void;
 }) {
   const sortedCampaigns = sortCampaignsForSelection(campaigns);
+  const [detailTransaction, setDetailTransaction] = useState<TransactionSummary | null>(null);
 
   return (
-    <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-      <div className="max-h-[620px] overflow-auto">
+    <>
+      <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
+        <div className="max-h-[620px] overflow-auto">
         <table className="w-full min-w-[980px] text-left text-sm">
           <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
@@ -648,8 +651,15 @@ function TransactionTable({
                     {transaction.matchedKeyword ?? "Chưa có keyword khớp"}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-zinc-600">
-                  {transaction.detail}
+                <td className="whitespace-nowrap px-3 py-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setDetailTransaction(transaction)}
+                    className="max-w-52 truncate rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 font-mono text-zinc-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
+                    title="Mở chi tiết giao dịch"
+                  >
+                    {transaction.detail || "Xem chi tiết"}
+                  </button>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-medium text-emerald-700">
                   {transaction.creditAmount > 0 ? money(transaction.creditAmount) : "-"}
@@ -722,7 +732,134 @@ function TransactionTable({
             ) : null}
           </tbody>
         </table>
+        </div>
       </div>
+      {detailTransaction ? (
+        <StatementReceiptModal transaction={detailTransaction} onClose={() => setDetailTransaction(null)} />
+      ) : null}
+    </>
+  );
+}
+
+function StatementReceiptModal({
+  transaction,
+  onClose,
+}: {
+  transaction: TransactionSummary;
+  onClose: () => void;
+}) {
+  const isCredit = transaction.creditAmount > 0;
+  const amount = isCredit ? transaction.creditAmount : transaction.debitAmount;
+  const transactionType = isCredit
+    ? "Tiền vào"
+    : transaction.outflowType === "REFUND"
+      ? "Hoàn lại"
+      : "Tiền ra";
+  const campaignText = transaction.allocations.length > 0
+    ? transaction.allocations.map((allocation) => allocation.campaign.code).join(", ")
+    : transaction.campaign?.code ?? "Chưa phân loại";
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/55 p-4 backdrop-blur-[2px]"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="statement-receipt-title"
+        className="relative max-h-[calc(100vh-2rem)] w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/70 bg-[#fffdf9] shadow-2xl"
+      >
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden="true">
+          <Image
+            src="/assets/dhamma-celestial-mangosteen-deva-mobile.jpg"
+            alt=""
+            fill
+            sizes="430px"
+            className="object-cover object-center opacity-[0.09] grayscale-[20%]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf9]/90 via-[#fffdf9]/82 to-[#fffdf9]/94" />
+        </div>
+
+        <div className="relative p-5 sm:p-6">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng chi tiết giao dịch"
+            className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 text-zinc-500 shadow-sm hover:text-zinc-900"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="pr-10 text-center">
+            <span className={`mx-auto inline-flex h-11 w-11 items-center justify-center rounded-full ${isCredit ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+              {isCredit ? <ArrowUpFromLine className="h-5 w-5 rotate-180" /> : <ArrowUpFromLine className="h-5 w-5" />}
+            </span>
+            <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+              Chi tiết giao dịch sao kê
+            </p>
+            <h2 id="statement-receipt-title" className={`mt-2 text-3xl font-bold tracking-tight ${isCredit ? "text-emerald-700" : "text-amber-700"}`}>
+              {money(amount)}
+            </h2>
+            <span className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isCredit ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
+              {transactionType}
+            </span>
+          </div>
+
+          <div className="my-5 border-t border-dashed border-zinc-300" />
+
+          <dl className="space-y-4 text-sm">
+            <StatementReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
+            <StatementReceiptRow label="Mã giao dịch" value={transaction.detail || "—"} mono />
+            <StatementReceiptRow label="Thiện pháp" value={campaignText} />
+            <div>
+              <dt className="text-xs text-zinc-500">Nội dung chuyển khoản</dt>
+              <dd className="mt-1.5 whitespace-pre-wrap break-words rounded-lg border border-white/80 bg-white/65 p-3 font-semibold leading-6 text-zinc-900 shadow-sm">
+                {transaction.description}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-5 border-t border-dashed border-zinc-300 pt-4 text-center text-[11px] leading-5 text-zinc-500">
+            Dhamma Group · Thông tin trích từ sao kê
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function StatementReceiptRow({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-3">
+      <dt className="text-xs leading-5 text-zinc-500">{label}</dt>
+      <dd className={`break-words text-right font-semibold leading-5 text-zinc-900 ${mono ? "font-mono text-xs" : ""}`}>
+        {value}
+      </dd>
     </div>
   );
 }
@@ -878,10 +1015,12 @@ function DebitTransactionTable({
   onLinkRefund: (transaction: TransactionSummary) => void;
 }) {
   const sortedCampaigns = sortCampaignsForSelection(campaigns);
+  const [detailTransaction, setDetailTransaction] = useState<TransactionSummary | null>(null);
 
   return (
-    <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-      <div className="max-h-[420px] overflow-auto">
+    <>
+      <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
+        <div className="max-h-[420px] overflow-auto">
         <table className="w-full min-w-[880px] text-left text-sm">
           <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
@@ -908,8 +1047,15 @@ function DebitTransactionTable({
                     {transaction.description}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 align-top font-mono text-xs text-zinc-600">
-                  {transaction.detail}
+                <td className="whitespace-nowrap px-3 py-2 align-top text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setDetailTransaction(transaction)}
+                    className="max-w-52 truncate rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 font-mono text-zinc-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
+                    title="Mở chi tiết giao dịch"
+                  >
+                    {transaction.detail || "Xem chi tiết"}
+                  </button>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right align-top font-medium text-amber-700">
                   {money(transaction.debitAmount)}
@@ -986,8 +1132,12 @@ function DebitTransactionTable({
             ) : null}
           </tbody>
         </table>
+        </div>
       </div>
-    </div>
+      {detailTransaction ? (
+        <StatementReceiptModal transaction={detailTransaction} onClose={() => setDetailTransaction(null)} />
+      ) : null}
+    </>
   );
 }
 
