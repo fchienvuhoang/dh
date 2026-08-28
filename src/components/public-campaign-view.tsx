@@ -356,16 +356,16 @@ function TransactionReceiptModal({
       >
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
           <Image
-            src="/assets/dhamma-celestial-mangosteen-deva-mobile.jpg"
+            src="/assets/dhamma-transaction-celestial-varied.jpg"
             alt=""
             fill
             sizes="420px"
-            className="object-cover object-top opacity-70 saturate-[0.95]"
+            className="object-cover object-top opacity-95 contrast-[1.04] saturate-[1.03]"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf7]/35 via-[#fffdf7]/58 to-[#fffdf7]/72" />
+          <div className="absolute inset-0 bg-[#fffdf7]/24" />
         </div>
 
-        <div className="relative p-5 sm:p-6">
+        <div className="relative p-4 sm:p-5">
           <button
             type="button"
             onClick={onClose}
@@ -377,59 +377,59 @@ function TransactionReceiptModal({
           </button>
 
           <div className="pr-9 text-center">
-            <span className="mx-auto mb-3 block h-14 w-14 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.18)]">
+            <span className="mx-auto mb-2 block h-12 w-12 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.18)]">
               <Image
                 src="/assets/dhamma-group-logo.jpg"
                 alt="Logo Dhamma Group"
-                width={56}
-                height={56}
+                width={48}
+                height={48}
                 className="h-full w-full scale-[1.12] object-cover"
               />
             </span>
-            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              <CircleCheck className="h-6 w-6" />
+            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <CircleCheck className="h-5 w-5" />
             </div>
-            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
               Chi tiết giao dịch
             </p>
-            <h2 id="transaction-receipt-title" className="mt-1 text-lg font-semibold leading-6 text-zinc-950">
+            <h2 id="transaction-receipt-title" className="mt-1 text-base font-semibold leading-5 text-zinc-950">
               {campaignName}
             </h2>
             <p className="mt-1 font-mono text-xs text-zinc-500">{campaignCode}</p>
           </div>
 
-          <div className="my-5 border-t border-dashed border-zinc-300" />
+          <div className="my-3 border-t border-dashed border-zinc-300" />
 
           <div className="text-center">
             <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.className}`}>
               {meta.label}
             </span>
-            <div className={`mt-2 text-3xl font-bold tracking-tight ${meta.amountClassName}`}>
+            <div className={`mt-1.5 text-2xl font-bold tracking-tight ${meta.amountClassName}`}>
               {money(meta.amount)}
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border-2 border-[#b63f70] bg-white/90 p-4 shadow-[0_8px_24px_rgba(76,23,59,0.12)]">
+          <div className="mt-4 rounded-xl border-2 border-[#b63f70] bg-white/90 p-3.5 shadow-[0_8px_24px_rgba(76,23,59,0.12)]">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-[#b63f70]" />
               <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a3315f]">
                 Nội dung chuyển khoản
               </div>
             </div>
-            <div className="mt-2.5 whitespace-pre-wrap break-words text-[17px] font-bold leading-7 text-zinc-950">
+            <div className="mt-2 whitespace-pre-wrap break-words text-base font-bold leading-6 text-zinc-950">
               {transaction.description}
             </div>
           </div>
 
-          <div className="my-5 border-t border-dashed border-zinc-300" />
+          <div className="my-3 border-t border-dashed border-zinc-300" />
 
-          <dl className="space-y-4 rounded-xl border border-white/80 bg-white/72 p-4 text-sm shadow-sm backdrop-blur-[2px]">
+          <dl className="rounded-xl border border-white/80 bg-white/72 p-3 text-sm shadow-sm backdrop-blur-[2px]">
             <ReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
           </dl>
 
           <RefundRelationship transaction={transaction} />
 
-          <div className="mt-6 border-t border-dashed border-zinc-300 pt-4 text-center text-[11px] leading-5 text-zinc-500">
+          <div className="mt-4 border-t border-dashed border-zinc-300 pt-3 text-center text-[11px] leading-4 text-zinc-500">
             Thông tin được trích từ danh sách giao dịch công khai
           </div>
 
@@ -449,7 +449,7 @@ function TransactionReceiptModal({
                 setIsDownloading(false);
               }
             }}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#4c173b] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#612149] disabled:cursor-wait disabled:opacity-70"
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#4c173b] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#612149] disabled:cursor-wait disabled:opacity-70"
           >
             {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh giao dịch"}
