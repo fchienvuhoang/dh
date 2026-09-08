@@ -5,6 +5,8 @@ import {
   ArrowUpFromLine,
   Ban,
   CheckCircle2,
+  Check,
+  Copy,
   Download,
   ExternalLink,
   FileSpreadsheet,
@@ -916,6 +918,18 @@ function CampaignTable({
   campaigns: CampaignSummary[];
   onSelect: (campaign: CampaignSummary) => void;
 }) {
+  const [copiedCampaignId, setCopiedCampaignId] = useState<string | null>(null);
+
+  async function copyStatement(campaign: CampaignSummary) {
+    const didCopy = await copyToClipboard(buildCampaignStatement(campaign));
+    if (!didCopy) return;
+
+    setCopiedCampaignId(campaign.id);
+    window.setTimeout(() => {
+      setCopiedCampaignId((current) => current === campaign.id ? null : current);
+    }, 2_000);
+  }
+
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
       <div className="overflow-auto">
@@ -931,6 +945,7 @@ function CampaignTable({
               <th className="px-3 py-2 text-right">Hoàn lại</th>
               <th className="px-3 py-2 text-right">Còn lại</th>
               <th className="px-3 py-2 text-right">GD</th>
+              <th className="px-3 py-2 text-right">Mẫu sao kê</th>
               <th className="px-3 py-2 text-right">Link công khai</th>
               <th className="px-3 py-2 text-right">Sửa</th>
             </tr>
@@ -1016,6 +1031,28 @@ function CampaignTable({
                   {campaign.transactionCount.toLocaleString("vi-VN")}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void copyStatement(campaign);
+                    }}
+                    className={`inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition ${
+                      copiedCampaignId === campaign.id
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-[#d8b4c4] bg-[#fff8fb] text-[#7a294f] hover:bg-[#f9eaf1]"
+                    }`}
+                    aria-label={`Sao chép mẫu sao kê thiện pháp ${campaign.code}`}
+                  >
+                    {copiedCampaignId === campaign.id ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    {copiedCampaignId === campaign.id ? "Đã sao chép" : "Sao chép mẫu"}
+                  </button>
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right">
                   <a
                     href={publicCampaignPath(campaign.code)}
                     target="_blank"
@@ -1034,7 +1071,7 @@ function CampaignTable({
             ))}
             {campaigns.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-3 py-8 text-center text-zinc-500">
+                <td colSpan={12} className="px-3 py-8 text-center text-zinc-500">
                   Chưa có thiện pháp nào.
                 </td>
               </tr>
@@ -1691,6 +1728,108 @@ function sortCampaignsForSelection(campaigns: CampaignSummary[]) {
 function campaignOptionLabel(campaign: CampaignSummary) {
   const marker = campaign.status === "ACTIVE" ? "●" : "○";
   return `${marker} ${campaign.code} — ${selectionStatusLabels[campaign.status]}`;
+}
+
+const PUBLIC_CAMPAIGN_ORIGIN = "https://dhamma-eight.vercel.app";
+
+const statementIntroductions = [
+  "Dhamma Group xin kính gửi đến quý vị bản cập nhật sao kê của thiện pháp",
+  "Chúng con xin phép cập nhật thông tin tịnh tài của thiện pháp",
+  "Dhamma Group trân trọng gửi quý vị phần tổng hợp minh bạch của thiện pháp",
+  "Kính mời quý vị cùng theo dõi thông tin thu chi mới nhất của thiện pháp",
+  "Chúng con xin được chia sẻ bản cập nhật tịnh tài dành cho thiện pháp",
+];
+
+const statementGreetings = [
+  "Kính chúc quý đạo hữu và toàn thể thiện tín một ngày an lành, thân tâm thường lạc.",
+  "Kính chúc quý vị một ngày mới nhiều an vui, bình an và thuận duyên trong thiện pháp.",
+  "Nguyện chúc quý vị cùng gia đình luôn được an vui, sức khỏe và đầy đủ thiện duyên.",
+  "Kính gửi đến quý vị lời chúc bình an; nguyện mọi thiện sự đều được thành tựu viên mãn.",
+  "Kính chúc quý vị ngày mới nhẹ nhàng, hạnh phúc và luôn tăng trưởng trong thiện lành.",
+];
+
+const statementTotals = [
+  "Tính đến hôm nay, tổng tịnh tài quý vị đã cùng phát tâm hùn phước là:",
+  "Tổng số tịnh tài được ghi nhận đến thời điểm cập nhật là:",
+  "Đến ngày hôm nay, thiện pháp đã nhận được tổng tịnh tài hùn phước:",
+  "Số tịnh tài quý vị đồng phát tâm đóng góp hiện được ghi nhận là:",
+  "Tổng tịnh tài đã được cập nhật minh bạch đến hôm nay là:",
+];
+
+const statementLinkInvitations = [
+  "Kính mời quý vị xem danh sách giao dịch và thông tin chi tiết tại:",
+  "Toàn bộ số liệu được công khai tại đường dẫn dưới đây, kính mời quý vị theo dõi:",
+  "Quý vị có thể kiểm tra phần sao kê minh bạch và các giao dịch tại:",
+  "Thông tin chi tiết của từng khoản tịnh tài được cập nhật tại:",
+  "Kính mời quý vị cùng theo dõi bản sao kê công khai qua đường dẫn:",
+];
+
+function buildCampaignStatement(campaign: CampaignSummary) {
+  const variant = hashText(campaign.code) % statementIntroductions.length;
+  const date = vietnamDate(new Date());
+  const code = campaign.code.toLocaleUpperCase("vi-VN");
+  const name = campaign.name.trim().replace(/[.。]+$/, "").toLocaleUpperCase("vi-VN");
+  const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
+
+  return [
+    `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code}`,
+    `NGÀY ${date}`,
+    "",
+    statementGreetings[variant],
+    "",
+    `🙏 ${statementIntroductions[variant]} ${code}:`,
+    name,
+    "",
+    `💰 ${statementTotals[variant]}`,
+    money(campaign.income),
+    "",
+    `🔎 ${statementLinkInvitations[variant]}`,
+    publicUrl,
+    "",
+    "Dhamma Group thành kính tri ân và xin tùy hỷ công đức của tất cả quý vị đã phát tâm đồng hành.",
+    "",
+    "🌺 Sādhu! Sādhu! Sādhu!",
+    "🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu.",
+    "🌺 Buddhasāsanaṃ ciraṃ tiṭṭhatu.",
+  ].join("\n");
+}
+
+function vietnamDate(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("day")}.${value("month")}.${value("year")}`;
+}
+
+function hashText(value: string) {
+  return [...value].reduce((hash, character) => ((hash * 31) + character.charCodeAt(0)) >>> 0, 0);
+}
+
+async function copyToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall through for browsers that block Clipboard API access.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const didCopy = document.execCommand("copy");
+  textarea.remove();
+  return didCopy;
 }
 
 function CampaignOptionGroups({
