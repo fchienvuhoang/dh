@@ -918,18 +918,6 @@ function CampaignTable({
   campaigns: CampaignSummary[];
   onSelect: (campaign: CampaignSummary) => void;
 }) {
-  const [copiedCampaignId, setCopiedCampaignId] = useState<string | null>(null);
-
-  async function copyStatement(campaign: CampaignSummary) {
-    const didCopy = await copyToClipboard(buildCampaignStatement(campaign));
-    if (!didCopy) return;
-
-    setCopiedCampaignId(campaign.id);
-    window.setTimeout(() => {
-      setCopiedCampaignId((current) => current === campaign.id ? null : current);
-    }, 2_000);
-  }
-
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
       <div className="overflow-auto">
@@ -945,7 +933,6 @@ function CampaignTable({
               <th className="px-3 py-2 text-right">Hoàn lại</th>
               <th className="px-3 py-2 text-right">Còn lại</th>
               <th className="px-3 py-2 text-right">GD</th>
-              <th className="px-3 py-2 text-right">Mẫu sao kê</th>
               <th className="px-3 py-2 text-right">Link công khai</th>
               <th className="px-3 py-2 text-right">Sửa</th>
             </tr>
@@ -1031,28 +1018,6 @@ function CampaignTable({
                   {campaign.transactionCount.toLocaleString("vi-VN")}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right">
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void copyStatement(campaign);
-                    }}
-                    className={`inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition ${
-                      copiedCampaignId === campaign.id
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-[#d8b4c4] bg-[#fff8fb] text-[#7a294f] hover:bg-[#f9eaf1]"
-                    }`}
-                    aria-label={`Sao chép mẫu sao kê thiện pháp ${campaign.code}`}
-                  >
-                    {copiedCampaignId === campaign.id ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
-                    {copiedCampaignId === campaign.id ? "Đã sao chép" : "Sao chép mẫu"}
-                  </button>
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right">
                   <a
                     href={publicCampaignPath(campaign.code)}
                     target="_blank"
@@ -1071,7 +1036,7 @@ function CampaignTable({
             ))}
             {campaigns.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-zinc-500">
+                <td colSpan={11} className="px-3 py-8 text-center text-zinc-500">
                   Chưa có thiện pháp nào.
                 </td>
               </tr>
@@ -1886,6 +1851,50 @@ function campaignSelectClassName(campaignId: string | undefined, campaigns: Camp
   return "border-zinc-300 bg-zinc-100 text-zinc-600";
 }
 
+function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) {
+  const [copied, setCopied] = useState(false);
+  const statement = buildCampaignStatement(campaign);
+
+  async function handleCopy() {
+    const didCopy = await copyToClipboard(statement);
+    if (!didCopy) return;
+
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2_000);
+  }
+
+  return (
+    <section className="overflow-hidden rounded-md border border-[#e3c8d4] bg-[#fffafb]">
+      <div className="flex flex-col gap-3 border-b border-[#ecd8e1] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-[#4c173b]">Mẫu sao kê để chia sẻ</h3>
+          <p className="mt-1 text-xs leading-5 text-zinc-500">
+            Mẫu tự cập nhật tổng hùn phước và link công khai của thiện pháp này.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void handleCopy()}
+          className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition ${
+            copied
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-[#c998ad] bg-white text-[#6b2349] hover:bg-[#f9eaf1]"
+          }`}
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? "Đã sao chép" : "Sao chép mẫu"}
+        </button>
+      </div>
+      <textarea
+        readOnly
+        value={statement}
+        aria-label={`Mẫu sao kê thiện pháp ${campaign.code}`}
+        className="block h-64 w-full resize-y bg-white px-4 py-3 text-sm leading-6 text-zinc-800 outline-none"
+      />
+    </section>
+  );
+}
+
 function CampaignModal({
   state,
   isSaving,
@@ -1976,6 +1985,8 @@ function CampaignModal({
             placeholder={"cntt10\nchùa tam tạng 10\ncung duong y ao"}
           />
           <Textarea name="description" label="Ghi chú" rows={3} defaultValue={campaign?.description ?? ""} />
+
+          {campaign ? <CampaignStatementTemplate campaign={campaign} /> : null}
 
           <div className="flex flex-col-reverse gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
             {campaign ? (
