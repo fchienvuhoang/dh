@@ -1706,7 +1706,7 @@ const statementIntroductions = [
 ];
 
 const statementGreeting =
-  "Kính chúc quý vị ngày mới an vui trong Chánh pháp, thuận duyên tạo các thiện nghiệp, vun bồi và làm viên mãn các Pāramī.";
+  "KÍNH CHÚC QUÝ VỊ NGÀY MỚI AN VUI TRONG CHÁNH PHÁP, THUẬN DUYÊN TẠO CÁC THIỆN NGHIỆP, VUN BỒI VÀ LÀM VIÊN MÃN CÁC PĀRAMĪ.";
 
 const statementTotals = [
   "Tính đến hôm nay, tổng tịnh tài quý vị đã cùng phát tâm hùn phước là:",
@@ -1792,6 +1792,38 @@ async function copyToClipboard(text: string) {
   return didCopy;
 }
 
+async function copyStatementToClipboard(statement: string) {
+  if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+    const html = statement
+      .split("\n")
+      .map((line) => {
+        const escapedLine = line
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+        const content = line === statementGreeting ? `<strong>${escapedLine}</strong>` : escapedLine || "<br>";
+        return `<div>${content}</div>`;
+      })
+      .join("");
+
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/plain": new Blob([statement], { type: "text/plain" }),
+          "text/html": new Blob([html], { type: "text/html" }),
+        }),
+      ]);
+      return true;
+    } catch {
+      // Fall back to plain text when rich clipboard content is unsupported.
+    }
+  }
+
+  return copyToClipboard(statement);
+}
+
 function CampaignOptionGroups({
   campaigns,
   currentCampaignId,
@@ -1851,7 +1883,7 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
   const statement = buildCampaignStatement(campaign);
 
   async function handleCopy() {
-    const didCopy = await copyToClipboard(statement);
+    const didCopy = await copyStatementToClipboard(statement);
     if (!didCopy) return;
 
     setCopied(true);
@@ -1880,12 +1912,18 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
           {copied ? "Đã sao chép" : "Sao chép mẫu"}
         </button>
       </div>
-      <textarea
-        readOnly
-        value={statement}
+      <div
+        role="textbox"
+        aria-readonly="true"
         aria-label={`Mẫu sao kê thiện pháp ${campaign.code}`}
-        className="block h-64 w-full resize-y bg-white px-4 py-3 text-sm leading-6 text-zinc-800 outline-none"
-      />
+        className="h-64 w-full select-text overflow-y-auto whitespace-pre-wrap bg-white px-4 py-3 text-sm leading-6 text-zinc-800"
+      >
+        {statement.split("\n").map((line, index) => (
+          <div key={`${index}-${line}`} className={line === statementGreeting ? "font-bold" : undefined}>
+            {line || <br />}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
