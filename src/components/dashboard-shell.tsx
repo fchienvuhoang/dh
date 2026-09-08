@@ -1705,13 +1705,8 @@ const statementIntroductions = [
   "Chúng con xin được chia sẻ bản cập nhật tịnh tài dành cho thiện pháp",
 ];
 
-const statementGreetings = [
-  "Kính chúc quý đạo hữu và toàn thể thiện tín một ngày an lành, thân tâm thường lạc.",
-  "Kính chúc quý vị một ngày mới nhiều an vui, bình an và thuận duyên trong thiện pháp.",
-  "Nguyện chúc quý vị cùng gia đình luôn được an vui, sức khỏe và đầy đủ thiện duyên.",
-  "Kính gửi đến quý vị lời chúc bình an; nguyện mọi thiện sự đều được thành tựu viên mãn.",
-  "Kính chúc quý vị ngày mới nhẹ nhàng, hạnh phúc và luôn tăng trưởng trong thiện lành.",
-];
+const statementGreeting =
+  "Kính chúc quý vị ngày mới an vui trong Chánh pháp, thuận duyên tạo các thiện nghiệp, vun bồi và làm viên mãn các Pāramī.";
 
 const statementTotals = [
   "Tính đến hôm nay, tổng tịnh tài quý vị đã cùng phát tâm hùn phước là:",
@@ -1740,7 +1735,7 @@ function buildCampaignStatement(campaign: CampaignSummary) {
     `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code}`,
     `NGÀY ${date}`,
     "",
-    statementGreetings[variant],
+    statementGreeting,
     "",
     `🙏 ${statementIntroductions[variant]} ${code}:`,
     name,
