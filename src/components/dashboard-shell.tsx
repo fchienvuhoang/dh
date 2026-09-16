@@ -1739,14 +1739,14 @@ function buildCampaignStatement(campaign: CampaignSummary, expenses: StatementEx
   const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
   const totals = campaign.code.toLocaleLowerCase("vi-VN") === "tp04"
     ? [
-        "💰 Tổng các khoản hùn phước (sau hoàn lại):",
+        "💰 Tổng các khoản hùn phước:",
         money(campaign.income),
         "💝 Tổng các khoản cúng dường:",
         money(campaign.expenses),
         ...expenses.map((expense, index) =>
           `${index + 1}. ${dateOnly(expense.transactionDate)} · ${expense.description.replace(/\s+/g, " ").trim()} · ${money(expense.amount)}`,
         ),
-        "🌿 Tổng tịnh tài còn lại:",
+        "🌿 Tịnh tài hiện tại:",
         money(campaign.balance),
       ]
     : [`💰 ${statementTotals[variant]}`, money(campaign.income)];
