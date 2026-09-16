@@ -1743,9 +1743,12 @@ function buildCampaignStatement(campaign: CampaignSummary, expenses: StatementEx
         money(campaign.income),
         "💝 Tổng các khoản cúng dường:",
         money(campaign.expenses),
-        ...expenses.map((expense, index) =>
-          `${index + 1}. ${dateOnly(expense.transactionDate)} · ${expense.description.replace(/\s+/g, " ").trim()} · ${money(expense.amount)}`,
-        ),
+        ...(expenses.length > 0 ? ["", `CHI TIẾT ${expenses.length} KHOẢN CÚNG DƯỜNG`] : []),
+        ...expenses.flatMap((expense, index) => [
+          `${index + 1}. ${dateOnly(expense.transactionDate)} · ${money(expense.amount)}`,
+          `   Nội dung: ${expense.description.replace(/\s+/g, " ").trim()}`,
+          "",
+        ]),
         "🌿 Tịnh tài hiện tại:",
         money(campaign.balance),
       ]
@@ -1865,12 +1868,109 @@ function campaignSelectClassName(campaignId: string | undefined, campaigns: Camp
   return "border-zinc-300 bg-zinc-100 text-zinc-600";
 }
 
+function CampaignStatementImage({
+  ref,
+  campaign,
+  expenses,
+}: {
+  ref: React.Ref<HTMLDivElement>;
+  campaign: CampaignSummary;
+  expenses: StatementExpense[];
+}) {
+  const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
+
+  return (
+    <div ref={ref} className="w-full bg-[#fffdfb] px-5 py-6 text-[#321c29] sm:px-8 sm:py-8">
+      <div className="flex items-center justify-between gap-3 border-b border-[#e8c8d5] pb-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <Image
+            src="/assets/dhamma-group-logo.jpg"
+            alt="Dhamma Group"
+            width={60}
+            height={60}
+            unoptimized
+            className="h-14 w-14 shrink-0 rounded-full border border-[#e9c5d4] object-cover"
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-[#4c173b]">DHAMMA GROUP</p>
+            <p className="text-xs text-[#846575]">Sao kê thiện pháp · {campaign.code.toUpperCase()}</p>
+          </div>
+        </div>
+        <p className="shrink-0 text-right text-xs font-medium text-[#846575]">{vietnamDate(new Date())}</p>
+      </div>
+
+      <div className="pt-6">
+        <p className="text-xs font-bold uppercase text-[#aa527a]">Cập nhật tịnh tài</p>
+        <h3 className="mt-2 break-words text-2xl font-bold leading-tight text-[#4c173b] sm:text-3xl">
+          {campaign.name}
+        </h3>
+        <p className="mt-4 text-xs leading-5 text-[#765663]">{statementGreeting}</p>
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 border-y border-[#e8c8d5] bg-[#fff4f8]">
+        <div className="min-w-0 border-r border-[#e8c8d5] px-3 py-4 sm:px-5">
+          <p className="text-xs text-[#765663]">Tổng hùn phước</p>
+          <p className="mt-1 break-words text-base font-bold text-[#34765c] sm:text-xl">{money(campaign.income)}</p>
+        </div>
+        <div className="min-w-0 px-3 py-4 sm:px-5">
+          <p className="text-xs text-[#765663]">Tổng cúng dường</p>
+          <p className="mt-1 break-words text-base font-bold text-[#af651f] sm:text-xl">{money(campaign.expenses)}</p>
+        </div>
+      </div>
+
+      <section className="mt-7">
+        <div className="flex items-baseline justify-between gap-3 border-b-2 border-[#4c173b] pb-3">
+          <h4 className="text-base font-bold text-[#4c173b]">Các khoản cúng dường</h4>
+          <span className="shrink-0 text-xs text-[#765663]">{expenses.length} khoản</span>
+        </div>
+        {expenses.length === 0 ? (
+          <p className="py-5 text-sm text-[#765663]">Chưa có khoản cúng dường.</p>
+        ) : (
+          <div>
+            {expenses.map((expense, index) => (
+              <div key={expense.id} className="flex gap-3 border-b border-[#f0dce4] py-4">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f7e2eb] text-xs font-bold text-[#7c2e54]">
+                  {index + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <span className="text-xs font-medium text-[#765663]">{dateOnly(expense.transactionDate)}</span>
+                    <span className="text-sm font-bold text-[#4c173b]">{money(expense.amount)}</span>
+                  </div>
+                  <p className="mt-1 break-words text-sm leading-5 text-[#321c29]">{expense.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <div className="mt-7 bg-[#4c173b] px-5 py-5 text-white">
+        <p className="text-xs font-medium text-[#f2c5d8]">TỊNH TÀI HIỆN TẠI</p>
+        <p className="mt-1 break-words text-2xl font-bold sm:text-3xl">{money(campaign.balance)}</p>
+      </div>
+
+      <div className="mt-7 border-t border-[#e8c8d5] pt-5 text-sm leading-6 text-[#5c3a4b]">
+        <p>Kính mời quý vị xem danh sách giao dịch tại:</p>
+        <p className="break-all font-semibold text-[#7c2e54]">{publicUrl}</p>
+        <p className="mt-4">Dhamma Group thành kính tri ân và xin tùy hỷ công đức của tất cả quý vị đã phát tâm đồng hành.</p>
+        <p className="mt-4 text-center font-medium text-[#4c173b]">Sādhu! Sādhu! Sādhu!</p>
+        <p className="text-center text-xs">Idaṃ me puññaṃ nibbānassa paccayo hotu. · Buddhasāsanaṃ ciraṃ tiṭṭhatu.</p>
+      </div>
+    </div>
+  );
+}
+
 function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) {
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [expenses, setExpenses] = useState<StatementExpense[] | null>(null);
   const [expenseError, setExpenseError] = useState<string | null>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const includesExpenseDetails = campaign.code.toLocaleLowerCase("vi-VN") === "tp04";
   const expensesMatchTotal = expenses?.reduce((sum, expense) => sum + expense.amount, 0) === campaign.expenses;
+  const isStatementReady = !includesExpenseDetails || (expenses !== null && expensesMatchTotal);
   const statement = buildCampaignStatement(campaign, expenses ?? []);
 
   useEffect(() => {
@@ -1888,12 +1988,26 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
   }, [campaign.id, includesExpenseDetails]);
 
   async function handleCopy() {
-    if (includesExpenseDetails && (!expenses || !expensesMatchTotal)) return;
+    if (!isStatementReady) return;
     const didCopy = await copyToClipboard(statement);
     if (!didCopy) return;
 
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2_000);
+  }
+
+  async function handleDownload() {
+    if (!isStatementReady || !imageRef.current) return;
+
+    setImageError(null);
+    setIsDownloading(true);
+    try {
+      await downloadElementAsPng(imageRef.current, `sao-ke-${campaign.code}-${vietnamDate(new Date())}`);
+    } catch {
+      setImageError("Không thể tạo ảnh sao kê. Vui lòng thử lại.");
+    } finally {
+      setIsDownloading(false);
+    }
   }
 
   return (
@@ -1905,19 +2019,32 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
             Mẫu tự cập nhật tổng hùn phước và link công khai của thiện pháp này.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void handleCopy()}
-          disabled={includesExpenseDetails && (!expenses || !expensesMatchTotal)}
-          className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition ${
-            copied
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-[#c998ad] bg-white text-[#6b2349] hover:bg-[#f9eaf1]"
-          } disabled:cursor-not-allowed disabled:opacity-50`}
-        >
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          {copied ? "Đã sao chép" : "Sao chép mẫu"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {includesExpenseDetails ? (
+            <button
+              type="button"
+              onClick={() => void handleDownload()}
+              disabled={!isStatementReady || isDownloading}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-[#4c173b] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#612149] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh sao kê"}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void handleCopy()}
+            disabled={!isStatementReady}
+            className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition ${
+              copied
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-[#c998ad] bg-white text-[#6b2349] hover:bg-[#f9eaf1]"
+            } disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? "Đã sao chép" : "Sao chép mẫu"}
+          </button>
+        </div>
       </div>
       {includesExpenseDetails && !expenses ? (
         <p className="px-4 py-2 text-xs text-zinc-600">
@@ -1929,18 +2056,21 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
           Tổng chi tiết chưa khớp tổng cúng dường. Vui lòng tải lại trang trước khi sao chép.
         </p>
       ) : null}
-      <div
-        role="textbox"
-        aria-readonly="true"
-        aria-label={`Mẫu sao kê thiện pháp ${campaign.code}`}
-        className="h-64 w-full select-text overflow-y-auto whitespace-pre-wrap bg-white px-4 py-3 text-sm leading-6 text-zinc-800"
-      >
-        {statement.split("\n").map((line, index) => (
-          <div key={`${index}-${line}`}>
-            {line || <br />}
-          </div>
-        ))}
-      </div>
+      {imageError ? <p role="alert" className="px-4 py-2 text-xs text-rose-700">{imageError}</p> : null}
+      {includesExpenseDetails && isStatementReady ? (
+        <CampaignStatementImage ref={imageRef} campaign={campaign} expenses={expenses ?? []} />
+      ) : !includesExpenseDetails ? (
+        <div
+          role="textbox"
+          aria-readonly="true"
+          aria-label={`Mẫu sao kê thiện pháp ${campaign.code}`}
+          className="h-64 w-full select-text overflow-y-auto whitespace-pre-wrap break-words bg-white px-4 py-3 text-sm leading-6 text-zinc-800"
+        >
+          {statement.split("\n").map((line, index) => (
+            <div key={`${index}-${line}`}>{line || <br />}</div>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
