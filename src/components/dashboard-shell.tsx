@@ -1880,7 +1880,7 @@ function CampaignStatementImage({
   const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
 
   return (
-    <div ref={ref} className="w-full bg-[#fffdfb] px-5 py-6 text-[#321c29] sm:px-8 sm:py-8">
+    <div ref={ref} className="w-full overflow-hidden rounded-lg border-2 border-[#c998ad] bg-[#fffdfb] px-5 py-6 text-[#321c29] sm:px-8 sm:py-8">
       <div className="flex items-center justify-between gap-3 border-b border-[#e8c8d5] pb-5">
         <div className="flex min-w-0 items-center gap-3">
           <Image
@@ -1889,6 +1889,7 @@ function CampaignStatementImage({
             width={60}
             height={60}
             unoptimized
+            loading="eager"
             className="h-14 w-14 shrink-0 rounded-full border border-[#e9c5d4] object-cover"
           />
           <div className="min-w-0">
@@ -1907,14 +1908,18 @@ function CampaignStatementImage({
         <p className="mt-4 text-xs leading-5 text-[#765663]">{statementGreeting}</p>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 border-y border-[#e8c8d5] bg-[#fff4f8]">
-        <div className="min-w-0 border-r border-[#e8c8d5] px-3 py-4 sm:px-5">
-          <p className="text-xs text-[#765663]">Tổng hùn phước</p>
-          <p className="mt-1 break-words text-base font-bold text-[#34765c] sm:text-xl">{money(campaign.income)}</p>
+      <div className="mt-6 grid grid-cols-3 border-y border-[#e8c8d5] bg-[#fff4f8]">
+        <div className="min-w-0 border-r border-[#e8c8d5] px-2 py-4 sm:px-4">
+          <p className="text-[11px] leading-4 text-[#765663] sm:text-xs">Tổng hùn phước</p>
+          <p className="mt-1 break-all text-xs font-bold tabular-nums text-[#34765c] sm:text-lg">{money(campaign.income)}</p>
         </div>
-        <div className="min-w-0 px-3 py-4 sm:px-5">
-          <p className="text-xs text-[#765663]">Tổng cúng dường</p>
-          <p className="mt-1 break-words text-base font-bold text-[#af651f] sm:text-xl">{money(campaign.expenses)}</p>
+        <div className="min-w-0 px-2 py-4 sm:px-4">
+          <p className="text-[11px] leading-4 text-[#765663] sm:text-xs">Tổng cúng dường</p>
+          <p className="mt-1 break-all text-xs font-bold tabular-nums text-[#af651f] sm:text-lg">{money(campaign.expenses)}</p>
+        </div>
+        <div className="min-w-0 bg-[#4c173b] px-2 py-4 text-white sm:px-4">
+          <p className="text-[11px] leading-4 text-[#f2c5d8] sm:text-xs">Tịnh tài hiện tại</p>
+          <p className="mt-1 break-all text-xs font-bold tabular-nums sm:text-lg">{money(campaign.balance)}</p>
         </div>
       </div>
 
@@ -1944,11 +1949,6 @@ function CampaignStatementImage({
           </div>
         )}
       </section>
-
-      <div className="mt-7 bg-[#4c173b] px-5 py-5 text-white">
-        <p className="text-xs font-medium text-[#f2c5d8]">TỊNH TÀI HIỆN TẠI</p>
-        <p className="mt-1 break-words text-2xl font-bold sm:text-3xl">{money(campaign.balance)}</p>
-      </div>
 
       <div className="mt-7 border-t border-[#e8c8d5] pt-5 text-sm leading-6 text-[#5c3a4b]">
         <p>Kính mời quý vị xem danh sách giao dịch tại:</p>
@@ -2002,6 +2002,7 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
     setImageError(null);
     setIsDownloading(true);
     try {
+      await Promise.all(Array.from(imageRef.current.querySelectorAll("img"), (image) => image.decode()));
       await downloadElementAsPng(imageRef.current, `sao-ke-${campaign.code}-${vietnamDate(new Date())}`);
     } catch {
       setImageError("Không thể tạo ảnh sao kê. Vui lòng thử lại.");
@@ -2019,32 +2020,17 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
             Mẫu tự cập nhật tổng hùn phước và link công khai của thiện pháp này.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {includesExpenseDetails ? (
-            <button
-              type="button"
-              onClick={() => void handleDownload()}
-              disabled={!isStatementReady || isDownloading}
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-[#4c173b] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#612149] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh sao kê"}
-            </button>
-          ) : null}
+        {includesExpenseDetails ? (
           <button
             type="button"
-            onClick={() => void handleCopy()}
-            disabled={!isStatementReady}
-            className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition ${
-              copied
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-[#c998ad] bg-white text-[#6b2349] hover:bg-[#f9eaf1]"
-            } disabled:cursor-not-allowed disabled:opacity-50`}
+            onClick={() => void handleDownload()}
+            disabled={!isStatementReady || isDownloading}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-[#4c173b] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#612149] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Đã sao chép" : "Sao chép mẫu"}
+            {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh sao kê"}
           </button>
-        </div>
+        ) : null}
       </div>
       {includesExpenseDetails && !expenses ? (
         <p className="px-4 py-2 text-xs text-zinc-600">
@@ -2059,16 +2045,35 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
       {imageError ? <p role="alert" className="px-4 py-2 text-xs text-rose-700">{imageError}</p> : null}
       {includesExpenseDetails && isStatementReady ? (
         <CampaignStatementImage ref={imageRef} campaign={campaign} expenses={expenses ?? []} />
-      ) : !includesExpenseDetails ? (
-        <div
-          role="textbox"
-          aria-readonly="true"
-          aria-label={`Mẫu sao kê thiện pháp ${campaign.code}`}
-          className="h-64 w-full select-text overflow-y-auto whitespace-pre-wrap break-words bg-white px-4 py-3 text-sm leading-6 text-zinc-800"
-        >
-          {statement.split("\n").map((line, index) => (
-            <div key={`${index}-${line}`}>{line || <br />}</div>
-          ))}
+      ) : null}
+      {isStatementReady ? (
+        <div className={includesExpenseDetails ? "border-t border-[#ecd8e1]" : undefined}>
+          <div className="flex items-center justify-between gap-3 px-4 pt-4">
+            <h4 className="text-sm font-semibold text-[#4c173b]">Nội dung sao kê dạng văn bản</h4>
+            <button
+              type="button"
+              onClick={() => void handleCopy()}
+              aria-label={copied ? "Đã sao chép nội dung sao kê" : "Sao chép nội dung sao kê"}
+              title={copied ? "Đã sao chép" : "Sao chép nội dung sao kê"}
+              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition ${
+                copied
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-[#c998ad] bg-white text-[#6b2349] hover:bg-[#f9eaf1]"
+              }`}
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </button>
+          </div>
+          <div
+            role="textbox"
+            aria-readonly="true"
+            aria-label={`Mẫu sao kê thiện pháp ${campaign.code}`}
+            className={`w-full select-text overflow-y-auto whitespace-pre-wrap break-words bg-white px-4 py-3 text-sm leading-6 text-zinc-800 ${includesExpenseDetails ? "h-[30rem]" : "h-64"}`}
+          >
+            {statement.split("\n").map((line, index) => (
+              <div key={`${index}-${line}`}>{line || <br />}</div>
+            ))}
+          </div>
         </div>
       ) : null}
     </section>
