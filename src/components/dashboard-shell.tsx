@@ -1730,6 +1730,16 @@ function buildCampaignStatement(campaign: CampaignSummary) {
   const code = campaign.code.toLocaleUpperCase("vi-VN");
   const name = campaign.name.trim().replace(/[.。]+$/, "").toLocaleUpperCase("vi-VN");
   const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
+  const totals = campaign.code.toLocaleLowerCase("vi-VN") === "tp04"
+    ? [
+        "💰 Tổng các khoản hùn phước (sau hoàn lại):",
+        money(campaign.income),
+        "💝 Tổng các khoản cúng dường:",
+        money(campaign.expenses),
+        "🌿 Tổng tịnh tài còn lại:",
+        money(campaign.balance),
+      ]
+    : [`💰 ${statementTotals[variant]}`, money(campaign.income)];
 
   return [
     `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code}`,
@@ -1740,8 +1750,7 @@ function buildCampaignStatement(campaign: CampaignSummary) {
     `🙏 ${statementIntroductions[variant]} ${code}:`,
     name,
     "",
-    `💰 ${statementTotals[variant]}`,
-    money(campaign.income),
+    ...totals,
     "",
     `🔎 ${statementLinkInvitations[variant]}`,
     publicUrl,
@@ -1790,38 +1799,6 @@ async function copyToClipboard(text: string) {
   const didCopy = document.execCommand("copy");
   textarea.remove();
   return didCopy;
-}
-
-async function copyStatementToClipboard(statement: string) {
-  if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
-    const html = statement
-      .split("\n")
-      .map((line) => {
-        const escapedLine = line
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-        const content = line === statementGreeting ? `<strong>${escapedLine}</strong>` : escapedLine || "<br>";
-        return `<div>${content}</div>`;
-      })
-      .join("");
-
-    try {
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/plain": new Blob([statement], { type: "text/plain" }),
-          "text/html": new Blob([html], { type: "text/html" }),
-        }),
-      ]);
-      return true;
-    } catch {
-      // Fall back to plain text when rich clipboard content is unsupported.
-    }
-  }
-
-  return copyToClipboard(statement);
 }
 
 function CampaignOptionGroups({
@@ -1883,7 +1860,7 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
   const statement = buildCampaignStatement(campaign);
 
   async function handleCopy() {
-    const didCopy = await copyStatementToClipboard(statement);
+    const didCopy = await copyToClipboard(statement);
     if (!didCopy) return;
 
     setCopied(true);
@@ -1919,7 +1896,7 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
         className="h-64 w-full select-text overflow-y-auto whitespace-pre-wrap bg-white px-4 py-3 text-sm leading-6 text-zinc-800"
       >
         {statement.split("\n").map((line, index) => (
-          <div key={`${index}-${line}`} className={line === statementGreeting ? "font-bold" : undefined}>
+          <div key={`${index}-${line}`}>
             {line || <br />}
           </div>
         ))}
