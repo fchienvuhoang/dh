@@ -85,6 +85,13 @@ type RefundCandidatesResponse = {
   candidates: RefundCandidate[];
 };
 
+type StatementExpense = {
+  id: string;
+  transactionDate: string;
+  description: string;
+  amount: number;
+};
+
 const statusLabels = {
   ACTIVE: "Đang chạy",
   PAUSED: "Tạm dừng",
@@ -1724,7 +1731,7 @@ const statementLinkInvitations = [
   "Kính mời quý vị cùng theo dõi bản sao kê công khai qua đường dẫn:",
 ];
 
-function buildCampaignStatement(campaign: CampaignSummary) {
+function buildCampaignStatement(campaign: CampaignSummary, expenses: StatementExpense[] = []) {
   const variant = hashText(campaign.code) % statementIntroductions.length;
   const date = vietnamDate(new Date());
   const code = campaign.code.toLocaleUpperCase("vi-VN");
@@ -1736,6 +1743,9 @@ function buildCampaignStatement(campaign: CampaignSummary) {
         money(campaign.income),
         "💝 Tổng các khoản cúng dường:",
         money(campaign.expenses),
+        ...expenses.map((expense, index) =>
+          `${index + 1}. ${dateOnly(expense.transactionDate)} · ${expense.description.replace(/\s+/g, " ").trim()} · ${money(expense.amount)}`,
+        ),
         "🌿 Tổng tịnh tài còn lại:",
         money(campaign.balance),
       ]
@@ -1857,9 +1867,28 @@ function campaignSelectClassName(campaignId: string | undefined, campaigns: Camp
 
 function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) {
   const [copied, setCopied] = useState(false);
-  const statement = buildCampaignStatement(campaign);
+  const [expenses, setExpenses] = useState<StatementExpense[] | null>(null);
+  const [expenseError, setExpenseError] = useState<string | null>(null);
+  const includesExpenseDetails = campaign.code.toLocaleLowerCase("vi-VN") === "tp04";
+  const expensesMatchTotal = expenses?.reduce((sum, expense) => sum + expense.amount, 0) === campaign.expenses;
+  const statement = buildCampaignStatement(campaign, expenses ?? []);
+
+  useEffect(() => {
+    if (!includesExpenseDetails) return;
+
+    const controller = new AbortController();
+    fetch(`/api/campaigns/${campaign.id}/statement-expenses`, { signal: controller.signal })
+      .then((response) => readJson<{ transactions: StatementExpense[] }>(response))
+      .then(({ transactions }) => setExpenses(transactions))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setExpenseError(getErrorMessage(error));
+      });
+
+    return () => controller.abort();
+  }, [campaign.id, includesExpenseDetails]);
 
   async function handleCopy() {
+    if (includesExpenseDetails && (!expenses || !expensesMatchTotal)) return;
     const didCopy = await copyToClipboard(statement);
     if (!didCopy) return;
 
@@ -1879,16 +1908,27 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
         <button
           type="button"
           onClick={() => void handleCopy()}
+          disabled={includesExpenseDetails && (!expenses || !expensesMatchTotal)}
           className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition ${
             copied
               ? "border-emerald-200 bg-emerald-50 text-emerald-700"
               : "border-[#c998ad] bg-white text-[#6b2349] hover:bg-[#f9eaf1]"
-          }`}
+          } disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           {copied ? "Đã sao chép" : "Sao chép mẫu"}
         </button>
       </div>
+      {includesExpenseDetails && !expenses ? (
+        <p className="px-4 py-2 text-xs text-zinc-600">
+          {expenseError ?? "Đang tải chi tiết các khoản cúng dường..."}
+        </p>
+      ) : null}
+      {includesExpenseDetails && expenses && !expensesMatchTotal ? (
+        <p className="px-4 py-2 text-xs text-rose-700">
+          Tổng chi tiết chưa khớp tổng cúng dường. Vui lòng tải lại trang trước khi sao chép.
+        </p>
+      ) : null}
       <div
         role="textbox"
         aria-readonly="true"
