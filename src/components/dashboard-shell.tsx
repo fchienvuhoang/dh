@@ -1731,28 +1731,40 @@ const statementLinkInvitations = [
   "Kính mời quý vị cùng theo dõi bản sao kê công khai qua đường dẫn:",
 ];
 
+const statementBlessings = [
+  "🌺 Sādhu! Sādhu! Sādhu!",
+  "   Lành thay! Lành thay! Lành thay!",
+  "🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu.",
+  "   Nguyện phước báu này của tôi là duyên lành đưa đến Niết-bàn.",
+  "🌺 Buddhasāsanaṃ ciraṃ tiṭṭhatu.",
+  "   Nguyện Giáo pháp của Đức Phật trường tồn lâu dài.",
+];
+
 function buildCampaignStatement(campaign: CampaignSummary, expenses: StatementExpense[] = []) {
   const variant = hashText(campaign.code) % statementIntroductions.length;
   const date = vietnamDate(new Date());
   const code = campaign.code.toLocaleUpperCase("vi-VN");
   const name = campaign.name.trim().replace(/[.。]+$/, "").toLocaleUpperCase("vi-VN");
   const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
-  const totals = campaign.code.toLocaleLowerCase("vi-VN") === "tp04"
-    ? [
-        "💰 Tổng các khoản hùn phước:",
-        money(campaign.income),
-        "💝 Tổng các khoản cúng dường:",
-        money(campaign.expenses),
-        ...(expenses.length > 0 ? ["", `CHI TIẾT ${expenses.length} KHOẢN CÚNG DƯỜNG`] : []),
-        ...expenses.flatMap((expense, index) => [
-          `${index + 1}. ${dateOnly(expense.transactionDate)} · ${money(expense.amount)}`,
-          `   Nội dung: ${expense.description.replace(/\s+/g, " ").trim()}`,
-          "",
-        ]),
-        "🌿 Tịnh tài hiện tại:",
-        money(campaign.balance),
-      ]
-    : [`💰 ${statementTotals[variant]}`, money(campaign.income)];
+
+  if (campaign.code.toLocaleLowerCase("vi-VN") === "tp04") {
+    return [
+      `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code} · ${date}`,
+      `🌺 ${name}`,
+      "",
+      `💰 Tổng hùn phước: ${money(campaign.income)}`,
+      `💝 Tổng cúng dường: ${money(campaign.expenses)}`,
+      `🌿 Tịnh tài hiện tại: ${money(campaign.balance)}`,
+      "",
+      `CHI TIẾT ${String(expenses.length).padStart(2, "0")} KHOẢN CÚNG DƯỜNG`,
+      ...expenses.map((expense, index) =>
+        `${index + 1}. ${shortVietnamDate(expense.transactionDate)} · ${money(expense.amount)} – ${formatTp04ExpenseDescription(expense.description)}`,
+      ),
+      "",
+      `🔎 Xem chi tiết: ${publicUrl}`,
+      ...statementBlessings,
+    ].join("\n");
+  }
 
   return [
     `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code}`,
@@ -1763,17 +1775,43 @@ function buildCampaignStatement(campaign: CampaignSummary, expenses: StatementEx
     `🙏 ${statementIntroductions[variant]} ${code}:`,
     name,
     "",
-    ...totals,
+    `💰 ${statementTotals[variant]}`,
+    money(campaign.income),
     "",
     `🔎 ${statementLinkInvitations[variant]}`,
     publicUrl,
     "",
-    "Dhamma Group thành kính tri ân và xin tùy hỷ công đức của tất cả quý vị đã phát tâm đồng hành.",
-    "",
-    "🌺 Sādhu! Sādhu! Sādhu!",
-    "🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu.",
-    "🌺 Buddhasāsanaṃ ciraṃ tiṭṭhatu.",
+    ...statementBlessings,
   ].join("\n");
+}
+
+function formatTp04ExpenseDescription(description: string) {
+  const normalized = normalizeTransferText(description);
+  const knownDescriptions: Array<[string[], string]> = [
+    [["50 hop dao lam", "myanmar"], "Cúng dường 50 hộp dao lam tới chư Tăng Myanmar."],
+    [["dat bat 2000 vi", "pol"], "Cúng dường đặt bát 2.000 vị tại POL."],
+    [["vt pa auk", "pausi"], "Cúng dường vật thực Pa-Auk, POL Pa-Auk Pausi."],
+    [["mahavihara", "m obi"], "Cúng dường Kathina Mahāvihāra Hmawbi."],
+    [["mawlamyine"], "Cúng dường Kathina Pa-Auk Mawlamyine."],
+    [["ntt14"], "Cúng dường Kathina chùa Ngài Tam Tạng 14."],
+    [["jatila"], "Cúng dường Kathina chùa Ngài Jatila."],
+    [["dhamma gone"], "Cúng dường lễ dâng y Kathina Pa-Auk Dhamma Gone."],
+    [["01 bo y", "kathina pol"], "Cúng dường 01 bộ y Kathina POL."],
+  ];
+  const known = knownDescriptions.find(([keywords]) =>
+    keywords.every((keyword) => normalized.includes(keyword)),
+  );
+  if (known) return known[1];
+
+  const cleaned = description
+    .replace(/\btp04\b/gi, "")
+    .replace(/\b(?:nh[oó]m\s+)?dhamma(?:\s+group)?(?:\s+vn)?\b/gi, "")
+    .replace(/\bcd\b/i, "Cúng dường")
+    .replace(/\s*[-–—]\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[.。]+$/, "");
+  return `${cleaned || "Khoản cúng dường"}.`;
 }
 
 function vietnamDate(date: Date) {
@@ -1786,6 +1824,14 @@ function vietnamDate(date: Date) {
   const value = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((part) => part.type === type)?.value ?? "";
   return `${value("day")}.${value("month")}.${value("year")}`;
+}
+
+function shortVietnamDate(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    day: "2-digit",
+    month: "2-digit",
+  }).format(new Date(value));
 }
 
 function hashText(value: string) {
@@ -1868,110 +1914,19 @@ function campaignSelectClassName(campaignId: string | undefined, campaigns: Camp
   return "border-zinc-300 bg-zinc-100 text-zinc-600";
 }
 
-function CampaignStatementImage({
-  ref,
-  campaign,
-  expenses,
-}: {
-  ref: React.Ref<HTMLDivElement>;
-  campaign: CampaignSummary;
-  expenses: StatementExpense[];
-}) {
-  const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
-
-  return (
-    <div ref={ref} className="w-full overflow-hidden rounded-lg border-2 border-[#c998ad] bg-[#fffdfb] px-5 py-6 text-[#321c29] sm:px-8 sm:py-8">
-      <div className="flex items-center justify-between gap-3 border-b border-[#e8c8d5] pb-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <Image
-            src="/assets/dhamma-group-logo.jpg"
-            alt="Dhamma Group"
-            width={60}
-            height={60}
-            unoptimized
-            loading="eager"
-            className="h-14 w-14 shrink-0 rounded-full border border-[#e9c5d4] object-cover"
-          />
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-[#4c173b]">DHAMMA GROUP</p>
-            <p className="text-xs text-[#846575]">Sao kê thiện pháp · {campaign.code.toUpperCase()}</p>
-          </div>
-        </div>
-        <p className="shrink-0 text-right text-xs font-medium text-[#846575]">{vietnamDate(new Date())}</p>
-      </div>
-
-      <div className="pt-6">
-        <p className="text-xs font-bold uppercase text-[#aa527a]">Cập nhật tịnh tài</p>
-        <h3 className="mt-2 break-words text-2xl font-bold leading-tight text-[#4c173b] sm:text-3xl">
-          {campaign.name}
-        </h3>
-        <p className="mt-4 text-xs leading-5 text-[#765663]">{statementGreeting}</p>
-      </div>
-
-      <div className="mt-6 grid grid-cols-3 border-y border-[#e8c8d5] bg-[#fff4f8]">
-        <div className="min-w-0 border-r border-[#e8c8d5] px-2 py-4 sm:px-4">
-          <p className="text-[11px] leading-4 text-[#765663] sm:text-xs">Tổng hùn phước</p>
-          <p className="mt-1 break-all text-xs font-bold tabular-nums text-[#34765c] sm:text-lg">{money(campaign.income)}</p>
-        </div>
-        <div className="min-w-0 px-2 py-4 sm:px-4">
-          <p className="text-[11px] leading-4 text-[#765663] sm:text-xs">Tổng cúng dường</p>
-          <p className="mt-1 break-all text-xs font-bold tabular-nums text-[#af651f] sm:text-lg">{money(campaign.expenses)}</p>
-        </div>
-        <div className="min-w-0 bg-[#4c173b] px-2 py-4 text-white sm:px-4">
-          <p className="text-[11px] leading-4 text-[#f2c5d8] sm:text-xs">Tịnh tài hiện tại</p>
-          <p className="mt-1 break-all text-xs font-bold tabular-nums sm:text-lg">{money(campaign.balance)}</p>
-        </div>
-      </div>
-
-      <section className="mt-7">
-        <div className="flex items-baseline justify-between gap-3 border-b-2 border-[#4c173b] pb-3">
-          <h4 className="text-base font-bold text-[#4c173b]">Các khoản cúng dường</h4>
-          <span className="shrink-0 text-xs text-[#765663]">{expenses.length} khoản</span>
-        </div>
-        {expenses.length === 0 ? (
-          <p className="py-5 text-sm text-[#765663]">Chưa có khoản cúng dường.</p>
-        ) : (
-          <div>
-            {expenses.map((expense, index) => (
-              <div key={expense.id} className="flex gap-3 border-b border-[#f0dce4] py-4">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f7e2eb] text-xs font-bold text-[#7c2e54]">
-                  {index + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <span className="text-xs font-medium text-[#765663]">{dateOnly(expense.transactionDate)}</span>
-                    <span className="text-sm font-bold text-[#4c173b]">{money(expense.amount)}</span>
-                  </div>
-                  <p className="mt-1 break-words text-sm leading-5 text-[#321c29]">{expense.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <div className="mt-7 border-t border-[#e8c8d5] pt-5 text-sm leading-6 text-[#5c3a4b]">
-        <p>Kính mời quý vị xem danh sách giao dịch tại:</p>
-        <p className="break-all font-semibold text-[#7c2e54]">{publicUrl}</p>
-        <p className="mt-4">Dhamma Group thành kính tri ân và xin tùy hỷ công đức của tất cả quý vị đã phát tâm đồng hành.</p>
-        <p className="mt-4 text-center font-medium text-[#4c173b]">Sādhu! Sādhu! Sādhu!</p>
-        <p className="text-center text-xs">Idaṃ me puññaṃ nibbānassa paccayo hotu. · Buddhasāsanaṃ ciraṃ tiṭṭhatu.</p>
-      </div>
-    </div>
-  );
-}
-
 function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) {
   const [copied, setCopied] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [imageError, setImageError] = useState<string | null>(null);
   const [expenses, setExpenses] = useState<StatementExpense[] | null>(null);
   const [expenseError, setExpenseError] = useState<string | null>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
   const includesExpenseDetails = campaign.code.toLocaleLowerCase("vi-VN") === "tp04";
+  const sortedExpenses = useMemo(() =>
+    [...(expenses ?? [])].sort((left, right) =>
+      new Date(right.transactionDate).getTime() - new Date(left.transactionDate).getTime(),
+    ),
+  [expenses]);
   const expensesMatchTotal = expenses?.reduce((sum, expense) => sum + expense.amount, 0) === campaign.expenses;
   const isStatementReady = !includesExpenseDetails || (expenses !== null && expensesMatchTotal);
-  const statement = buildCampaignStatement(campaign, expenses ?? []);
+  const statement = buildCampaignStatement(campaign, sortedExpenses);
 
   useEffect(() => {
     if (!includesExpenseDetails) return;
@@ -1996,21 +1951,6 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
     window.setTimeout(() => setCopied(false), 2_000);
   }
 
-  async function handleDownload() {
-    if (!isStatementReady || !imageRef.current) return;
-
-    setImageError(null);
-    setIsDownloading(true);
-    try {
-      await Promise.all(Array.from(imageRef.current.querySelectorAll("img"), (image) => image.decode()));
-      await downloadElementAsPng(imageRef.current, `sao-ke-${campaign.code}-${vietnamDate(new Date())}`);
-    } catch {
-      setImageError("Không thể tạo ảnh sao kê. Vui lòng thử lại.");
-    } finally {
-      setIsDownloading(false);
-    }
-  }
-
   return (
     <section className="overflow-hidden rounded-md border border-[#e3c8d4] bg-[#fffafb]">
       <div className="flex flex-col gap-3 border-b border-[#ecd8e1] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2020,17 +1960,6 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
             Mẫu tự cập nhật tổng hùn phước và link công khai của thiện pháp này.
           </p>
         </div>
-        {includesExpenseDetails ? (
-          <button
-            type="button"
-            onClick={() => void handleDownload()}
-            disabled={!isStatementReady || isDownloading}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-[#4c173b] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#612149] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh sao kê"}
-          </button>
-        ) : null}
       </div>
       {includesExpenseDetails && !expenses ? (
         <p className="px-4 py-2 text-xs text-zinc-600">
@@ -2042,13 +1971,9 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
           Tổng chi tiết chưa khớp tổng cúng dường. Vui lòng tải lại trang trước khi sao chép.
         </p>
       ) : null}
-      {imageError ? <p role="alert" className="px-4 py-2 text-xs text-rose-700">{imageError}</p> : null}
-      {includesExpenseDetails && isStatementReady ? (
-        <CampaignStatementImage ref={imageRef} campaign={campaign} expenses={expenses ?? []} />
-      ) : null}
       {isStatementReady ? (
         <div className={includesExpenseDetails ? "border-t border-[#ecd8e1]" : undefined}>
-          <div className="flex items-center justify-between gap-3 px-4 pt-4">
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
             <h4 className="text-sm font-semibold text-[#4c173b]">Nội dung sao kê dạng văn bản</h4>
             <button
               type="button"
@@ -2068,7 +1993,7 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
             role="textbox"
             aria-readonly="true"
             aria-label={`Mẫu sao kê thiện pháp ${campaign.code}`}
-            className={`w-full select-text overflow-y-auto whitespace-pre-wrap break-words bg-white px-4 py-3 text-sm leading-6 text-zinc-800 ${includesExpenseDetails ? "h-[30rem]" : "h-64"}`}
+            className={`w-full select-text overflow-y-auto whitespace-pre-wrap break-words border-t border-zinc-100 bg-white px-4 py-2 text-sm leading-5 text-zinc-800 ${includesExpenseDetails ? "max-h-[28rem]" : "h-64"}`}
           >
             {statement.split("\n").map((line, index) => (
               <div key={`${index}-${line}`}>{line || <br />}</div>
