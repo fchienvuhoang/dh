@@ -354,17 +354,6 @@ function TransactionReceiptModal({
         aria-labelledby="transaction-receipt-title"
         className="relative max-h-[calc(100vh-2rem)] w-full max-w-[420px] overflow-y-auto rounded-2xl border border-emerald-900/10 bg-[#fffdf7] shadow-2xl"
       >
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
-          <Image
-            src="/assets/dhamma-transaction-celestial-varied.jpg"
-            alt=""
-            fill
-            sizes="420px"
-            className="object-cover object-top opacity-95 contrast-[1.04] saturate-[1.03]"
-          />
-          <div className="absolute inset-0 bg-[#fffdf7]/24" />
-        </div>
-
         <div className="relative p-4 sm:p-5">
           <button
             type="button"
