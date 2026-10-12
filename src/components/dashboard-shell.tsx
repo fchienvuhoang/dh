@@ -93,6 +93,8 @@ type StatementExpense = {
 };
 
 type CampaignBill = {
+  transactionId: string | null;
+  title: string | null;
   id: string;
   originalName: string;
   mimeType: string;
@@ -2014,6 +2016,8 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
 }
 
 function CampaignBillManager({ campaign }: { campaign: CampaignSummary }) {
+  const [expenses, setExpenses] = useState<StatementExpense[]>([]);
+  const [titles, setTitles] = useState<Record<string, string>>({});
   const [bills, setBills] = useState<CampaignBill[] | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -2021,6 +2025,10 @@ function CampaignBillManager({ campaign }: { campaign: CampaignSummary }) {
 
   useEffect(() => {
     const controller = new AbortController();
+    fetch(`/api/campaigns/${campaign.id}/statement-expenses`, { signal: controller.signal })
+      .then((response) => readJson<{ transactions: StatementExpense[] }>(response))
+      .then(({ transactions }) => setExpenses(transactions))
+      .catch((caught: unknown) => { if (!controller.signal.aborted) setError(getErrorMessage(caught)); });
     fetch(`/api/campaigns/${campaign.id}/bills`, { signal: controller.signal })
       .then((response) => readJson<{ bills: CampaignBill[] }>(response))
       .then(({ bills: loadedBills }) => setBills(loadedBills))
@@ -2030,22 +2038,23 @@ function CampaignBillManager({ campaign }: { campaign: CampaignSummary }) {
     return () => controller.abort();
   }, [campaign.id]);
 
-  async function uploadBills(files: File[]) {
+  async function uploadBills(files: File[], expense: StatementExpense) {
     if (files.length === 0) return;
     setError(null);
     setIsUploading(true);
     try {
-      const uploaded: CampaignBill[] = [];
       for (const file of files) {
         const formData = new FormData();
         formData.set("file", file);
+        formData.set("transactionId", expense.id);
+        formData.set("title", titles[expense.id] ?? formatTp04ExpenseDescription(expense.description));
         const result = await readJson<{ bill: CampaignBill }>(await fetch(
           `/api/campaigns/${campaign.id}/bills`,
           { method: "POST", body: formData },
         ));
-        uploaded.push(result.bill);
+        setBills((current) => [result.bill, ...(current ?? [])]);
       }
-      setBills((current) => [...uploaded.reverse(), ...(current ?? [])]);
+
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -2077,31 +2086,38 @@ function CampaignBillManager({ campaign }: { campaign: CampaignSummary }) {
       </div>
 
       <div className="p-4">
-        <label className={`flex min-h-24 items-center justify-center rounded-md border-2 border-dashed border-[#d8b4c4] bg-white px-4 text-center transition ${isUploading ? "cursor-wait opacity-60" : "cursor-pointer hover:bg-[#fff4f8]"}`}>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            disabled={isUploading}
-            className="sr-only"
-            onChange={(event) => {
-              const files = Array.from(event.currentTarget.files ?? []);
-              event.currentTarget.value = "";
-              void uploadBills(files);
-            }}
-          />
-          <span className="flex flex-col items-center gap-2 text-sm font-medium text-[#6b2349]">
-            {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-            {isUploading ? "Đang tải ảnh lên..." : "Chọn các ảnh bill để tải lên"}
-          </span>
-        </label>
+        <div className="space-y-3">
+          {expenses.map((expense, index) => (
+            <div key={expense.id} className="rounded-md border border-[#e3c8d4] bg-white p-3">
+              <p className="text-sm font-semibold">{index + 1}. {formatTp04ExpenseDescription(expense.description)}</p>
+              <p className="mt-1 text-xs text-zinc-500">{shortVietnamDate(expense.transactionDate)} · {money(expense.amount)}</p>
+              <label className="mt-3 block text-xs">Tên khoản cúng dường hiển thị cùng bill
+                <input className="mt-1 w-full rounded border p-2" maxLength={255} value={titles[expense.id] ?? formatTp04ExpenseDescription(expense.description)} onChange={(event) => setTitles((current) => ({ ...current, [expense.id]: event.target.value }))} />
+              </label>
+              <label className="mt-3 block cursor-pointer rounded border-2 border-dashed border-[#d8b4c4] p-3 text-center text-sm text-[#6b2349]">
+                {isUploading ? "Đang tải ảnh lên..." : "Tải bill cho khoản cúng dường này"}
+                <input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={isUploading || !((titles[expense.id] ?? expense.description).trim())} className="sr-only" onChange={(event) => { const files = Array.from(event.currentTarget.files ?? []); event.currentTarget.value = ""; void uploadBills(files, expense); }} />
+              </label>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {bills?.filter((bill) => bill.transactionId === expense.id).map((bill) => (
+                  <div key={bill.id} className="rounded border p-2">
+                    <a href={`/thien-phap/media/${bill.id}`} target="_blank" rel="noreferrer"><Image src={`/thien-phap/media/${bill.id}`} alt={bill.title ?? expense.description} width={120} height={160} unoptimized className="h-40 w-30 object-contain" /></a>
+                    <button type="button" disabled={deletingId === bill.id} onClick={() => void deleteBill(bill)} className="mt-1 text-xs text-rose-600">Xóa bill</button>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-zinc-500">{bills?.filter((bill) => bill.transactionId === expense.id).length ?? 0} ảnh bill đã tải lên</p>
+            </div>
+          ))}
+          {expenses.length === 0 ? <p className="text-xs text-zinc-500">Chưa có khoản chi cúng dường được gắn với thiện pháp này.</p> : null}
+        </div>
 
         {error ? <p role="alert" className="mt-3 text-xs text-rose-700">{error}</p> : null}
         {bills === null && !error ? <p className="mt-3 text-xs text-zinc-500">Đang tải danh sách ảnh...</p> : null}
         {bills?.length === 0 ? <p className="mt-3 text-xs text-zinc-500">Chưa có ảnh bill nào.</p> : null}
-        {bills && bills.length > 0 ? (
+        {bills && bills.some((bill) => !bill.transactionId) ? (
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {bills.map((bill) => (
+            {bills.filter((bill) => !bill.transactionId).map((bill) => (
               <article key={bill.id} className="overflow-hidden rounded-md border border-zinc-200 bg-white">
                 <a
                   href={`/thien-phap/media/${bill.id}`}
@@ -2116,12 +2132,12 @@ function CampaignBillManager({ campaign }: { campaign: CampaignSummary }) {
                     fill
                     unoptimized
                     sizes="(max-width: 640px) 50vw, 210px"
-                    className="object-cover"
+                    className="object-contain"
                   />
                 </a>
                 <div className="flex items-center gap-2 p-2">
                   <p className="min-w-0 flex-1 truncate text-xs text-zinc-600" title={bill.originalName}>
-                    {bill.originalName}
+                    {bill.title ?? "Bill chưa gắn khoản cúng dường"}
                   </p>
                   <button
                     type="button"

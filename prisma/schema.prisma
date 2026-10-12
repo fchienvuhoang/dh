@@ -89,6 +89,9 @@ model CampaignBill {
   id           String   @id @default(cuid())
   campaignId   String
   campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  transactionId String?
+  transaction BankTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  title        String?
   originalName String
   mimeType     String
   sizeBytes    Int
@@ -96,6 +99,7 @@ model CampaignBill {
   createdAt    DateTime @default(now())
 
   @@index([campaignId, createdAt])
+  @@index([transactionId])
 }
 
 model CampaignKeyword {
@@ -135,6 +139,7 @@ model BankTransaction {
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
   allocations           TransactionAllocation[]
+  bills                 CampaignBill[]
   refundLinks            TransactionRefundAllocation[] @relation("RefundTransaction")
   receivedRefundLinks    TransactionRefundAllocation[] @relation("OriginalTransaction")
 

@@ -118,18 +118,44 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
-        {data.bills.length > 0 ? (
+        {data.donations.length > 0 ? (
+          <section className="mb-5 rounded-lg border border-[#edcddb] bg-white p-4 sm:p-5">
+            <h2 className="text-lg font-bold text-[#4a1838]">Chi tiết các khoản cúng dường và bill chuyển tiền</h2>
+            <div className="mt-4 space-y-4">
+              {data.donations.map((donation, index) => {
+                const bills = data.bills.filter((bill) => bill.transactionId === donation.id);
+                return (
+                  <article key={donation.id} className="rounded-lg border border-[#edcddb] bg-[#fff8fb] p-4">
+                    <h3 className="font-semibold text-[#4a1838]">{index + 1}. {bills[0]?.title ?? donation.title}</h3>
+                    <p className="mt-1 text-sm text-[#78636f]">{new Date(donation.transactionDate).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })} · {money(donation.amount)}</p>
+                    {bills.length === 0 ? <p className="mt-3 text-sm text-[#78636f]">Chưa có bill chuyển tiền.</p> : (
+                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {bills.map((bill) => (
+                          <button key={bill.id} type="button" onClick={() => setSelectedBillId(bill.id)} className="overflow-hidden rounded-lg border border-[#e8b8cc] bg-white text-left" aria-label={`Xem bill ${bill.title ?? donation.title}`}>
+                            <span className="relative block aspect-[3/4] bg-white"><Image src={`/thien-phap/media/${bill.id}`} alt={`Bill ${bill.title ?? donation.title}`} fill unoptimized sizes="(max-width: 640px) 100vw, 33vw" className="object-contain" /></span>
+                            <span className="block px-3 py-2 text-sm">{bill.title ?? donation.title}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+        {data.bills.some((bill) => !bill.transactionId) ? (
           <section className="mb-5 rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-[#4a1838]">Hình ảnh bill chuyển tiền</h2>
+                <h2 className="text-lg font-bold text-[#4a1838]">Bill chưa gắn khoản cúng dường</h2>
                 <p className="mt-1 text-xs text-[#78636f]">
-                  {data.bills.length.toLocaleString("vi-VN")} hình ảnh minh bạch của thiện pháp
+                  {data.bills.filter((bill) => !bill.transactionId).length.toLocaleString("vi-VN")} hình ảnh minh bạch của thiện pháp
                 </p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {data.bills.map((bill, index) => (
+              {data.bills.filter((bill) => !bill.transactionId).map((bill, index) => (
                 <button
                   key={bill.id}
                   type="button"
@@ -144,7 +170,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                       fill
                       unoptimized
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="object-cover transition duration-300 group-hover:scale-[1.02]"
+                      className="object-contain transition duration-300 group-hover:scale-[1.02]"
                     />
                   </span>
                   <span className="block truncate px-3 py-2 text-xs font-medium text-[#624b59]">

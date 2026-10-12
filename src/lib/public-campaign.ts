@@ -5,7 +5,7 @@ import { getPrisma, withDatabaseReadRetry } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bills-v6";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bills-v7";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
@@ -26,9 +26,12 @@ export type PublicCampaignData = {
   transactionCount: number;
   transactions: PublicCampaignTransaction[];
   bills: PublicCampaignBill[];
+  donations: { id: string; title: string; amount: number; transactionDate: string }[];
 };
 
 export type PublicCampaignBill = {
+  transactionId: string | null;
+  title: string | null;
   id: string;
   originalName: string;
   createdAt: string;
@@ -114,8 +117,8 @@ export function getPublicCampaignData(code: string): Promise<PublicCampaignData 
 async function loadPublicCampaignBills(campaignId: string) {
   try {
     return await getPrisma().campaignBill.findMany({
-      where: { campaignId },
-      select: { id: true, originalName: true, createdAt: true },
+      where: { campaignId, OR: [{ transactionId: null }, { transaction: { campaignId, outflowType: "DONATION", debitAmount: { gt: 0 } } }] },
+      select: { id: true, originalName: true, createdAt: true, transactionId: true, title: true },
       orderBy: { createdAt: "desc" },
     });
   } catch (error) {
@@ -148,7 +151,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
     return null;
   }
 
-  const [transactionSums, refundSums, allocationSums, transactions, allocations, bills] = await Promise.all([
+  const [transactionSums, refundSums, allocationSums, transactions, allocations, bills, donations] = await Promise.all([
     prisma.bankTransaction.aggregate({
       where: {
         campaignId: campaign.id,
@@ -234,6 +237,11 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
       take: 1000,
     }),
     loadPublicCampaignBills(campaign.id),
+    prisma.bankTransaction.findMany({
+      where: { campaignId: campaign.id, outflowType: "DONATION", debitAmount: { gt: 0 } },
+      select: { id: true, description: true, debitAmount: true, transactionDate: true },
+      orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
+    }),
   ]);
 
   const grossIncome =
@@ -302,7 +310,15 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
     balance: income - expenses,
     transactionCount: transactionSums._count + allocationSums._count,
     transactions: publicTransactions,
+    donations: donations.map((transaction) => ({
+      id: transaction.id,
+      title: redactPhoneNumbers(transaction.description),
+      amount: decimalToNumber(transaction.debitAmount),
+      transactionDate: transaction.transactionDate.toISOString(),
+    })),
     bills: bills.map((bill) => ({
+      transactionId: bill.transactionId,
+      title: bill.title ? redactPhoneNumbers(bill.title) : null,
       id: bill.id,
       originalName: bill.originalName,
       createdAt: bill.createdAt.toISOString(),

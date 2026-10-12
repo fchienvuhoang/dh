@@ -67,6 +67,12 @@ export const tvdToanThuanVcbStatement: PublicCampaignData = {
   balance: income - expenses,
   transactionCount: rows.filter((row) => row[3] > 0).length,
   bills: [],
+  donations: rows.filter((row) => row[2] > 0).map(([row, date, amount, , description]) => ({
+    id: `vcb-${row}`,
+    title: redactPhoneNumbers(description),
+    amount,
+    transactionDate: `${date}T12:00:00.000Z`,
+  })),
   transactions: rows.map(([row, date, debitAmount, creditAmount, description]) => ({
     id: `vcb-${row}`,
     transactionDate: `${date}T12:00:00.000Z`,
