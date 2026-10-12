@@ -1,10 +1,11 @@
 import { revalidateTag, unstable_cache } from "next/cache";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 import { decimalToNumber } from "@/lib/money";
 import { getPrisma, withDatabaseReadRetry } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bills-v5";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bills-v6";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
@@ -110,6 +111,25 @@ export function getPublicCampaignData(code: string): Promise<PublicCampaignData 
   return withDatabaseReadRetry(() => loadPublicCampaignData(code));
 }
 
+async function loadPublicCampaignBills(campaignId: string) {
+  try {
+    return await getPrisma().campaignBill.findMany({
+      where: { campaignId },
+      select: { id: true, originalName: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    // During a rollout, the optional bill table may not have been migrated yet.
+    // Keep the financial report available; other database errors must still surface.
+    if (error instanceof PrismaClientKnownRequestError && error.code === "P2021" &&
+        error.meta?.modelName === "CampaignBill") {
+      console.warn("Public campaign bills unavailable: apply the CampaignBill migration.");
+      return [];
+    }
+    throw error;
+  }
+}
+
 async function loadPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
   const prisma = getPrisma();
   const normalizedCode = makeCampaignCode(code);
@@ -121,10 +141,6 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
       name: true,
       description: true,
       status: true,
-      bills: {
-        select: { id: true, originalName: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-      },
     },
   });
 
@@ -132,7 +148,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
     return null;
   }
 
-  const [transactionSums, refundSums, allocationSums, transactions, allocations] = await Promise.all([
+  const [transactionSums, refundSums, allocationSums, transactions, allocations, bills] = await Promise.all([
     prisma.bankTransaction.aggregate({
       where: {
         campaignId: campaign.id,
@@ -217,6 +233,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
       orderBy: { transaction: { transactionDate: "desc" } },
       take: 1000,
     }),
+    loadPublicCampaignBills(campaign.id),
   ]);
 
   const grossIncome =
@@ -285,7 +302,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
     balance: income - expenses,
     transactionCount: transactionSums._count + allocationSums._count,
     transactions: publicTransactions,
-    bills: campaign.bills.map((bill) => ({
+    bills: bills.map((bill) => ({
       id: bill.id,
       originalName: bill.originalName,
       createdAt: bill.createdAt.toISOString(),
@@ -298,7 +315,7 @@ export function getCachedPublicCampaignData(code: string) {
   return unstable_cache(
     () => getPublicCampaignData(normalizedCode),
     ["public-campaign-data", PUBLIC_CAMPAIGN_DATA_CACHE_VERSION, normalizedCode],
-    { revalidate: false, tags: [publicCampaignTag(normalizedCode)] },
+    { revalidate: 60, tags: [publicCampaignTag(normalizedCode)] },
   )();
 }
 

@@ -123,12 +123,24 @@ Link gửi cho người xem là `/bao-cao`. Trang được đặt `noindex`, `no
 2. Import project vào Vercel.
 3. Tạo PostgreSQL từ Vercel Marketplace hoặc kết nối resource có sẵn.
 4. Đảm bảo `DATABASE_URL` và `ADMIN_PASSWORD` được inject vào project.
-5. Chạy migration và seed:
+5. Vercel chạy `npm run vercel-build` theo `vercel.json`: áp dụng migration bằng
+   `prisma migrate deploy` trước khi build ứng dụng. Nếu migration thất bại, build sẽ dừng.
+   `DATABASE_URL` phải trỏ tới cùng database mà URL pool của ứng dụng sử dụng.
+6. Chạy seed khi khởi tạo database lần đầu:
+
+```bash
+pnpm db:seed
+```
+
+Nếu bản đang chạy báo `The table public.CampaignBill does not exist`, chạy migration
+với `DATABASE_URL` của đúng môi trường bị lỗi rồi redeploy:
 
 ```bash
 pnpm db:deploy
-pnpm db:seed
 ```
+
+Migration `20261012090000_add_campaign_bills` tạo bảng lưu ảnh bill, index và khóa
+ngoại tới thiện pháp. Không cần reset database.
 
 ## Luồng sử dụng
 
