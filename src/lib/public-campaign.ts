@@ -4,7 +4,7 @@ import { getPrisma, withDatabaseReadRetry } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "removed-pre-charity-transactions-v4";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bills-v5";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
@@ -24,6 +24,13 @@ export type PublicCampaignData = {
   balance: number;
   transactionCount: number;
   transactions: PublicCampaignTransaction[];
+  bills: PublicCampaignBill[];
+};
+
+export type PublicCampaignBill = {
+  id: string;
+  originalName: string;
+  createdAt: string;
 };
 
 export type PublicCampaignTransaction = {
@@ -114,6 +121,10 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
       name: true,
       description: true,
       status: true,
+      bills: {
+        select: { id: true, originalName: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
@@ -274,6 +285,11 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
     balance: income - expenses,
     transactionCount: transactionSums._count + allocationSums._count,
     transactions: publicTransactions,
+    bills: campaign.bills.map((bill) => ({
+      id: bill.id,
+      originalName: bill.originalName,
+      createdAt: bill.createdAt.toISOString(),
+    })),
   };
 }
 

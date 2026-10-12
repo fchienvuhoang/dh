@@ -22,6 +22,7 @@ const statusClassNames = {
 export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
   const [query, setQuery] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState<PublicCampaignTransaction | null>(null);
+  const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
   const normalizedQuery = normalizeTransferText(query);
 
   const filteredTransactions = useMemo(() => {
@@ -117,6 +118,44 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
+        {data.bills.length > 0 ? (
+          <section className="mb-5 rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-[#4a1838]">Hình ảnh bill chuyển tiền</h2>
+                <p className="mt-1 text-xs text-[#78636f]">
+                  {data.bills.length.toLocaleString("vi-VN")} hình ảnh minh bạch của thiện pháp
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {data.bills.map((bill, index) => (
+                <button
+                  key={bill.id}
+                  type="button"
+                  onClick={() => setSelectedBillId(bill.id)}
+                  className="group overflow-hidden rounded-lg border border-[#e8b8cc] bg-[#fff8fb] text-left shadow-sm transition hover:border-[#cf7da1] hover:shadow-md"
+                  aria-label={`Xem bill chuyển tiền số ${index + 1}`}
+                >
+                  <span className="relative block aspect-[3/4] overflow-hidden bg-zinc-100">
+                    <Image
+                      src={`/thien-phap/media/${bill.id}`}
+                      alt={`Bill chuyển tiền số ${index + 1} của thiện pháp ${data.code}`}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover transition duration-300 group-hover:scale-[1.02]"
+                    />
+                  </span>
+                  <span className="block truncate px-3 py-2 text-xs font-medium text-[#624b59]">
+                    Bill {index + 1}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         <section className="rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
@@ -196,6 +235,36 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           transaction={selectedTransaction}
           onClose={() => setSelectedTransaction(null)}
         />
+      ) : null}
+      {selectedBillId ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-zinc-950/85 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Xem ảnh bill chuyển tiền"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedBillId(null);
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setSelectedBillId(null)}
+            aria-label="Đóng ảnh bill"
+            className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-zinc-700 shadow-lg"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="relative h-full max-h-[90vh] w-full max-w-4xl">
+            <Image
+              src={`/thien-phap/media/${selectedBillId}`}
+              alt="Bill chuyển tiền được phóng lớn"
+              fill
+              unoptimized
+              sizes="100vw"
+              className="object-contain"
+            />
+          </div>
+        </div>
       ) : null}
     </div>
   );

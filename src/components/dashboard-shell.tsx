@@ -92,6 +92,14 @@ type StatementExpense = {
   amount: number;
 };
 
+type CampaignBill = {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+};
+
 const statusLabels = {
   ACTIVE: "Đang chạy",
   PAUSED: "Tạm dừng",
@@ -2005,6 +2013,135 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
   );
 }
 
+function CampaignBillManager({ campaign }: { campaign: CampaignSummary }) {
+  const [bills, setBills] = useState<CampaignBill[] | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/campaigns/${campaign.id}/bills`, { signal: controller.signal })
+      .then((response) => readJson<{ bills: CampaignBill[] }>(response))
+      .then(({ bills: loadedBills }) => setBills(loadedBills))
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted) setError(getErrorMessage(caught));
+      });
+    return () => controller.abort();
+  }, [campaign.id]);
+
+  async function uploadBills(files: File[]) {
+    if (files.length === 0) return;
+    setError(null);
+    setIsUploading(true);
+    try {
+      const uploaded: CampaignBill[] = [];
+      for (const file of files) {
+        const formData = new FormData();
+        formData.set("file", file);
+        const result = await readJson<{ bill: CampaignBill }>(await fetch(
+          `/api/campaigns/${campaign.id}/bills`,
+          { method: "POST", body: formData },
+        ));
+        uploaded.push(result.bill);
+      }
+      setBills((current) => [...uploaded.reverse(), ...(current ?? [])]);
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  async function deleteBill(bill: CampaignBill) {
+    if (!window.confirm(`Xóa ảnh bill “${bill.originalName}”?`)) return;
+    setError(null);
+    setDeletingId(bill.id);
+    try {
+      await readJson(await fetch(`/api/campaign-bills/${bill.id}`, { method: "DELETE" }));
+      setBills((current) => current?.filter((item) => item.id !== bill.id) ?? []);
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  return (
+    <section className="overflow-hidden rounded-md border border-[#e3c8d4] bg-[#fffafb]">
+      <div className="border-b border-[#ecd8e1] px-4 py-3">
+        <h3 className="text-sm font-semibold text-[#4c173b]">Hình ảnh bill chuyển tiền</h3>
+        <p className="mt-1 text-xs leading-5 text-zinc-500">
+          Ảnh tải lên sẽ tự động xuất hiện tại trang công khai. Hỗ trợ JPG, PNG, WebP; tối đa 4 MB mỗi ảnh.
+        </p>
+      </div>
+
+      <div className="p-4">
+        <label className={`flex min-h-24 items-center justify-center rounded-md border-2 border-dashed border-[#d8b4c4] bg-white px-4 text-center transition ${isUploading ? "cursor-wait opacity-60" : "cursor-pointer hover:bg-[#fff4f8]"}`}>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            disabled={isUploading}
+            className="sr-only"
+            onChange={(event) => {
+              const files = Array.from(event.currentTarget.files ?? []);
+              event.currentTarget.value = "";
+              void uploadBills(files);
+            }}
+          />
+          <span className="flex flex-col items-center gap-2 text-sm font-medium text-[#6b2349]">
+            {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+            {isUploading ? "Đang tải ảnh lên..." : "Chọn các ảnh bill để tải lên"}
+          </span>
+        </label>
+
+        {error ? <p role="alert" className="mt-3 text-xs text-rose-700">{error}</p> : null}
+        {bills === null && !error ? <p className="mt-3 text-xs text-zinc-500">Đang tải danh sách ảnh...</p> : null}
+        {bills?.length === 0 ? <p className="mt-3 text-xs text-zinc-500">Chưa có ảnh bill nào.</p> : null}
+        {bills && bills.length > 0 ? (
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {bills.map((bill) => (
+              <article key={bill.id} className="overflow-hidden rounded-md border border-zinc-200 bg-white">
+                <a
+                  href={`/thien-phap/media/${bill.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="relative block aspect-[3/4] bg-zinc-100"
+                  title={`Mở ảnh ${bill.originalName}`}
+                >
+                  <Image
+                    src={`/thien-phap/media/${bill.id}`}
+                    alt={`Bill chuyển tiền ${bill.originalName}`}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 640px) 50vw, 210px"
+                    className="object-cover"
+                  />
+                </a>
+                <div className="flex items-center gap-2 p-2">
+                  <p className="min-w-0 flex-1 truncate text-xs text-zinc-600" title={bill.originalName}>
+                    {bill.originalName}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={deletingId === bill.id}
+                    onClick={() => void deleteBill(bill)}
+                    aria-label={`Xóa ảnh ${bill.originalName}`}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                  >
+                    {deletingId === bill.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 function CampaignModal({
   state,
   isSaving,
@@ -2096,6 +2233,7 @@ function CampaignModal({
           />
           <Textarea name="description" label="Ghi chú" rows={3} defaultValue={campaign?.description ?? ""} />
 
+          {campaign ? <CampaignBillManager campaign={campaign} /> : null}
           {campaign ? <CampaignStatementTemplate campaign={campaign} /> : null}
 
           <div className="flex flex-col-reverse gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
