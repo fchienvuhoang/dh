@@ -127,13 +127,33 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                 return (
                   <article key={donation.id} className="rounded-lg border border-[#edcddb] bg-[#fff8fb] p-4">
                     <h3 className="font-semibold text-[#4a1838]">{index + 1}. {bills[0]?.title ?? donation.title}</h3>
-                    <p className="mt-1 text-sm text-[#78636f]">{new Date(donation.transactionDate).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })} · {money(donation.amount)}</p>
+                    <p className="mt-1 text-sm text-[#78636f]">
+                      {new Date(donation.transactionDate).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })} · {money(donation.amount)}
+                      {bills.length > 0 ? ` · ${bills.length.toLocaleString("vi-VN")} bill` : ""}
+                    </p>
                     {bills.length === 0 ? <p className="mt-3 text-sm text-[#78636f]">Chưa có bill chuyển tiền.</p> : (
-                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {bills.map((bill) => (
-                          <button key={bill.id} type="button" onClick={() => setSelectedBillId(bill.id)} className="overflow-hidden rounded-lg border border-[#e8b8cc] bg-white text-left" aria-label={`Xem bill ${bill.title ?? donation.title}`}>
-                            <span className="relative block aspect-[3/4] bg-white"><Image src={`/thien-phap/media/${bill.id}`} alt={`Bill ${bill.title ?? donation.title}`} fill unoptimized sizes="(max-width: 640px) 100vw, 33vw" className="object-contain" /></span>
-                            <span className="block px-3 py-2 text-sm">{bill.title ?? donation.title}</span>
+                      <div className="-mx-1 mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
+                        {bills.map((bill, billIndex) => (
+                          <button
+                            key={bill.id}
+                            type="button"
+                            onClick={() => setSelectedBillId(bill.id)}
+                            className="group w-28 shrink-0 snap-start overflow-hidden rounded-lg border border-[#e8b8cc] bg-white text-left shadow-sm transition hover:border-[#cf7da1] hover:shadow-md sm:w-auto"
+                            aria-label={`Xem bill ${billIndex + 1}: ${bill.title ?? donation.title}`}
+                          >
+                            <span className="relative block h-32 overflow-hidden bg-white sm:h-auto sm:aspect-[3/4]">
+                              <Image
+                                src={`/thien-phap/media/${bill.id}`}
+                                alt={`Bill ${bill.title ?? donation.title}`}
+                                fill
+                                unoptimized
+                                sizes="(max-width: 639px) 112px, (max-width: 1023px) 50vw, 33vw"
+                                className="object-contain transition duration-300 group-hover:scale-[1.02]"
+                              />
+                            </span>
+                            <span className="block truncate px-2.5 py-2 text-xs font-medium text-[#624b59]">
+                              Bill {billIndex + 1}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -154,22 +174,22 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                 </p>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="-mx-1 mt-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
               {data.bills.filter((bill) => !bill.transactionId).map((bill, index) => (
                 <button
                   key={bill.id}
                   type="button"
                   onClick={() => setSelectedBillId(bill.id)}
-                  className="group overflow-hidden rounded-lg border border-[#e8b8cc] bg-[#fff8fb] text-left shadow-sm transition hover:border-[#cf7da1] hover:shadow-md"
+                  className="group w-28 shrink-0 snap-start overflow-hidden rounded-lg border border-[#e8b8cc] bg-[#fff8fb] text-left shadow-sm transition hover:border-[#cf7da1] hover:shadow-md sm:w-auto"
                   aria-label={`Xem bill chuyển tiền số ${index + 1}`}
                 >
-                  <span className="relative block aspect-[3/4] overflow-hidden bg-zinc-100">
+                  <span className="relative block h-32 overflow-hidden bg-zinc-100 sm:h-auto sm:aspect-[3/4]">
                     <Image
                       src={`/thien-phap/media/${bill.id}`}
                       alt={`Bill chuyển tiền số ${index + 1} của thiện pháp ${data.code}`}
                       fill
                       unoptimized
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      sizes="(max-width: 639px) 112px, (max-width: 1023px) 33vw, 25vw"
                       className="object-contain transition duration-300 group-hover:scale-[1.02]"
                     />
                   </span>
