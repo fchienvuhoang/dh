@@ -1861,7 +1861,7 @@ function campaignOptionLabel(campaign: CampaignSummary) {
   return `${marker} ${campaign.code} — ${selectionStatusLabels[campaign.status]}`;
 }
 
-const PUBLIC_CAMPAIGN_ORIGIN = "https://dhamma-eight.vercel.app";
+const PUBLIC_CAMPAIGN_ORIGIN = "https://dhamma-group.danasangha.org";
 
 const statementIntroductions = [
   "Dhamma Group xin kính gửi đến quý vị bản cập nhật sao kê của thiện pháp",
