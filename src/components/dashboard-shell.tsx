@@ -33,6 +33,7 @@ import type {
   DashboardState,
   TransactionSummary,
 } from "@/lib/dashboard";
+import { buildCampaignStatement, buildCombinedCampaignStatement, formatTp04ExpenseDescription, selectedStatementCampaigns, shortVietnamDate } from "@/lib/campaign-statement";
 import { downloadElementAsPng } from "@/lib/download-element-image";
 import { normalizeTransferText, splitKeywords } from "@/lib/text";
 
@@ -559,6 +560,8 @@ function Dashboard({ data }: { data: DashboardData }) {
                   onSelect={(campaign) => setCampaignModal({ mode: "edit", campaign })}
                 />
               </Panel>
+
+              <CombinedCampaignStatementTemplate campaigns={data.campaigns} />
 
               <Panel>
                 <PanelTitle icon={Wallet} title="Tổng hợp thu chi" />
@@ -1874,142 +1877,6 @@ function campaignOptionLabel(campaign: CampaignSummary) {
   return `${marker} ${campaign.code} — ${selectionStatusLabels[campaign.status]}`;
 }
 
-const PUBLIC_CAMPAIGN_ORIGIN = "https://dhamma-group.danasangha.org";
-
-const statementIntroductions = [
-  "Dhamma Group xin kính gửi đến quý vị bản cập nhật sao kê của thiện pháp",
-  "Chúng con xin phép cập nhật thông tin tịnh tài của thiện pháp",
-  "Dhamma Group trân trọng gửi quý vị phần tổng hợp minh bạch của thiện pháp",
-  "Kính mời quý vị cùng theo dõi thông tin thu chi mới nhất của thiện pháp",
-  "Chúng con xin được chia sẻ bản cập nhật tịnh tài dành cho thiện pháp",
-];
-
-const statementGreeting =
-  "KÍNH CHÚC QUÝ VỊ NGÀY MỚI AN VUI TRONG CHÁNH PHÁP, THUẬN DUYÊN TẠO CÁC THIỆN NGHIỆP, VUN BỒI VÀ LÀM VIÊN MÃN CÁC PĀRAMĪ.";
-
-const statementTotals = [
-  "Tính đến hôm nay, tổng tịnh tài quý vị đã cùng phát tâm hùn phước là:",
-  "Tổng số tịnh tài được ghi nhận đến thời điểm cập nhật là:",
-  "Đến ngày hôm nay, thiện pháp đã nhận được tổng tịnh tài hùn phước:",
-  "Số tịnh tài quý vị đồng phát tâm đóng góp hiện được ghi nhận là:",
-  "Tổng tịnh tài đã được cập nhật minh bạch đến hôm nay là:",
-];
-
-const statementLinkInvitations = [
-  "Kính mời quý vị xem danh sách giao dịch và thông tin chi tiết tại:",
-  "Toàn bộ số liệu được công khai tại đường dẫn dưới đây, kính mời quý vị theo dõi:",
-  "Quý vị có thể kiểm tra phần sao kê minh bạch và các giao dịch tại:",
-  "Thông tin chi tiết của từng khoản tịnh tài được cập nhật tại:",
-  "Kính mời quý vị cùng theo dõi bản sao kê công khai qua đường dẫn:",
-];
-
-const statementBlessings = [
-  "🌺 Sādhu! Sādhu! Sādhu!",
-  "   Lành thay! Lành thay! Lành thay!",
-  "🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu.",
-  "   Nguyện phước báu này của tôi là duyên lành đưa đến Niết-bàn.",
-  "🌺 Buddhasāsanaṃ ciraṃ tiṭṭhatu.",
-  "   Nguyện Giáo pháp của Đức Phật trường tồn lâu dài.",
-];
-
-function buildCampaignStatement(campaign: CampaignSummary, expenses: StatementExpense[] = []) {
-  const variant = hashText(campaign.code) % statementIntroductions.length;
-  const date = vietnamDate(new Date());
-  const code = campaign.code.toLocaleUpperCase("vi-VN");
-  const name = campaign.name.trim().replace(/[.。]+$/, "").toLocaleUpperCase("vi-VN");
-  const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
-
-  if (campaign.code.toLocaleLowerCase("vi-VN") === "tp04") {
-    return [
-      `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code} · ${date}`,
-      `🌺 ${name}`,
-      "",
-      `💰 Tổng hùn phước: ${money(campaign.income)}`,
-      `💝 Tổng cúng dường: ${money(campaign.expenses)}`,
-      `🌿 Tịnh tài hiện tại: ${money(campaign.balance)}`,
-      "",
-      `CHI TIẾT ${String(expenses.length).padStart(2, "0")} KHOẢN CÚNG DƯỜNG`,
-      ...expenses.map((expense, index) =>
-        `${index + 1}. ${shortVietnamDate(expense.transactionDate)} · ${money(expense.amount)} – ${formatTp04ExpenseDescription(expense.description)}`,
-      ),
-      "",
-      `🔎 Xem chi tiết: ${publicUrl}`,
-      ...statementBlessings,
-    ].join("\n");
-  }
-
-  return [
-    `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code}`,
-    `NGÀY ${date}`,
-    "",
-    statementGreeting,
-    "",
-    `🙏 ${statementIntroductions[variant]} ${code}:`,
-    name,
-    "",
-    `💰 ${statementTotals[variant]}`,
-    money(campaign.income),
-    "",
-    `🔎 ${statementLinkInvitations[variant]}`,
-    publicUrl,
-    "",
-    ...statementBlessings,
-  ].join("\n");
-}
-
-function formatTp04ExpenseDescription(description: string) {
-  const normalized = normalizeTransferText(description);
-  const knownDescriptions: Array<[string[], string]> = [
-    [["50 hop dao lam", "myanmar"], "Cúng dường 50 hộp dao lam tới chư Tăng Myanmar."],
-    [["dat bat 2000 vi", "pol"], "Cúng dường đặt bát 2.000 vị tại POL."],
-    [["vt pa auk", "pausi"], "Cúng dường vật thực Pa-Auk, POL Pa-Auk Pausi."],
-    [["mahavihara", "m obi"], "Cúng dường Kathina Mahāvihāra Hmawbi."],
-    [["mawlamyine"], "Cúng dường Kathina Pa-Auk Mawlamyine."],
-    [["ntt14"], "Cúng dường Kathina chùa Ngài Tam Tạng 14."],
-    [["jatila"], "Cúng dường Kathina chùa Ngài Jatila."],
-    [["dhamma gone"], "Cúng dường lễ dâng y Kathina Pa-Auk Dhamma Gone."],
-    [["01 bo y", "kathina pol"], "Cúng dường 01 bộ y Kathina POL."],
-  ];
-  const known = knownDescriptions.find(([keywords]) =>
-    keywords.every((keyword) => normalized.includes(keyword)),
-  );
-  if (known) return known[1];
-
-  const cleaned = description
-    .replace(/\btp04\b/gi, "")
-    .replace(/\b(?:nh[oó]m\s+)?dhamma(?:\s+group)?(?:\s+vn)?\b/gi, "")
-    .replace(/\bcd\b/i, "Cúng dường")
-    .replace(/\s*[-–—]\s*/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/[.。]+$/, "");
-  return `${cleaned || "Khoản cúng dường"}.`;
-}
-
-function vietnamDate(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).formatToParts(date);
-  const value = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((part) => part.type === type)?.value ?? "";
-  return `${value("day")}.${value("month")}.${value("year")}`;
-}
-
-function shortVietnamDate(value: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    day: "2-digit",
-    month: "2-digit",
-  }).format(new Date(value));
-}
-
-function hashText(value: string) {
-  return [...value].reduce((hash, character) => ((hash * 31) + character.charCodeAt(0)) >>> 0, 0);
-}
-
 async function copyToClipboard(text: string) {
   if (navigator.clipboard?.writeText) {
     try {
@@ -2084,6 +1951,94 @@ function campaignSelectClassName(campaignId: string | undefined, campaigns: Camp
     return "border-amber-300 bg-amber-50 text-amber-800";
   }
   return "border-zinc-300 bg-zinc-100 text-zinc-600";
+}
+
+function CombinedCampaignStatementTemplate({ campaigns }: { campaigns: CampaignSummary[] }) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [expenseData, setExpenseData] = useState<{ campaignId: string; transactions: StatementExpense[] } | null>(null);
+  const [expenseError, setExpenseError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const activeCampaigns = sortCampaignsForSelection(campaigns.filter((campaign) => campaign.status === "ACTIVE"));
+  const selected = selectedStatementCampaigns(campaigns, selectedIds);
+  const detailedCampaign = selected.find((campaign) => campaign.code.toLowerCase() === "tp04");
+  const detailedCampaignId = detailedCampaign?.id;
+  const detailedExpensesTotal = detailedCampaign?.expenses;
+  const detailedTransactionCount = detailedCampaign?.transactionCount;
+
+  useEffect(() => {
+    if (!detailedCampaignId) return;
+    const controller = new AbortController();
+    fetch(`/api/campaigns/${detailedCampaignId}/statement-expenses`, { signal: controller.signal })
+      .then((response) => readJson<{ transactions: StatementExpense[] }>(response))
+      .then(({ transactions }) => {
+        setExpenseData({ campaignId: detailedCampaignId, transactions });
+        setExpenseError(null);
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setExpenseError(getErrorMessage(error));
+      });
+    return () => controller.abort();
+  }, [detailedCampaignId, detailedExpensesTotal, detailedTransactionCount, retry]);
+
+  const expenses = expenseData && expenseData.campaignId === detailedCampaignId ? expenseData.transactions : null;
+  const ready = selected.length > 0 && (!detailedCampaign || (expenses !== null &&
+    Math.abs(expenses.reduce((sum, expense) => sum + expense.amount, 0) - detailedCampaign.expenses) < 0.01));
+  const statement = buildCombinedCampaignStatement(campaigns, selectedIds,
+    detailedCampaignId && expenses ? { [detailedCampaignId]: expenses } : {});
+
+  function select(ids: string[]) {
+    setSelectedIds(ids);
+    setCopied(false);
+    setCopyError(null);
+  }
+
+  async function handleCopy() {
+    if (!ready) return;
+    try {
+      if (!await copyToClipboard(statement)) throw new Error("Không sao chép được. Bạn có thể chọn nội dung bên dưới để sao chép thủ công.");
+      setCopied(true);
+      setCopyError(null);
+    } catch (error) {
+      setCopyError(getErrorMessage(error));
+    }
+  }
+
+  return (
+    <Panel>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <PanelTitle icon={Copy} title="Sao kê tổng hợp để chia sẻ" />
+          <p className="mt-1 text-sm text-zinc-500">Chọn các thiện pháp đang hoạt động để ghép thành một nội dung sao kê.</p>
+        </div>
+        <button type="button" disabled={!ready} onClick={() => void handleCopy()} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? "Đã sao chép" : `Sao chép sao kê${selected.length ? ` (${selected.length} thiện pháp)` : ""}`}
+        </button>
+      </div>
+      {activeCampaigns.length ? <>
+        <div className="mt-4 flex items-center gap-3 text-sm">
+          <button type="button" onClick={() => select(activeCampaigns.map((campaign) => campaign.id))} className="font-medium text-emerald-700 hover:underline">Chọn tất cả</button>
+          <button type="button" onClick={() => select([])} className="text-zinc-500 hover:underline">Bỏ chọn</button>
+          <span className="text-zinc-500">Đã chọn {selected.length}/{activeCampaigns.length}</span>
+        </div>
+        <fieldset className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <legend className="sr-only">Chọn thiện pháp cho sao kê tổng hợp</legend>
+          {activeCampaigns.map((campaign) => <label key={campaign.id} className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm ${selectedIds.includes(campaign.id) ? "border-emerald-300 bg-emerald-50" : "border-zinc-200 bg-white"}`}>
+            <input type="checkbox" checked={selectedIds.includes(campaign.id)} onChange={(event) => select(event.target.checked ? [...selectedIds, campaign.id] : selectedIds.filter((id) => id !== campaign.id))} className="mt-1 h-4 w-4 accent-emerald-700" />
+            <span><span className="font-semibold">{campaign.code.toLocaleUpperCase("vi-VN")}</span><span className="mt-1 block text-zinc-600">{campaign.name}</span></span>
+          </label>)}
+        </fieldset>
+      </> : <p className="mt-4 text-sm text-zinc-500">Chưa có thiện pháp đang hoạt động.</p>}
+      {copyError ? <p role="alert" className="mt-3 text-sm text-rose-700">{copyError}</p> : null}
+      {selected.length > 0 && !ready ? <div role="status" className="mt-4 text-sm text-zinc-600">
+        {expenseError ?? (expenses ? "Chi tiết khoản cúng dường chưa khớp tổng chi. Vui lòng thử tải lại." : "Đang tải chi tiết khoản cúng dường…")}
+        {expenseError || expenses ? <button type="button" onClick={() => setRetry((value) => value + 1)} className="ml-2 font-medium underline">Thử lại</button> : null}
+      </div> : null}
+      {ready ? <div role="textbox" aria-readonly="true" aria-label="Nội dung sao kê tổng hợp" className="mt-4 max-h-[36rem] select-text overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-zinc-200 bg-zinc-50 p-4 text-sm leading-6 text-zinc-800">{statement}</div> : selected.length === 0 && activeCampaigns.length > 0 ? <p className="mt-4 text-sm text-zinc-500">Chọn thiện pháp để xem trước nội dung sao kê.</p> : null}
+    </Panel>
+  );
 }
 
 function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) {
