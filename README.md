@@ -48,8 +48,8 @@ Sau khi provision database trên Vercel, dùng URL qua pooler cho traffic ứng 
 Nếu nhà cung cấp cấp riêng hai URL, cấu hình:
 
 ```bash
-DATABASE_POOL_URL="postgresql://...pooler-host.../database?sslmode=require"
-DATABASE_URL="postgresql://...direct-host.../database?sslmode=require"
+DATABASE_POOL_URL="postgresql://...pooler-host.../database?sslmode=verify-full"
+DATABASE_URL="postgresql://...direct-host.../database?sslmode=verify-full"
 ```
 
 Áp dụng biến cho cả Production, Preview và Development rồi redeploy. Nên chọn database region

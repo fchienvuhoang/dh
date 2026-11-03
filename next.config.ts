@@ -4,8 +4,13 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
   outputFileTracingIncludes: {
     "/api/import": [
-      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
-      "./node_modules/.pnpm/@napi-rs+canvas*/node_modules/@napi-rs/**/*",
+      // Include real files in pnpm's store, rather than directories reached
+      // through package symlinks, which Vercel rejects when assembling functions.
+      "./node_modules/.pnpm/pdfjs-dist@*/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "./node_modules/.pnpm/@napi-rs+canvas@*/node_modules/@napi-rs/canvas/*.js",
+      "./node_modules/.pnpm/@napi-rs+canvas@*/node_modules/@napi-rs/canvas/package.json",
+      "./node_modules/.pnpm/@napi-rs+canvas-*@*/node_modules/@napi-rs/canvas-*/*.node",
+      "./node_modules/.pnpm/@napi-rs+canvas-*@*/node_modules/@napi-rs/canvas-*/package.json",
     ],
   },
   async headers() {

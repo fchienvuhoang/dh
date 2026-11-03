@@ -2469,7 +2469,7 @@ function SetupScreen({ state }: { state: Exclude<DashboardState, { ok: true }> }
         </div>
         <div className="mt-5 space-y-3 text-sm">
           <pre className="overflow-x-auto rounded-md bg-zinc-950 p-4 text-zinc-50">
-            <code>{'DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"'}</code>
+            <code>{'DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=verify-full"'}</code>
           </pre>
           <pre className="overflow-x-auto rounded-md bg-zinc-100 p-4 text-zinc-800">
             <code>{"pnpm db:generate\npnpm db:push\npnpm db:seed\npnpm dev"}</code>

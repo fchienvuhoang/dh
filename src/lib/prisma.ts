@@ -2,6 +2,7 @@ import { attachDatabasePool } from "@vercel/functions";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
+import { normalizeDatabaseSslUrl } from "@/lib/database-url";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -41,7 +42,7 @@ export function getPrisma(): PrismaClient {
   }
 
   const pool = globalForPrisma.databasePool ?? new Pool({
-    connectionString: getDatabaseUrl(),
+    connectionString: normalizeDatabaseSslUrl(getDatabaseUrl()),
     max: getDatabasePoolMax(),
     min: 1,
     idleTimeoutMillis: 5_000,
