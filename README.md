@@ -91,19 +91,7 @@ Mở `http://localhost:3000`.
 
 ## Đăng nhập quản trị
 
-Trang quản trị `/` và các API quản trị được bảo vệ bằng mật khẩu trong biến môi trường:
-
-```bash
-ADMIN_PASSWORD="mật-khẩu-mạnh"
-```
-
-Tạo mật khẩu mạnh:
-
-```bash
-openssl rand -base64 32
-```
-
-Khi deploy Vercel, thêm `ADMIN_PASSWORD` vào Project Settings → Environment Variables. Các trang public `/thien-phap/[ma-thien-phap]` vẫn mở công khai cho thí chủ xem.
+Trang quản trị `/` và các API quản trị chỉ chấp nhận phiên đăng nhập Google SSO của email được cấp quyền. Cấu hình theo phần Đăng nhập Google SSO bên dưới. Các phiên mật khẩu quản trị cũ không còn hợp lệ; API đăng nhập mật khẩu đã được gỡ bỏ. Các trang public `/thien-phap/[ma-thien-phap]` vẫn mở công khai cho thí chủ xem.
 
 ## Báo cáo chỉ xem
 
@@ -122,7 +110,7 @@ Link gửi cho người xem là `/bao-cao`. Trang được đặt `noindex`, `no
 1. Push project lên GitHub.
 2. Import project vào Vercel.
 3. Tạo PostgreSQL từ Vercel Marketplace hoặc kết nối resource có sẵn.
-4. Đảm bảo `DATABASE_URL` và `ADMIN_PASSWORD` được inject vào project.
+4. Đảm bảo `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` và `NEXT_PUBLIC_APP_URL` được inject vào project.
 5. Vercel chạy `npm run vercel-build` theo `vercel.json`: áp dụng migration bằng
    `prisma migrate deploy` trước khi build ứng dụng. Nếu migration thất bại, build sẽ dừng.
    `DATABASE_URL` phải trỏ tới cùng database mà URL pool của ứng dụng sử dụng.
@@ -166,7 +154,7 @@ Kiểm tra bộ đọc PDF: `npm run test:pdf`.
 
 ## Đăng nhập Google SSO
 
-Thêm `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` (ngẫu nhiên, ít nhất 32 ký tự) và `NEXT_PUBLIC_APP_URL` vào môi trường chạy. `GOOGLE_ALLOWED_EMAILS` nhận danh sách email quản trị phân cách bằng dấu phẩy; mặc định chỉ `fchienvuhoang@gmail.com`. Đặt danh sách rỗng sẽ từ chối mọi tài khoản Google. Đăng nhập mật khẩu hiện có vẫn dùng được.
+Thêm `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` (ngẫu nhiên, ít nhất 32 ký tự) và `NEXT_PUBLIC_APP_URL` vào môi trường chạy. `GOOGLE_ALLOWED_EMAILS` nhận danh sách email quản trị phân cách bằng dấu phẩy; mặc định chỉ `fchienvuhoang@gmail.com`. Đặt danh sách rỗng sẽ từ chối mọi tài khoản Google. Trang quản trị chỉ hỗ trợ Google SSO.
 
 Trong Google Cloud Console, dùng OAuth client loại Web application và đăng ký **Authorized redirect URI** đúng domain của `NEXT_PUBLIC_APP_URL`:
 

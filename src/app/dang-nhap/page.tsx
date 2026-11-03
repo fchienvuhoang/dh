@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { LockKeyhole } from "lucide-react";
-import { LoginForm } from "@/components/login-form";
-import { isAdminPasswordConfigured, safeRedirectPath } from "@/lib/auth";
+import { safeRedirectPath } from "@/lib/auth";
 import { googleAuthConfigured } from "@/lib/google-auth";
 
 type Props = {
@@ -39,8 +38,7 @@ export default async function LoginPage({ searchParams }: Props) {
         {googleConfigured ? (
           <a href={`/api/auth/google?next=${encodeURIComponent(nextPath)}`} className="mt-5 flex w-full items-center justify-center rounded-md border border-zinc-300 bg-white px-3 py-3 text-sm font-medium hover:bg-zinc-50">Đăng nhập bằng Google</a>
         ) : null}
-        {googleConfigured && isAdminPasswordConfigured() ? <p className="mt-4 text-center text-xs text-zinc-500">Hoặc dùng mật khẩu quản trị</p> : null}
-        {isAdminPasswordConfigured() || !googleConfigured ? <LoginForm authConfigured={isAdminPasswordConfigured()} nextPath={nextPath} /> : null}
+        {!googleConfigured ? <p role="alert" className="mt-5 rounded-md bg-amber-50 p-3 text-sm text-amber-800">Đăng nhập Google chưa sẵn sàng. Vui lòng liên hệ quản trị viên.</p> : null}
       </section>
     </main>
   );

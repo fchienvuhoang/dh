@@ -3,14 +3,9 @@ import { verifyGoogleAdminSession } from "@/lib/google-session";
 export const ADMIN_SESSION_COOKIE = "dhamma_admin_session";
 export const READONLY_SESSION_COOKIE = "dhamma_readonly_session";
 
-const SESSION_MESSAGE = "dhamma-admin-session-v1";
 const READONLY_SESSION_MESSAGE = "dhamma-readonly-session-v1";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 const READONLY_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
-
-export function isAdminPasswordConfigured() {
-  return Boolean(process.env.ADMIN_PASSWORD);
-}
 
 export function getAdminSessionMaxAge() {
   return SESSION_MAX_AGE_SECONDS;
@@ -48,32 +43,8 @@ export async function verifyReadonlySessionToken(token: string | undefined) {
   return constantTimeEqual(token, await createReadonlySessionToken());
 }
 
-export async function createAdminSessionToken() {
-  const password = process.env.ADMIN_PASSWORD;
-  if (!password) {
-    throw new Error("ADMIN_PASSWORD is not configured.");
-  }
-
-  return hmacHex(password, SESSION_MESSAGE);
-}
-
 export async function verifyAdminSessionToken(token: string | undefined) {
-  if (token?.includes(".")) return verifyGoogleAdminSession(token);
-  if (!token || !process.env.ADMIN_PASSWORD) {
-    return false;
-  }
-
-  const expectedToken = await createAdminSessionToken();
-  return constantTimeEqual(token, expectedToken);
-}
-
-export function verifyAdminPassword(password: string) {
-  const expectedPassword = process.env.ADMIN_PASSWORD;
-  if (!expectedPassword) {
-    return false;
-  }
-
-  return constantTimeEqual(password, expectedPassword);
+  return token ? verifyGoogleAdminSession(token) : false;
 }
 
 export function safeRedirectPath(value: unknown) {

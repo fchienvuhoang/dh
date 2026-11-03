@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import assert from "node:assert/strict";
 import { test, mock } from "node:test";
 import { OAuth2Client } from "google-auth-library";
@@ -76,4 +77,13 @@ test("callback grants only the allowed verified identity with matching nonce", a
   } finally {
     exchange.mock.restore(); verification.mock.restore();
   }
+});
+
+
+test("legacy password sessions are rejected even when ADMIN_PASSWORD is still set", async () => {
+  process.env.ADMIN_PASSWORD = "legacy-test-password";
+  const legacyToken = createHmac("sha256", process.env.ADMIN_PASSWORD).update("dhamma-admin-session-v1").digest("hex");
+  assert.equal(await verifyAdminSessionToken(legacyToken), false);
+  assert.equal(await verifyAdminSessionToken(undefined), false);
+  delete process.env.ADMIN_PASSWORD;
 });
