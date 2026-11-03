@@ -33,12 +33,9 @@ const statementLinkInvitations = [
 ];
 
 const statementBlessings = [
-  "🌺 Sādhu! Sādhu! Sādhu!",
-  "   Lành thay! Lành thay! Lành thay!",
-  "🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu.",
-  "   Nguyện phước báu này của tôi là duyên lành đưa đến Niết-bàn.",
-  "🌺 Buddhasāsanaṃ ciraṃ tiṭṭhatu.",
-  "   Nguyện Giáo pháp của Đức Phật trường tồn lâu dài.",
+  "🌺 Sādhu! Sādhu! Sādhu! — Lành thay! Lành thay! Lành thay!",
+  "🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu. — Nguyện phước báu này của tôi là duyên lành đưa đến Niết-bàn.",
+  "🌺 Buddhasāsanaṃ ciraṃ tiṭṭhatu. — Nguyện Giáo pháp của Đức Phật trường tồn lâu dài.",
 ];
 
 export function buildCampaignStatement(campaign: CampaignSummary, expenses: StatementExpense[] = [], bodyOnly = false) {
@@ -59,24 +56,19 @@ export function buildCampaignStatement(campaign: CampaignSummary, expenses: Stat
       ...expenses.map((expense, index) =>
         `${index + 1}. ${shortVietnamDate(expense.transactionDate)} · ${money(expense.amount)} – ${formatTp04ExpenseDescription(expense.description)}`,
       ),
-      "",
       `🔎 Xem chi tiết: ${publicUrl}`,
-      ...(!bodyOnly ? statementBlessings : []),
+      ...(!bodyOnly ? ["", ...statementBlessings] : []),
     ].join("\n");
   }
 
   return [
     ...(!bodyOnly ? [
-      `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code}`, `NGÀY ${date}`, "", statementGreeting, "",
-      `🙏 ${statementIntroductions[variant]} ${code}:`, name, "",
+      `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code} · ${date}`, "", statementGreeting,
+      `🙏 ${statementIntroductions[variant]} ${code}: ${name}`, "",
     ] : []),
-    `💰 ${statementTotals[variant]}`,
-    money(campaign.income),
-    "",
-    `🔎 ${statementLinkInvitations[variant]}`,
-    publicUrl,
-    "",
-    ...(!bodyOnly ? statementBlessings : []),
+    `💰 ${statementTotals[variant]} ${money(campaign.income)}`,
+    `🔎 ${statementLinkInvitations[variant]} ${publicUrl}`,
+    ...(!bodyOnly ? ["", ...statementBlessings] : []),
   ].join("\n");
 }
 
@@ -152,8 +144,8 @@ export function buildCombinedCampaignStatement(campaigns: CampaignSummary[], ids
   const selected = selectedStatementCampaigns(campaigns, ids);
   if (!selected.length) return "";
   return [
-    `🏦 CẬP NHẬT SAO KÊ TỔNG HỢP ${selected.map((campaign) => campaign.code.toLocaleUpperCase("vi-VN")).join(" · ")}`,
-    `NGÀY ${vietnamDate(new Date())}`, "", statementGreeting, "",
+    `🏦 CẬP NHẬT SAO KÊ TỔNG HỢP ${selected.map((campaign) => campaign.code.toLocaleUpperCase("vi-VN")).join(" · ")} · ${vietnamDate(new Date())}`,
+    "", statementGreeting,
     `🙏 Dhamma Group xin kính gửi quý vị bản cập nhật sao kê của ${selected.length} thiện pháp:`, "",
     ...selected.flatMap((campaign, index) => [
       `${index + 1}. ${campaign.code.toLocaleUpperCase("vi-VN")} — ${campaign.name.trim().toLocaleUpperCase("vi-VN")}`,
