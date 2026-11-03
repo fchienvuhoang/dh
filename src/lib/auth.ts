@@ -1,3 +1,5 @@
+import { verifyGoogleAdminSession } from "@/lib/google-session";
+
 export const ADMIN_SESSION_COOKIE = "dhamma_admin_session";
 export const READONLY_SESSION_COOKIE = "dhamma_readonly_session";
 
@@ -56,6 +58,7 @@ export async function createAdminSessionToken() {
 }
 
 export async function verifyAdminSessionToken(token: string | undefined) {
+  if (token?.includes(".")) return verifyGoogleAdminSession(token);
   if (!token || !process.env.ADMIN_PASSWORD) {
     return false;
   }
@@ -74,7 +77,7 @@ export function verifyAdminPassword(password: string) {
 }
 
 export function safeRedirectPath(value: unknown) {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(value)) {
     return "/";
   }
 

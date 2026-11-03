@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test:pdf": "tsx --test src/lib/techcombank-pdf.test.ts",
     "dev": "next dev",
     "build": "prisma generate && next build",
     "vercel-build": "prisma migrate deploy && npm run build",
@@ -12,18 +13,23 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "node prisma/seed.mjs"
+    "db:seed": "node prisma/seed.mjs",
+    "test:auth": "tsx --test src/lib/google-auth.test.ts"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.1.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@vercel/functions": "^3.9.5",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",
+    "google-auth-library": "^11.3.2",
     "html-to-image": "^1.11.13",
+    "jose": "^6.2.15",
     "lucide-react": "^1.23.0",
     "next": "16.2.10",
+    "pdfjs-dist": "^6.5.438",
     "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -40,6 +46,7 @@
     "eslint-config-next": "16.2.10",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

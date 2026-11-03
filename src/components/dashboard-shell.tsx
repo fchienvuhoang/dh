@@ -463,7 +463,8 @@ function Dashboard({ data }: { data: DashboardData }) {
                 <input
                   name="file"
                   type="file"
-                  accept=".xlsx,.xls"
+                  accept=".xlsx,.xls,.pdf,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  disabled={isImporting}
                   required
                   className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
                 />
@@ -472,9 +473,21 @@ function Dashboard({ data }: { data: DashboardData }) {
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
-                  Import Excel
+                  Nhập sao kê
                 </button>
+                <label className="text-sm text-zinc-600 lg:col-span-2">
+                  Mật khẩu mở PDF (nếu có)
+                  <input name="password" type="password" autoComplete="off" disabled={isImporting} placeholder="Nhập mật khẩu của file PDF" className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm sm:max-w-sm" />
+                </label>
+                <p className="text-xs leading-5 text-zinc-500 lg:col-span-2">
+                  Hỗ trợ Excel và PDF sao kê Techcombank có văn bản, tối đa 4 MB. Mật khẩu chỉ dùng để mở file trong lần nhập này.
+                  Trên iPhone: lưu file vào Tệp rồi chọn tại đây. Với ZIP, hãy giải nén trước; PDF ảnh quét chưa được hỗ trợ.
+                </p>
               </form>
+              <details className="mt-3 text-sm text-zinc-600">
+                <summary className="cursor-pointer">Cài Dhamma lên màn hình chính iPhone</summary>
+                <p className="mt-2 leading-6">Mở trang này trong Safari → Chia sẻ → Thêm vào Màn hình chính → Thêm. Sau đó mở biểu tượng Dhamma để sử dụng. Ứng dụng cần kết nối Internet để xem và nhập dữ liệu.</p>
+              </details>
               {data.latestImport ? (
                 <p className="mt-3 text-xs leading-5 text-zinc-500">
                   Lần import gần nhất: {data.latestImport.fileName}, {dateTime(data.latestImport.importedAt)}

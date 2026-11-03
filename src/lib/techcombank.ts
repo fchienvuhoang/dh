@@ -54,6 +54,11 @@ export function parseTechcombankStatement(buffer: Buffer): ParsedStatement {
     raw: false,
   });
 
+  return parseTechcombankMatrix(matrix, sheetName);
+}
+
+export function parseTechcombankMatrix(matrix: SheetCell[][], sheetName: string): ParsedStatement {
+
   const headerIndex = findHeaderRow(matrix);
   const headerRow = matrix[headerIndex].map(normalizeHeader);
   const columns = {

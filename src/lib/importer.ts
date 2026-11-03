@@ -4,6 +4,7 @@ import { classifyDescription, type KeywordRule } from "@/lib/classifier";
 import { toPrismaDecimal } from "@/lib/money";
 import { getPrisma } from "@/lib/prisma";
 import { parseTechcombankStatement } from "@/lib/techcombank";
+import { parseTechcombankPdf } from "@/lib/techcombank-pdf";
 import { normalizeTransferText } from "@/lib/text";
 
 export type ImportResult = {
@@ -27,9 +28,12 @@ export async function importTechcombankStatement(
   fileName: string,
   buffer: Buffer,
   uploadedAt = new Date(),
+  password?: string,
 ) {
+  const parsed = /\.pdf$/i.test(fileName)
+    ? await parseTechcombankPdf(buffer, password)
+    : parseTechcombankStatement(buffer);
   const prisma = getPrisma();
-  const parsed = parseTechcombankStatement(buffer);
   const rules = await loadKeywordRules(prisma);
 
   const uniqueRows = new Map<string, (typeof parsed.rows)[number]>();

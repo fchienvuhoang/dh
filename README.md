@@ -151,3 +151,27 @@ ngoại tới thiện pháp. Không cần reset database.
 5. Giao dịch chưa khớp có thể gán thủ công hoặc bổ sung keyword rồi bấm `Phân loại lại`.
 6. Gán các dòng cột `NO` vào thiện pháp tương ứng để theo dõi tổng chi và tồn quỹ.
 7. Gửi link public `/thien-phap/[ma-thien-phap]` cho thí chủ xem thu chi theo từng thiện pháp.
+
+## PWA và sao kê PDF
+
+Ứng dụng có manifest, icon và service worker; sau khi deploy qua HTTPS, trên iPhone mở bằng Safari → Chia sẻ → Thêm vào Màn hình chính. PWA cần Internet; service worker chỉ hiển thị thông báo khi mất mạng, không lưu trang quản trị, API hay sao kê vào Cache Storage. iOS chưa hỗ trợ nhận file vào PWA từ bảng chia sẻ hệ thống. Lưu sao kê vào Tệp rồi chọn file tại mục Import sao kê.
+
+Form nhập hỗ trợ `.xlsx`, `.xls`, `.pdf`, tối đa 4 MB. PDF có mật khẩu dùng ô mật khẩu ngay dưới nút chọn file; mật khẩu không được ghi vào database. ZIP cần được giải nén trong Tệp trước. PDF ảnh quét chưa được hỗ trợ.
+
+Bộ đọc PDF hỗ trợ bố cục sáu cột và sao kê tám cột xuất từ ứng dụng Techcombank (trang ngang, nội dung nhiều dòng, tiêu đề chỉ ở trang đầu). Đã đối chiếu file mẫu 18 trang, 261 giao dịch: tổng thu, chi và số dư từng dòng đều khớp. Bộ đọc từ chối bố cục không nhận diện đủ; PDF ảnh quét chưa được hỗ trợ. Với bố cục di động, tổng doanh số trên sao kê cũng được đối chiếu. Chi tiết giao dịch là số bút toán dùng chống trùng giống Excel; riêng giao dịch không có số bút toán (lãi/phí), mã được tạo từ tài khoản, ngày, nội dung, số tiền và số dư để chống nhập trùng cùng PDF. Các giao dịch này cần đối chiếu riêng khi nhập chồng với Excel vì Excel có thể dùng mã khác.
+
+File mẫu và mật khẩu không được đưa vào repository. Kiểm tra tự động dùng dữ liệu tổng hợp.
+
+Kiểm tra bộ đọc PDF: `npm run test:pdf`.
+
+## Đăng nhập Google SSO
+
+Thêm `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` (ngẫu nhiên, ít nhất 32 ký tự) và `NEXT_PUBLIC_APP_URL` vào môi trường chạy. `GOOGLE_ALLOWED_EMAILS` nhận danh sách email quản trị phân cách bằng dấu phẩy; mặc định chỉ `fchienvuhoang@gmail.com`. Đặt danh sách rỗng sẽ từ chối mọi tài khoản Google. Đăng nhập mật khẩu hiện có vẫn dùng được.
+
+Trong Google Cloud Console, dùng OAuth client loại Web application và đăng ký **Authorized redirect URI** đúng domain của `NEXT_PUBLIC_APP_URL`:
+
+- Domain mới: `https://dhamma-group.danasangha.org/api/auth/google/callback`
+- Nếu vẫn dùng domain Vercel: `https://dhamma-eight.vercel.app/api/auth/google/callback`
+- Local: đặt `NEXT_PUBLIC_APP_URL=http://localhost:3000`, thêm `http://localhost:3000/api/auth/google/callback`.
+
+Chỉ khai báo `NEXT_PUBLIC_APP_URL` một lần; domain của biến này là nơi bắt đầu và kết thúc đăng nhập. Nếu Google OAuth app đang ở chế độ Testing, thêm email quản trị vào Test users. Sau khi thay biến môi trường cần redeploy/restart. Không đưa secret vào mã nguồn. Luồng Google dùng state, PKCE, nonce, xác minh ID token và phiên có thời hạn 7 ngày; email được kiểm tra lại với danh sách cho phép trên mỗi request. Logout xóa phiên Dhamma, không đăng xuất tài khoản Google trên thiết bị.
