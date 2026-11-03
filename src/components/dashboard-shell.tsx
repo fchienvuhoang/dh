@@ -543,9 +543,10 @@ function Dashboard({ data }: { data: DashboardData }) {
 
           {mainTab === "overview" ? (
             <>
-              <Panel>
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <PanelTitle icon={Settings} title="Danh sách thiện pháp" />
+              <CombinedCampaignStatementTemplate
+                campaigns={data.campaigns}
+                onSelect={(campaign) => setCampaignModal({ mode: "edit", campaign })}
+                headerActions={
                   <button
                     onClick={handleReclassify}
                     disabled={isReclassifying}
@@ -554,14 +555,8 @@ function Dashboard({ data }: { data: DashboardData }) {
                     {isReclassifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                     Phân loại lại
                   </button>
-                </div>
-                <CampaignTable
-                  campaigns={data.campaigns}
-                  onSelect={(campaign) => setCampaignModal({ mode: "edit", campaign })}
-                />
-              </Panel>
-
-              <CombinedCampaignStatementTemplate campaigns={data.campaigns} />
+                }
+              />
 
               <Panel>
                 <PanelTitle icon={Wallet} title="Tổng hợp thu chi" />
@@ -1096,9 +1091,13 @@ function StatementReceiptRow({
 function CampaignTable({
   campaigns,
   onSelect,
+  selectedIds,
+  onToggleStatement,
 }: {
   campaigns: CampaignSummary[];
   onSelect: (campaign: CampaignSummary) => void;
+  selectedIds: string[];
+  onToggleStatement: (id: string, checked: boolean) => void;
 }) {
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
@@ -1106,6 +1105,7 @@ function CampaignTable({
         <table className="w-full min-w-[1080px] text-left text-sm">
           <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
+              <th className="px-3 py-2">Chọn</th>
               <th className="px-3 py-2">Mã</th>
               <th className="px-3 py-2">Thiện pháp</th>
               <th className="px-3 py-2">Trạng thái</th>
@@ -1134,6 +1134,9 @@ function CampaignTable({
                 }}
                 className="cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 focus:outline-none"
               >
+                <td className="px-3 py-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+                  <input type="checkbox" aria-label={`Chọn ${campaign.code} vào sao kê tổng hợp`} disabled={campaign.status !== "ACTIVE"} checked={campaign.status === "ACTIVE" && selectedIds.includes(campaign.id)} onChange={(event) => onToggleStatement(campaign.id, event.target.checked)} className="h-4 w-4 accent-emerald-700 disabled:opacity-30" />
+                </td>
                 <td className="whitespace-nowrap px-3 py-2">
                   <span className="rounded-md bg-zinc-950 px-2 py-1 font-mono text-xs font-medium text-white">
                     {campaign.code}
@@ -1218,7 +1221,7 @@ function CampaignTable({
             ))}
             {campaigns.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-3 py-8 text-center text-zinc-500">
+                <td colSpan={12} className="px-3 py-8 text-center text-zinc-500">
                   Chưa có thiện pháp nào.
                 </td>
               </tr>
@@ -1953,7 +1956,11 @@ function campaignSelectClassName(campaignId: string | undefined, campaigns: Camp
   return "border-zinc-300 bg-zinc-100 text-zinc-600";
 }
 
-function CombinedCampaignStatementTemplate({ campaigns }: { campaigns: CampaignSummary[] }) {
+function CombinedCampaignStatementTemplate({ campaigns, onSelect, headerActions }: {
+  campaigns: CampaignSummary[];
+  onSelect: (campaign: CampaignSummary) => void;
+  headerActions: React.ReactNode;
+}) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -2009,13 +2016,16 @@ function CombinedCampaignStatementTemplate({ campaigns }: { campaigns: CampaignS
     <Panel>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <PanelTitle icon={Copy} title="Sao kê tổng hợp để chia sẻ" />
-          <p className="mt-1 text-sm text-zinc-500">Chọn các thiện pháp đang hoạt động để ghép thành một nội dung sao kê.</p>
+          <PanelTitle icon={Settings} title="Danh sách thiện pháp" />
+          <p className="mt-1 text-sm text-zinc-500">Tích chọn thiện pháp trong bảng để copy sao kê tổng hợp.</p>
         </div>
-        <button type="button" disabled={!ready} onClick={() => void handleCopy()} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          {copied ? "Đã sao chép" : `Sao chép sao kê${selected.length ? ` (${selected.length} thiện pháp)` : ""}`}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" disabled={!ready} onClick={() => void handleCopy()} className="inline-flex items-center justify-center gap-2 rounded-md bg-zinc-950 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50">
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            <span aria-live="polite">{copied ? "Đã copy" : `Copy sao kê tổng hợp${selected.length ? ` (${selected.length})` : ""}`}</span>
+          </button>
+          {headerActions}
+        </div>
       </div>
       {activeCampaigns.length ? <>
         <div className="mt-4 flex items-center gap-3 text-sm">
@@ -2023,20 +2033,24 @@ function CombinedCampaignStatementTemplate({ campaigns }: { campaigns: CampaignS
           <button type="button" onClick={() => select([])} className="text-zinc-500 hover:underline">Bỏ chọn</button>
           <span className="text-zinc-500">Đã chọn {selected.length}/{activeCampaigns.length}</span>
         </div>
-        <fieldset className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <legend className="sr-only">Chọn thiện pháp cho sao kê tổng hợp</legend>
-          {activeCampaigns.map((campaign) => <label key={campaign.id} className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm ${selectedIds.includes(campaign.id) ? "border-emerald-300 bg-emerald-50" : "border-zinc-200 bg-white"}`}>
-            <input type="checkbox" checked={selectedIds.includes(campaign.id)} onChange={(event) => select(event.target.checked ? [...selectedIds, campaign.id] : selectedIds.filter((id) => id !== campaign.id))} className="mt-1 h-4 w-4 accent-emerald-700" />
-            <span><span className="font-semibold">{campaign.code.toLocaleUpperCase("vi-VN")}</span><span className="mt-1 block text-zinc-600">{campaign.name}</span></span>
-          </label>)}
-        </fieldset>
+
       </> : <p className="mt-4 text-sm text-zinc-500">Chưa có thiện pháp đang hoạt động.</p>}
+      <CampaignTable campaigns={campaigns} onSelect={onSelect} selectedIds={selectedIds} onToggleStatement={(id, checked) => select(checked ? [...selectedIds, id] : selectedIds.filter((item) => item !== id))} />
       {copyError ? <p role="alert" className="mt-3 text-sm text-rose-700">{copyError}</p> : null}
       {selected.length > 0 && !ready ? <div role="status" className="mt-4 text-sm text-zinc-600">
         {expenseError ?? (expenses ? "Chi tiết khoản cúng dường chưa khớp tổng chi. Vui lòng thử tải lại." : "Đang tải chi tiết khoản cúng dường…")}
         {expenseError || expenses ? <button type="button" onClick={() => setRetry((value) => value + 1)} className="ml-2 font-medium underline">Thử lại</button> : null}
       </div> : null}
-      {ready ? <div role="textbox" aria-readonly="true" aria-label="Nội dung sao kê tổng hợp" className="mt-4 max-h-[36rem] select-text overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-zinc-200 bg-zinc-50 p-4 text-sm leading-6 text-zinc-800">{statement}</div> : selected.length === 0 && activeCampaigns.length > 0 ? <p className="mt-4 text-sm text-zinc-500">Chọn thiện pháp để xem trước nội dung sao kê.</p> : null}
+      {ready ? <section className="mt-4 overflow-hidden rounded-md border border-zinc-200">
+        <div className="flex items-center justify-between gap-3 border-b border-zinc-200 bg-white px-3 py-2">
+          <span className="text-sm font-medium text-zinc-700">Nội dung sao kê · {selected.length} thiện pháp</span>
+          <button type="button" onClick={() => void handleCopy()} aria-label="Copy sao kê tổng hợp" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-zinc-950 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800">
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            <span aria-live="polite">{copied ? "Đã copy" : "Copy"}</span>
+          </button>
+        </div>
+        <div role="textbox" aria-readonly="true" aria-label="Nội dung sao kê tổng hợp" className="max-h-[36rem] select-text overflow-y-auto whitespace-pre-wrap break-words bg-zinc-50 p-4 text-sm leading-6 text-zinc-800">{statement}</div>
+      </section> : selected.length === 0 && activeCampaigns.length > 0 ? <p className="mt-4 text-sm text-zinc-500">Chọn thiện pháp để xem trước nội dung sao kê.</p> : null}
     </Panel>
   );
 }
