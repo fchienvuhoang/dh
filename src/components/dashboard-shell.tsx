@@ -463,7 +463,7 @@ function Dashboard({ data }: { data: DashboardData }) {
                 <input
                   name="file"
                   type="file"
-                  accept=".xlsx,.xls,.pdf,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  accept=".xlsx,.xls,.pdf,.zip,application/zip,application/x-zip-compressed,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   disabled={isImporting}
                   required
                   className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
@@ -476,12 +476,12 @@ function Dashboard({ data }: { data: DashboardData }) {
                   Nhập sao kê
                 </button>
                 <label className="text-sm text-zinc-600 lg:col-span-2">
-                  Mật khẩu mở PDF (nếu có)
-                  <input name="password" type="password" autoComplete="off" disabled={isImporting} placeholder="Nhập mật khẩu của file PDF" className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm sm:max-w-sm" />
+                  Mật khẩu giải nén ZIP / mở PDF (nếu có)
+                  <input name="password" type="password" autoComplete="off" disabled={isImporting} placeholder="Nhập mật khẩu của file ZIP hoặc PDF" className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm sm:max-w-sm" />
                 </label>
                 <p className="text-xs leading-5 text-zinc-500 lg:col-span-2">
-                  Hỗ trợ Excel và PDF sao kê Techcombank có văn bản, tối đa 4 MB. Mật khẩu chỉ dùng để mở file trong lần nhập này.
-                  Trên iPhone: lưu file vào Tệp rồi chọn tại đây. Với ZIP, hãy giải nén trước; PDF ảnh quét chưa được hỗ trợ.
+                  Hỗ trợ Excel, PDF và ZIP chứa một PDF sao kê Techcombank, tối đa 4 MB tải lên. Mật khẩu chỉ dùng trong lần nhập này.
+                  Trên iPhone: lưu file vào Tệp rồi chọn tại đây. ZIP sẽ được giải nén tự động; PDF sau giải nén tối đa 20 MB. PDF ảnh quét chưa được hỗ trợ.
                 </p>
               </form>
               <details className="mt-3 text-sm text-zinc-600">
