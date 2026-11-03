@@ -15,7 +15,7 @@ test("extracts AES and ZipCrypto protected PDFs without writing archive paths to
     const result = await prepareStatementUpload("statement.zip", archive, "test-password");
     assert.equal(result.fileName, "statement.PDF");
     assert.equal(result.buffer.toString(), "%PDF-1.4\nfixture");
-    await assert.rejects(prepareStatementUpload("statement.zip", archive), /mật khẩu/);
+    await assert.rejects(prepareStatementUpload("statement.zip", archive), /ZIP_PASS/);
     await assert.rejects(prepareStatementUpload("statement.zip", archive, "incorrect"), /Mật khẩu/);
   }
 });

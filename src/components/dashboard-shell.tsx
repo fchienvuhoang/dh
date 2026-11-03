@@ -476,11 +476,11 @@ function Dashboard({ data }: { data: DashboardData }) {
                   Nhập sao kê
                 </button>
                 <label className="text-sm text-zinc-600 lg:col-span-2">
-                  Mật khẩu giải nén ZIP / mở PDF (nếu có)
-                  <input name="password" type="password" autoComplete="off" disabled={isImporting} placeholder="Nhập mật khẩu của file ZIP hoặc PDF" className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm sm:max-w-sm" />
+                  Mật khẩu mở PDF (nếu có)
+                  <input name="password" type="password" autoComplete="off" disabled={isImporting} placeholder="Chỉ nhập nếu PDF có mật khẩu" className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm sm:max-w-sm" />
                 </label>
                 <p className="text-xs leading-5 text-zinc-500 lg:col-span-2">
-                  Hỗ trợ Excel, PDF và ZIP chứa một PDF sao kê Techcombank, tối đa 4 MB tải lên. Mật khẩu chỉ dùng trong lần nhập này.
+                  Hỗ trợ Excel, PDF và ZIP chứa một PDF sao kê Techcombank, tối đa 4 MB tải lên. ZIP tự dùng mật khẩu đã cấu hình.
                   Trên iPhone: lưu file vào Tệp rồi chọn tại đây. ZIP sẽ được giải nén tự động; PDF sau giải nén tối đa 20 MB. PDF ảnh quét chưa được hỗ trợ.
                 </p>
               </form>

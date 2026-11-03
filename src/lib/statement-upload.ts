@@ -24,7 +24,7 @@ export async function prepareStatementUpload(fileName: string, buffer: Buffer, p
     if (pdfs.length !== 1) throw new Error("ZIP cần chứa đúng một file PDF sao kê.");
     const pdf = pdfs[0];
     if (pdf.directory) throw new Error("ZIP cần chứa một file PDF sao kê.");
-    if (pdf.encrypted && !password) throw new Error("Vui lòng nhập mật khẩu giải nén ZIP.");
+    if (pdf.encrypted && !password) throw new Error("Vui lòng cấu hình ZIP_PASS để giải nén ZIP.");
     if (pdf.uncompressedSize > MAX_PDF_BYTES) throw new Error("PDF sau giải nén không được vượt quá 20 MB.");
     const chunks: Buffer[] = [];
     let size = 0;
@@ -40,7 +40,7 @@ export async function prepareStatementUpload(fileName: string, buffer: Buffer, p
     return { fileName: pdf.filename.split(/[\\/]/).pop()!, buffer: extracted };
   } catch (error) {
     if (error instanceof Error && [ERR_INVALID_PASSWORD, ERR_ENCRYPTED].includes(error.message)) {
-      throw new Error("Mật khẩu giải nén ZIP chưa đúng. Vui lòng nhập lại.");
+      throw new Error("Mật khẩu giải nén ZIP chưa đúng. Vui lòng kiểm tra ZIP_PASS.");
     }
     if (error instanceof Error && /^(ZIP |PDF |Vui lòng |File bên trong)/.test(error.message)) throw error;
     throw new Error("Không giải nén được ZIP. File có thể bị lỗi hoặc không được hỗ trợ.");

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const uploadPassword = typeof password === "string" ? password : undefined;
-    const prepared = await prepareStatementUpload(file.name, buffer, uploadPassword);
+    const prepared = await prepareStatementUpload(file.name, buffer, process.env.ZIP_PASS);
     const result = await importTechcombankStatement(prepared.fileName, prepared.buffer, uploadedAt, uploadPassword);
     const affectedCodes = invalidatePublicCampaignCache(result.affectedCampaignCodes);
     await warmPublicCampaignCaches(affectedCodes);
