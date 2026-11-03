@@ -777,8 +777,8 @@ function TransactionTable({
         </div>
       </div>
       <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-        <div className="max-h-[620px] overflow-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
+        <div className="w-full">
+        <table className="responsive-data-table transaction-data-table w-full text-left text-sm">
           <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
               <th className="w-10 px-3 py-2">
@@ -813,7 +813,7 @@ function TransactionTable({
                     : "bg-rose-50/50 hover:bg-rose-50"
                 }
               >
-                <td className="px-3 py-2 align-top">
+                <td data-label="Chọn" className="px-3 py-2 align-top">
                   <input
                     type="checkbox"
                     checked={selectedTransactionIds.has(transaction.id)}
@@ -823,8 +823,8 @@ function TransactionTable({
                     className="h-4 w-4 rounded border-zinc-300 accent-emerald-600"
                   />
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-zinc-600">{dateOnly(transaction.transactionDate)}</td>
-                <td className="max-w-md px-3 py-2 align-top">
+                <td data-label="Ngày" className="whitespace-nowrap px-3 py-2 text-zinc-600">{dateOnly(transaction.transactionDate)}</td>
+                <td data-label="Nội dung chuyển khoản" className="max-w-md px-3 py-2 align-top">
                   <div className="whitespace-pre-wrap break-words font-medium text-zinc-900">
                     {transaction.description}
                   </div>
@@ -832,7 +832,7 @@ function TransactionTable({
                     {transaction.matchedKeyword ?? "Chưa có keyword khớp"}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-xs">
+                <td data-label="Chi tiết" className="whitespace-nowrap px-3 py-2 text-xs">
                   <button
                     type="button"
                     onClick={() => setDetailTransaction(transaction)}
@@ -842,13 +842,13 @@ function TransactionTable({
                     {transaction.detail || "Xem chi tiết"}
                   </button>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right font-medium text-emerald-700">
+                <td data-label="Có" className="whitespace-nowrap px-3 py-2 text-right font-medium text-emerald-700">
                   {transaction.creditAmount > 0 ? money(transaction.creditAmount) : "-"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right text-amber-700">
+                <td data-label="Nợ" className="whitespace-nowrap px-3 py-2 text-right text-amber-700">
                   {transaction.debitAmount > 0 ? money(transaction.debitAmount) : "-"}
                 </td>
-                <td className="px-3 py-2">
+                <td data-label="Thiện pháp" className="px-3 py-2">
                   {transaction.allocations.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {transaction.allocations.map((allocation) => (
@@ -870,7 +870,7 @@ function TransactionTable({
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2">
+                <td data-label="Gán" className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     <select
                       value={transaction.campaign?.id ?? ""}
@@ -1101,8 +1101,8 @@ function CampaignTable({
 }) {
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-      <div className="overflow-auto">
-        <table className="w-full min-w-[1080px] text-left text-sm">
+      <div className="w-full">
+        <table className="responsive-data-table campaign-data-table w-full text-left text-sm">
           <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
               <th className="px-3 py-2">Chọn</th>
@@ -1134,26 +1134,26 @@ function CampaignTable({
                 }}
                 className="cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 focus:outline-none"
               >
-                <td className="px-3 py-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+                <td data-label="Chọn" className="px-3 py-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
                   <input type="checkbox" aria-label={`Chọn ${campaign.code} vào sao kê tổng hợp`} disabled={campaign.status !== "ACTIVE"} checked={campaign.status === "ACTIVE" && selectedIds.includes(campaign.id)} onChange={(event) => onToggleStatement(campaign.id, event.target.checked)} className="h-4 w-4 accent-emerald-700 disabled:opacity-30" />
                 </td>
-                <td className="whitespace-nowrap px-3 py-2">
+                <td data-label="Mã" className="whitespace-nowrap px-3 py-2">
                   <span className="rounded-md bg-zinc-950 px-2 py-1 font-mono text-xs font-medium text-white">
                     {campaign.code}
                   </span>
                 </td>
-                <td className="max-w-xs px-3 py-2">
+                <td data-label="Thiện pháp" className="max-w-xs px-3 py-2">
                   <div className="font-medium text-zinc-900">{campaign.name}</div>
                   {campaign.description ? (
                     <div className="mt-1 line-clamp-1 text-xs text-zinc-500">{campaign.description}</div>
                   ) : null}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2">
+                <td data-label="Trạng thái" className="whitespace-nowrap px-3 py-2">
                   <span className={`rounded-md border px-2 py-1 text-xs font-medium ${statusClassNames[campaign.status]}`}>
                     {statusLabels[campaign.status]}
                   </span>
                 </td>
-                <td className="max-w-xs px-3 py-2">
+                <td data-label="Từ khóa" className="max-w-xs px-3 py-2">
                   <div className="flex flex-wrap gap-1">
                     {campaign.keywords.slice(0, 4).map((keyword) => {
                       const isDisabled = !keyword.active || campaign.status === "COMPLETED";
@@ -1187,22 +1187,22 @@ function CampaignTable({
                     ) : null}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right font-medium text-emerald-700">
+                <td data-label="Hùn phước" className="whitespace-nowrap px-3 py-2 text-right font-medium text-emerald-700">
                   {money(campaign.income)}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right text-amber-700">
+                <td data-label="Tổng chi" className="whitespace-nowrap px-3 py-2 text-right text-amber-700">
                   {money(campaign.expenses)}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right text-rose-700">
+                <td data-label="Hoàn lại" className="whitespace-nowrap px-3 py-2 text-right text-rose-700">
                   {money(campaign.refunds)}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-zinc-950">
+                <td data-label="Còn lại" className="whitespace-nowrap px-3 py-2 text-right font-semibold text-zinc-950">
                   {money(campaign.balance)}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right text-zinc-600">
+                <td data-label="GD" className="whitespace-nowrap px-3 py-2 text-right text-zinc-600">
                   {campaign.transactionCount.toLocaleString("vi-VN")}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right">
+                <td data-label="Link công khai" className="whitespace-nowrap px-3 py-2 text-right">
                   <a
                     href={publicCampaignPath(campaign.code)}
                     target="_blank"
@@ -1214,7 +1214,7 @@ function CampaignTable({
                     Thí chủ xem
                   </a>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right text-zinc-500">
+                <td data-label="Sửa" className="whitespace-nowrap px-3 py-2 text-right text-zinc-500">
                   <Settings className="ml-auto h-4 w-4" />
                 </td>
               </tr>
@@ -1252,8 +1252,8 @@ function DebitTransactionTable({
   return (
     <>
       <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-        <div className="max-h-[420px] overflow-auto">
-        <table className="w-full min-w-[880px] text-left text-sm">
+        <div className="w-full">
+        <table className="responsive-data-table debit-data-table w-full text-left text-sm">
           <thead className="sticky top-0 bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
               <th className="px-3 py-2">Ngày</th>
@@ -1271,15 +1271,15 @@ function DebitTransactionTable({
                 key={transaction.id}
                 className={transaction.campaign ? "hover:bg-zinc-50" : "bg-amber-50/60 hover:bg-amber-50"}
               >
-                <td className="whitespace-nowrap px-3 py-2 align-top text-zinc-600">
+                <td data-label="Ngày" className="whitespace-nowrap px-3 py-2 align-top text-zinc-600">
                   {dateOnly(transaction.transactionDate)}
                 </td>
-                <td className="max-w-md px-3 py-2 align-top">
+                <td data-label="Nội dung chuyển khoản" className="max-w-md px-3 py-2 align-top">
                   <div className="whitespace-pre-wrap break-words font-medium text-zinc-900">
                     {transaction.description}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 align-top text-xs">
+                <td data-label="Chi tiết" className="whitespace-nowrap px-3 py-2 align-top text-xs">
                   <button
                     type="button"
                     onClick={() => setDetailTransaction(transaction)}
@@ -1289,10 +1289,10 @@ function DebitTransactionTable({
                     {transaction.detail || "Xem chi tiết"}
                   </button>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right align-top font-medium text-amber-700">
+                <td data-label="Nợ" className="whitespace-nowrap px-3 py-2 text-right align-top font-medium text-amber-700">
                   {money(transaction.debitAmount)}
                 </td>
-                <td className="px-3 py-2 align-top">
+                <td data-label="Thiện pháp" className="px-3 py-2 align-top">
                   {transaction.campaign ? (
                     <span className="inline-flex rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
                       {transaction.campaign.code}
@@ -1303,7 +1303,7 @@ function DebitTransactionTable({
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2 align-top">
+                <td data-label="Loại chuyển ra" className="px-3 py-2 align-top">
                   <select
                     value={transaction.outflowType}
                     disabled={pendingTransactionId === transaction.id}
@@ -1320,7 +1320,7 @@ function DebitTransactionTable({
                     <option value="REFUND">Hoàn lại</option>
                   </select>
                 </td>
-                <td className="px-3 py-2 align-top">
+                <td data-label="Gán / liên kết" className="px-3 py-2 align-top">
                   <div className="flex flex-col items-start gap-2">
                     <select
                       value={transaction.campaign?.id ?? ""}
@@ -1443,7 +1443,7 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
 
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-zinc-200">
-      <table className="w-full text-left text-sm">
+      <table className="responsive-data-table summary-data-table w-full text-left text-sm">
         <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
           <tr>
             <th className="px-3 py-2">Khoản mục</th>
@@ -1454,9 +1454,9 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
         <tbody className="divide-y divide-zinc-100 bg-white">
           {rows.map((row) => (
             <tr key={row.label}>
-              <td className="px-3 py-2 font-medium text-zinc-900">{row.label}</td>
-              <td className="px-3 py-2 text-zinc-500">{row.note}</td>
-              <td className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${row.className}`}>
+              <td data-label="Khoản mục" className="px-3 py-2 font-medium text-zinc-900">{row.label}</td>
+              <td data-label="Cách tính / ghi chú" className="px-3 py-2 text-zinc-500">{row.note}</td>
+              <td data-label="Số tiền" className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${row.className}`}>
                 {money(row.value)}
               </td>
             </tr>

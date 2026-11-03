@@ -30,3 +30,98 @@ select:disabled,
 [role="button"][aria-disabled="true"] {
   cursor: not-allowed;
 }
+
+/* Tables fit their container; long content and controls wrap inside each cell. */
+.responsive-data-table {
+  table-layout: fixed;
+  min-width: 0;
+}
+.responsive-data-table th,
+.responsive-data-table td {
+  min-width: 0;
+  max-width: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+  padding: 0.5rem;
+}
+.responsive-data-table td :is(select, input:not([type="checkbox"]), button, a) {
+  max-width: 100%;
+  min-width: 0;
+}
+.responsive-data-table td :is(button, a, span) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.responsive-data-table td > .flex {
+  flex-wrap: wrap;
+}
+.responsive-data-table td select {
+  width: 100%;
+}
+@media (min-width: 1280px) {
+  .responsive-data-table {
+    font-size: 0.75rem;
+  }
+}
+@media (max-width: 1279px) {
+  .responsive-data-table,
+  .responsive-data-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .responsive-data-table thead {
+    display: none;
+  }
+  .responsive-data-table tbody > tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem 0.5rem;
+    padding: 0.5rem;
+  }
+  .responsive-data-table tbody > tr + tr {
+    border-top: 1px solid #e4e4e7;
+  }
+  .responsive-data-table td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0.25rem;
+    text-align: left;
+  }
+  .responsive-data-table td[data-label]::before {
+    content: attr(data-label);
+    color: #71717a;
+    font-size: 0.65rem;
+    font-weight: 500;
+  }
+  .responsive-data-table td[data-label="Nội dung chuyển khoản"],
+  .responsive-data-table td[data-label="Thiện pháp"],
+  .responsive-data-table td[colspan] {
+    grid-column: 1 / -1;
+  }
+  .responsive-data-table td > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+@media (min-width: 1280px) {
+  .campaign-data-table th:nth-child(1) { width: 5%; }
+  .campaign-data-table th:nth-child(2) { width: 6%; }
+  .campaign-data-table th:nth-child(3) { width: 20%; }
+  .campaign-data-table th:nth-child(4) { width: 8%; }
+  .campaign-data-table th:nth-child(5) { width: 12%; }
+  .campaign-data-table th:nth-child(10) { width: 4%; }
+  .campaign-data-table th:nth-child(11) { width: 8%; }
+  .campaign-data-table th:nth-child(12) { width: 3%; }
+  .transaction-data-table th:nth-child(1) { width: 4%; }
+  .transaction-data-table th:nth-child(2) { width: 9%; }
+  .transaction-data-table th:nth-child(3) { width: 24%; }
+  .transaction-data-table th:nth-child(4) { width: 12%; }
+  .transaction-data-table th:nth-child(8) { width: 19%; }
+  .debit-data-table th:nth-child(1) { width: 9%; }
+  .debit-data-table th:nth-child(2) { width: 25%; }
+  .debit-data-table th:nth-child(3) { width: 12%; }
+  .debit-data-table th:nth-child(7) { width: 20%; }
+}

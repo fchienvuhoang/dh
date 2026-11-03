@@ -123,7 +123,7 @@ export default async function ReadonlyReportPage() {
             <p className="mt-1 text-sm text-zinc-500">Số liệu tổng thu, tổng chi, còn thừa và đường dẫn công khai cho thí chủ.</p>
           </div>
 
-          <div className="divide-y divide-zinc-100 md:hidden">
+          <div className="divide-y divide-zinc-100 xl:hidden">
             {data.campaigns.map((campaign) => (
               <article key={campaign.id} className="px-4 py-4">
                 <div className="flex min-w-0 items-start justify-between gap-3">
@@ -189,8 +189,8 @@ export default async function ReadonlyReportPage() {
             ) : null}
           </div>
 
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[980px] text-left text-sm">
+          <div className="hidden xl:block">
+            <table className="responsive-data-table w-full text-left text-sm">
               <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
                 <tr>
                   <th className="px-4 py-3">Thiện pháp</th>

@@ -228,7 +228,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             </div>
           </div>
 
-          <div className="mt-5 space-y-3 md:hidden">
+          <div className="mt-5 space-y-3 xl:hidden">
             {filteredTransactions.map((transaction, index) => (
               <PublicTransactionCard
                 key={transaction.id}
@@ -240,9 +240,9 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
             {filteredTransactions.length === 0 ? <EmptyState /> : null}
           </div>
 
-          <div className="mt-5 hidden overflow-hidden rounded-lg border border-[#edcddb] md:block">
-            <div className="max-h-[720px] overflow-auto">
-              <table className="w-full min-w-[820px] text-left text-sm">
+          <div className="mt-5 hidden overflow-hidden rounded-lg border border-[#edcddb] xl:block">
+            <div className="w-full">
+              <table className="responsive-data-table w-full text-left text-sm">
                 <thead className="sticky top-0 bg-[#fff1f6] text-xs uppercase text-[#684e5b]">
                   <tr>
                     <th className="px-4 py-3">Ngày</th>
