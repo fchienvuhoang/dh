@@ -329,7 +329,7 @@ function PublicTransactionCard({
 
   return (
     <article
-      className="cursor-pointer overflow-hidden rounded-lg border border-[#e8b8cc] bg-white shadow-[0_6px_18px_rgba(76,23,59,0.09)] transition hover:border-[#cf7da1] hover:shadow-[0_8px_24px_rgba(76,23,59,0.14)]"
+      className="mobile-compact-card cursor-pointer overflow-hidden rounded-lg border border-[#e8b8cc] bg-white shadow-[0_6px_18px_rgba(76,23,59,0.09)] transition hover:border-[#cf7da1] hover:shadow-[0_8px_24px_rgba(76,23,59,0.14)]"
       role="button"
       tabIndex={0}
       onClick={onViewDetails}

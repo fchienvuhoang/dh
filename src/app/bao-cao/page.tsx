@@ -125,7 +125,7 @@ export default async function ReadonlyReportPage() {
 
           <div className="divide-y divide-zinc-100 xl:hidden">
             {data.campaigns.map((campaign) => (
-              <article key={campaign.id} className="px-4 py-4">
+              <article key={campaign.id} className="mobile-compact-report px-4 py-4">
                 <div className="flex min-w-0 items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="break-words text-sm font-semibold leading-6 text-zinc-950">
