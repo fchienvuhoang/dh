@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { PwaStartup } from "@/components/pwa-startup";
 import { PwaRegistration } from "@/components/pwa-registration";
 
 const geistSans = Geist({
@@ -44,8 +43,12 @@ export default function RootLayout({
     <html
       lang="vi"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      style={{ backgroundColor: "#f7f7f4" }}
     >
-      <body className="min-h-full flex flex-col"><PwaRegistration /><PwaStartup />{children}</body>
+      <head>
+        <link rel="preload" as="image" href="/splash/iphone-430x932-3.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
+      </head>
+      <body className="min-h-full flex flex-col"><PwaRegistration />{children}</body>
     </html>
   );
 }
