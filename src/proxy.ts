@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from "@/lib/auth";
 
 const PUBLIC_PREFIXES = [
+  "/khoi-dong",
   "/dang-nhap",
   "/thien-phap",
   "/bao-cao",

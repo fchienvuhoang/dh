@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Dhamma",
     description: "Nhập sao kê và quản lý thiện pháp của Dhamma Group.",
     lang: "vi",
-    start_url: "/",
+    start_url: "/khoi-dong",
     scope: "/",
     display: "standalone",
     background_color: "#f7f7f4",

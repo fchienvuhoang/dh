@@ -5,7 +5,7 @@
   "scripts": {
     "test:pdf": "tsx --test src/lib/techcombank-pdf.test.ts",
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/prepare-pwa.mjs && prisma generate && next build",
     "vercel-build": "prisma migrate deploy && npm run build",
     "start": "next start",
     "lint": "eslint",
