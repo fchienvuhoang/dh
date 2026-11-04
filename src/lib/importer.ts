@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError, type InputJsonObject } from "@prisma/client/runtime/client";
 import { classifyDescription, type KeywordRule } from "@/lib/classifier";
+import { newStatementRows } from "@/lib/statement-deduplication";
 import { toPrismaDecimal } from "@/lib/money";
 import { getPrisma } from "@/lib/prisma";
 import { parseTechcombankStatement } from "@/lib/techcombank";
@@ -81,12 +82,23 @@ export async function importTechcombankStatement(
     });
 
     const details = [...uniqueRows.keys()];
+    const dates = parsed.rows.map((row) => row.transactionDate.getTime());
+    const from = dates.length ? new Date(Math.min(...dates)) : uploadedAt;
+    from.setUTCHours(0, 0, 0, 0);
+    const until = dates.length ? new Date(Math.max(...dates)) : new Date(uploadedAt);
+    until.setUTCHours(24, 0, 0, 0);
     const existing = await tx.bankTransaction.findMany({
-      where: { detail: { in: details } },
-      select: { detail: true },
+      where: { OR: [
+        { detail: { in: details } },
+        { accountId: account.id, transactionDate: { gte: from, lt: until } },
+      ] },
+      select: { accountId: true, detail: true, transactionDate: true, description: true, debitAmount: true, creditAmount: true, balanceAfter: true },
     });
-    const existingDetails = new Set(existing.map((item) => item.detail));
-    const insertableRows = [...uniqueRows.values()].filter((row) => !existingDetails.has(row.detail));
+    const insertableRows = newStatementRows([...uniqueRows.values()], existing.map((row) => ({
+      ...row,
+      debitAmount: Number(row.debitAmount), creditAmount: Number(row.creditAmount),
+      balanceAfter: row.balanceAfter == null ? null : Number(row.balanceAfter),
+    })), account.id);
 
     const data = insertableRows.map((row) => {
       const classification = classifyDescription(row.description, rules);

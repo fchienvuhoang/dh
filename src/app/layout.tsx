@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { PwaStartup } from "@/components/pwa-startup";
 import { PwaRegistration } from "@/components/pwa-registration";
 
 const geistSans = Geist({
@@ -13,11 +14,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const viewport: Viewport = { themeColor: "#18181b" };
+export const viewport: Viewport = { themeColor: "#f7f7f4" };
 
 export const metadata: Metadata = {
   applicationName: "Dhamma",
-  appleWebApp: { capable: true, title: "Dhamma", statusBarStyle: "default" },
+  appleWebApp: {
+    capable: true,
+    title: "Dhamma",
+    statusBarStyle: "default",
+    startupImage: [
+      [375, 667, 2], [375, 812, 3], [390, 844, 3], [393, 852, 3],
+      [402, 874, 3], [414, 896, 2], [414, 896, 3], [430, 932, 3], [440, 956, 3],
+    ].map(([width, height, ratio]) => ({
+      url: `/splash/iphone-${width}x${height}-${ratio}.png`,
+      media: `(device-width: ${width}px) and (device-height: ${height}px) and (-webkit-device-pixel-ratio: ${ratio}) and (orientation: portrait)`,
+    })),
+  },
   icons: { apple: "/icons/icon-180.png" },
   title: "Quản lý thiện pháp",
   description: "Phân loại sao kê Techcombank theo thiện pháp.",
@@ -33,7 +45,7 @@ export default function RootLayout({
       lang="vi"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col"><PwaRegistration />{children}</body>
+      <body className="min-h-full flex flex-col"><PwaRegistration /><PwaStartup />{children}</body>
     </html>
   );
 }

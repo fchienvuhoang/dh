@@ -125,3 +125,42 @@ select:disabled,
   .debit-data-table th:nth-child(3) { width: 12%; }
   .debit-data-table th:nth-child(7) { width: 20%; }
 }
+
+.app-loading {
+  display: flex;
+  min-height: 100svh;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: #f7f7f4;
+  color: #171717;
+  text-align: center;
+}
+.app-loading-logo { border-radius: 1.25rem; }
+.app-loading-title { font-size: 1.25rem; font-weight: 600; }
+.app-loading-caption { color: #71717a; font-size: 0.875rem; }
+.app-loading-spinner {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 3px solid #e4e4e7;
+  border-top-color: #047857;
+  border-radius: 50%;
+  animation: app-loading-spin 0.8s linear infinite;
+}
+.pwa-startup { display: none; }
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .pwa-startup {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: #f7f7f4;
+  }
+}
+@keyframes app-loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .app-loading-spinner { animation: none; }
+}
