@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     if (!/\.(xlsx|xls|pdf|zip)$/i.test(file.name)) {
-      return NextResponse.json({ error: "Chỉ hỗ trợ Excel (.xlsx, .xls), PDF và ZIP chứa PDF." }, { status: 400 });
+      return NextResponse.json({ error: "Chỉ hỗ trợ Excel (.xlsx, .xls), PDF và ZIP chứa Excel hoặc PDF." }, { status: 400 });
     }
     if (!file.size || file.size > 4 * 1024 * 1024) {
       return NextResponse.json({ error: "Vui lòng chọn file có dữ liệu và không quá 4 MB." }, { status: 400 });

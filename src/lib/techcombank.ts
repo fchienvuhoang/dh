@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import * as XLSX from "xlsx";
 import { parseAmount } from "@/lib/money";
 import { normalizeTransferText } from "@/lib/text";
@@ -54,6 +55,9 @@ export function parseTechcombankStatement(buffer: Buffer): ParsedStatement {
     raw: false,
   });
 
+  if (matrix.some((row) => row.some((cell) => normalizeHeader(cell).includes("so but toan transaction no")))) {
+    return parseMobileExcelMatrix(matrix, sheetName);
+  }
   return parseTechcombankMatrix(matrix, sheetName);
 }
 
@@ -191,4 +195,72 @@ function normalizeHeader(value: unknown) {
 
 function toCellString(value: unknown) {
   return String(value ?? "").trim();
+}
+
+
+function parseMobileExcelMatrix(matrix: SheetCell[][], sheetName: string): ParsedStatement {
+  const unsupported = "Chưa đọc đầy đủ sao kê Excel Techcombank này hoặc số dư không khớp. Chưa có giao dịch nào được nhập.";
+  const headerIndex = matrix.findIndex((row) => row.some((cell) => normalizeHeader(cell).includes("so but toan transaction no")));
+  const header = matrix[headerIndex].map(normalizeHeader);
+  const column = (label: string) => header.findIndex((value) => value.startsWith(label));
+  const columns = { date: column("ngay giao dich"), description: column("dien giai"), detail: column("so but toan"), debit: column("no tktt"), credit: column("co tktt"), balance: column("so du") };
+  if (Object.values(columns).some((index) => index < 0)) throw new Error(unsupported);
+  const valueAfter = (label: string) => {
+    for (const row of matrix) {
+      const index = row.findIndex((cell) => normalizeHeader(cell).startsWith(label));
+      if (index >= 0) return row.slice(index + 1).find((cell) => toCellString(cell)) ?? null;
+    }
+    return null;
+  };
+  const meta: StatementMeta = {
+    sourceBank: "TECHCOMBANK",
+    accountNumber: toCellString(valueAfter("so tai khoan account no")) || null,
+    accountName: toCellString(valueAfter("ten tai khoan account name")) || null,
+    currency: toCellString(valueAfter("loai tien currency")) || "VND",
+    fromDate: parseBankDate(valueAfter("tu ngay from")),
+    toDate: parseBankDate(valueAfter("den ngay to")),
+    openingBalance: parseOptionalAmount(valueAfter("so du dau ky opening balance")),
+    closingBalance: parseOptionalAmount(valueAfter("so du cuoi ky ending balance")),
+  };
+  if (!meta.accountNumber || !meta.fromDate || !meta.toDate || meta.openingBalance == null || meta.closingBalance == null) throw new Error(unsupported);
+  const readAmount = (value: SheetCell) => {
+    const text = toCellString(value);
+    if (text && !/^(?:-|\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)$/.test(text)) throw new Error(unsupported);
+    return parseAmount(value);
+  };
+  const rows: StatementTransactionRow[] = [];
+  for (let index = headerIndex + 1; index < matrix.length; index++) {
+    const row = matrix[index];
+    const transactionDate = parseBankDate(row[columns.date]);
+    if (!transactionDate) continue;
+    const description = toCellString(row[columns.description]).replace(/\s+/g, " ");
+    const debitAmount = readAmount(row[columns.debit]);
+    const creditAmount = readAmount(row[columns.credit]);
+    const balanceAfter = readAmount(row[columns.balance]);
+    if (!description || !toCellString(row[columns.balance]) || (debitAmount > 0) === (creditAmount > 0)) throw new Error(unsupported);
+    const fallback = "TCB-PDF-" + createHash("sha256").update(JSON.stringify([
+      meta.accountNumber, toCellString(row[columns.date]), description,
+      toCellString(row[columns.debit]), toCellString(row[columns.credit]), toCellString(row[columns.balance]),
+    ])).digest("hex");
+    rows.push({ transactionDate, statementRow: index + 1, description,
+      detail: toCellString(row[columns.detail]) || fallback,
+      debitAmount, creditAmount, balanceAfter,
+      raw: { NGAY: row[columns.date] ?? null, DIEN_GIAI: description, CHI_TIET: row[columns.detail] ?? null, NO: row[columns.debit] ?? null, CO: row[columns.credit] ?? null, SO_DU: row[columns.balance] ?? null },
+    });
+  }
+  if (!rows.length || new Set(rows.map((row) => row.detail)).size !== rows.length) throw new Error(unsupported);
+  const totalsRow = matrix.find((row) => row.some((cell) => normalizeHeader(cell).startsWith("cong doanh so total volume")));
+  if (!totalsRow) throw new Error(unsupported);
+  const debit = rows.reduce((sum, row) => sum + row.debitAmount, 0);
+  const credit = rows.reduce((sum, row) => sum + row.creditAmount, 0);
+  if (Math.abs(debit - readAmount(totalsRow[columns.debit])) > .01 || Math.abs(credit - readAmount(totalsRow[columns.credit])) > .01 || Math.abs(meta.openingBalance + credit - debit - meta.closingBalance) > .01) throw new Error(unsupported);
+  const reconciles = (ordered: StatementTransactionRow[]) => {
+    let balance = meta.openingBalance!;
+    return ordered.every((row) => {
+      balance += row.creditAmount - row.debitAmount;
+      return Math.abs(balance - row.balanceAfter!) < .01;
+    });
+  };
+  if (!reconciles(rows) && !reconciles([...rows].reverse())) throw new Error(unsupported);
+  return { sheetName, meta, rows };
 }
