@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
 import { downloadElementAsPng } from "@/lib/download-element-image";
 import { normalizeTransferText } from "@/lib/text";
+import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
 const statusLabels = {
   ACTIVE: "Đang chạy",
@@ -120,10 +121,10 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
         {data.donations.length > 0 ? (
           <section className="mb-5 rounded-lg border border-[#edcddb] bg-white p-4 sm:p-5">
-            <h2 className="text-lg font-bold text-[#4a1838]">Chi tiết các khoản cúng dường và bill chuyển tiền</h2>
+            <h2 className="text-lg font-bold text-[#4a1838]">{TRANSFER_BILLS_ENABLED ? "Chi tiết các khoản cúng dường và bill chuyển tiền" : "Chi tiết các khoản cúng dường"}</h2>
             <div className="mt-4 space-y-4">
               {data.donations.map((donation, index) => {
-                const bills = data.bills.filter((bill) => bill.transactionId === donation.id);
+                const bills = TRANSFER_BILLS_ENABLED ? data.bills.filter((bill) => bill.transactionId === donation.id) : [];
                 return (
                   <article key={donation.id} className="rounded-lg border border-[#edcddb] bg-[#fff8fb] p-4">
                     <h3 className="font-semibold text-[#4a1838]">{index + 1}. {bills[0]?.title ?? donation.title}</h3>
@@ -131,7 +132,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                       {new Date(donation.transactionDate).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })} · {money(donation.amount)}
                       {bills.length > 0 ? ` · ${bills.length.toLocaleString("vi-VN")} bill` : ""}
                     </p>
-                    {bills.length === 0 ? <p className="mt-3 text-sm text-[#78636f]">Chưa có bill chuyển tiền.</p> : (
+                    {TRANSFER_BILLS_ENABLED ? (bills.length === 0 ? <p className="mt-3 text-sm text-[#78636f]">Chưa có bill chuyển tiền.</p> : (
                       <div className="-mx-1 mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
                         {bills.map((bill, billIndex) => (
                           <button
@@ -157,14 +158,14 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                           </button>
                         ))}
                       </div>
-                    )}
+                    )) : null}
                   </article>
                 );
               })}
             </div>
           </section>
         ) : null}
-        {data.bills.some((bill) => !bill.transactionId) ? (
+        {TRANSFER_BILLS_ENABLED && data.bills.some((bill) => !bill.transactionId) ? (
           <section className="mb-5 rounded-lg border border-[#edcddb] bg-white p-3 shadow-[0_10px_30px_rgba(76,23,59,0.08)] sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -282,7 +283,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           onClose={() => setSelectedTransaction(null)}
         />
       ) : null}
-      {selectedBillId ? (
+      {TRANSFER_BILLS_ENABLED && selectedBillId ? (
         <div
           className="fixed inset-0 z-[90] flex items-center justify-center bg-zinc-950/85 p-4 backdrop-blur-sm"
           role="dialog"

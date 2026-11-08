@@ -4,8 +4,9 @@ import { decimalToNumber } from "@/lib/money";
 import { getPrisma, withDatabaseReadRetry } from "@/lib/prisma";
 import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
+import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bills-v7";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bills-hidden-v8";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
@@ -236,7 +237,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
       orderBy: { transaction: { transactionDate: "desc" } },
       take: 1000,
     }),
-    loadPublicCampaignBills(campaign.id),
+    TRANSFER_BILLS_ENABLED ? loadPublicCampaignBills(campaign.id) : Promise.resolve([]),
     prisma.bankTransaction.findMany({
       where: { campaignId: campaign.id, outflowType: "DONATION", debitAmount: { gt: 0 } },
       select: { id: true, description: true, debitAmount: true, transactionDate: true },

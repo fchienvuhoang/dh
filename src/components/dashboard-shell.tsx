@@ -36,6 +36,7 @@ import type {
 import { buildCampaignStatement, buildCombinedCampaignStatement, formatTp04ExpenseDescription, selectedStatementCampaigns, shortVietnamDate } from "@/lib/campaign-statement";
 import { downloadElementAsPng } from "@/lib/download-element-image";
 import { normalizeTransferText, splitKeywords } from "@/lib/text";
+import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
 type Props = {
   state: DashboardState;
@@ -2389,7 +2390,7 @@ function CampaignModal({
           />
           <Textarea name="description" label="Ghi chú" rows={3} defaultValue={campaign?.description ?? ""} />
 
-          {campaign ? <CampaignBillManager campaign={campaign} /> : null}
+          {TRANSFER_BILLS_ENABLED && campaign ? <CampaignBillManager campaign={campaign} /> : null}
           {campaign ? <CampaignStatementTemplate campaign={campaign} /> : null}
 
           <div className="flex flex-col-reverse gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
