@@ -250,7 +250,6 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                     <th className="px-4 py-3">Phương danh thí chủ hùn phước</th>
                     <th className="px-4 py-3">Loại</th>
                     <th className="px-4 py-3 text-right">Số tiền</th>
-                    <th className="px-4 py-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f3dfe7] bg-white">
@@ -263,7 +262,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                   ))}
                   {filteredTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={5}>
+                      <td colSpan={4}>
                         <EmptyState />
                       </td>
                     </tr>
@@ -365,15 +364,6 @@ function PublicTransactionCard({
       </p>
       <div className="px-3 pb-3">
         <RefundRelationship transaction={transaction} />
-        {onViewDetails ? (
-          <button
-            type="button"
-            onClick={onViewDetails}
-            className="mt-3 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
-          >
-            Xem chi tiết
-          </button>
-        ) : null}
       </div>
     </article>
   );
@@ -413,15 +403,6 @@ function PublicTransactionRow({
       </td>
       <td className={`whitespace-nowrap px-4 py-3 text-right align-top font-bold ${meta.amountClassName}`}>
         {money(meta.amount)}
-      </td>
-      <td className="whitespace-nowrap px-3 py-2 text-right align-top">
-        <button
-          type="button"
-          onClick={onViewDetails}
-          className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
-        >
-          Chi tiết
-        </button>
       </td>
     </tr>
   );
