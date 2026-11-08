@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f7f4">
+<title>Khôi phục Dhamma</title>
+<style>body{margin:0;min-height:100dvh;display:grid;place-items:center;background:#f7f7f4;color:#171717;font:16px/1.5 system-ui}main{padding:24px;text-align:center;max-width:360px}a{display:inline-block;padding:12px 16px;border-radius:8px;background:#047857;color:white;text-decoration:none}</style>
+</head>
+<body><main><h1>Dhamma Group</h1><p role="status">Đang cập nhật ứng dụng…</p><a href="/dang-nhap">Mở trang đăng nhập</a></main>
+<script>
+(async function () {
+  try {
+    if ('serviceWorker' in navigator) {
+      await Promise.race([
+        (async function () {
+          var registration = await navigator.serviceWorker.register('/sw.js', {scope:'/',updateViaCache:'none'});
+          await registration.update();
+          var worker = registration.installing || registration.waiting || registration.active;
+          if (worker && worker.state !== 'activated') {
+            await new Promise(function (resolve, reject) {
+              worker.addEventListener('statechange', function () {
+                if (worker.state === 'activated') resolve();
+                if (worker.state === 'redundant') reject(new Error('Update failed'));
+              });
+              if (worker.state === 'activated') resolve();
+            });
+          }
+        })(),
+        new Promise(function (_, reject) {setTimeout(function(){reject(new Error('Timeout'));},15000);})
+      ]);
+    }
+    location.replace('/?pwa_recovery=1');
+  } catch (_) {
+    document.querySelector('p').textContent = 'Chưa cập nhật được. Vui lòng mở trang đăng nhập để tiếp tục.';
+  }
+})();
+</script></body></html>

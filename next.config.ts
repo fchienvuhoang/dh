@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      { source: "/pwa-recovery.html", headers: [{ key: "Cache-Control", value: "no-store" }] },
       {
         source: "/sw.js",
         headers: [
