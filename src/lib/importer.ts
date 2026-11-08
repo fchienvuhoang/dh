@@ -3,7 +3,7 @@ import { PrismaClientKnownRequestError, type InputJsonObject } from "@prisma/cli
 import { classifyDescription, type KeywordRule } from "@/lib/classifier";
 import { newStatementRows } from "@/lib/statement-deduplication";
 import { toPrismaDecimal } from "@/lib/money";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withDatabaseReadRetry } from "@/lib/prisma";
 import { parseTechcombankStatement } from "@/lib/techcombank";
 import { parseTechcombankPdf } from "@/lib/techcombank-pdf";
 import { normalizeTransferText } from "@/lib/text";
@@ -35,7 +35,7 @@ export async function importTechcombankStatement(
     ? await parseTechcombankPdf(buffer, password)
     : parseTechcombankStatement(buffer);
   const prisma = getPrisma();
-  const rules = await loadKeywordRules(prisma);
+  const rules = await withDatabaseReadRetry(() => loadKeywordRules(prisma));
 
   const uniqueRows = new Map<string, (typeof parsed.rows)[number]>();
   for (const row of parsed.rows) {
@@ -159,12 +159,12 @@ export async function importTechcombankStatement(
       closingBalance: parsed.meta.closingBalance,
       affectedCampaignCodes,
     } satisfies ImportResult;
-  });
+  }, { maxWait: 20_000, timeout: 20_000 });
 }
 
 export async function reclassifyImportedTransactions() {
   const prisma = getPrisma();
-  const rules = await loadKeywordRules(prisma);
+  const rules = await withDatabaseReadRetry(() => loadKeywordRules(prisma));
   const transactions = await prisma.bankTransaction.findMany({
     where: {
       classificationStatus: { not: "MANUAL" },

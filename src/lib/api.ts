@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { DatabaseNotConfiguredError } from "@/lib/prisma";
+import { DatabaseNotConfiguredError, isTransientDatabaseError } from "@/lib/prisma";
 
 export function apiError(error: unknown) {
   if (error instanceof DatabaseNotConfiguredError) {
@@ -9,6 +9,13 @@ export function apiError(error: unknown) {
         error: "DATABASE_URL chưa được cấu hình. Hãy tạo PostgreSQL trên Vercel và thêm biến môi trường.",
       },
       { status: 503 },
+    );
+  }
+
+  if (isTransientDatabaseError(error)) {
+    return NextResponse.json(
+      { error: "Kết nối database đang bận hoặc phản hồi chậm. Vui lòng đợi một chút rồi thử lại." },
+      { status: 503, headers: { "Retry-After": "3" } },
     );
   }
 

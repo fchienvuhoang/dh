@@ -13,6 +13,10 @@ const DEFAULT_DATABASE_POOL_MAX = 2;
 const TRANSIENT_DATABASE_ERROR_PATTERNS = [
   /connection terminated/i,
   /connection timeout/i,
+  /timeout exceeded when trying to connect/i,
+  /timeout expired/i,
+  /too many (?:clients|connections)/i,
+  /remaining connection slots/i,
   /connection closed/i,
   /connect econnrefused/i,
   /connect etimedout/i,
@@ -46,7 +50,7 @@ export function getPrisma(): PrismaClient {
     max: getDatabasePoolMax(),
     min: 1,
     idleTimeoutMillis: 5_000,
-    connectionTimeoutMillis: 8_000,
+    connectionTimeoutMillis: getDatabaseConnectionTimeout(),
     maxLifetimeSeconds: 300,
     keepAlive: true,
     allowExitOnIdle: true,
@@ -113,4 +117,9 @@ function getDatabasePoolMax() {
   }
 
   return Math.min(configured, 10);
+}
+
+function getDatabaseConnectionTimeout() {
+  const value = Number(process.env.DATABASE_CONNECTION_TIMEOUT_MS);
+  return Number.isInteger(value) && value >= 1_000 && value <= 60_000 ? value : 20_000;
 }
