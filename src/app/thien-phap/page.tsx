@@ -15,14 +15,14 @@ export default async function ActiveCampaignsPage() {
   const campaigns = await getCachedActivePublicCampaigns(bank);
 
   return (
-    <div className="min-h-screen bg-[#f7f7f4] text-zinc-950">
-      <header className="border-b border-zinc-200 bg-white">
+    <div className={`min-h-screen text-zinc-950 ${bank === "MBBANK" ? "bg-[#f8faf7]" : "bg-[#fcf9fa]"}`}>
+      <header className={`border-b ${bank === "MBBANK" ? "border-emerald-100 bg-gradient-to-br from-emerald-50 to-[#faf6ed]" : "border-[#ecdae3] bg-gradient-to-br from-[#f6eaf1] to-[#fffaf5]"}`}>
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase text-emerald-700">
             <HeartHandshake className="h-4 w-4" />
             {bank === "MBBANK" ? "Thiện pháp Metta" : "Thiện pháp Dhamma"}
           </div>
-          <h1 className="mt-2 text-2xl font-semibold tracking-normal sm:text-3xl">
+          <h1 className="mt-2 font-serif text-3xl font-medium tracking-tight sm:text-4xl">
             Các thiện pháp đang thực hiện
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
@@ -37,7 +37,7 @@ export default async function ActiveCampaignsPage() {
             {campaigns.map((campaign) => (
               <article
                 key={campaign.code}
-                className="flex min-w-0 flex-col rounded-md border border-zinc-200 bg-white p-4 shadow-sm"
+                className="flex min-w-0 flex-col rounded-xl border border-zinc-200/80 bg-white p-4 shadow-[0_4px_20px_#00000003] transition hover:border-zinc-300 hover:shadow-md sm:p-5"
               >
                 <div className="flex items-start gap-3">
                   <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
@@ -58,7 +58,7 @@ export default async function ActiveCampaignsPage() {
 
                 <a
                   href={`/thien-phap/${campaign.code}`}
-                  className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 sm:w-fit sm:self-start"
+                  className={`mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition sm:w-fit sm:self-start ${bank === "MBBANK" ? "bg-[#235b4b] hover:bg-[#194333]" : "bg-[#4c173b] hover:bg-[#6a2d54]"}`}
                 >
                   Xem thiện pháp
                   <ArrowRight className="h-4 w-4" />
