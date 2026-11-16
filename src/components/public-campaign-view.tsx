@@ -87,8 +87,8 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
 
               {isMetta ? (
                 <blockquote className="metta-dhammapada mt-5">
-                  <p>“Không hận diệt hận thù, là định luật ngàn thu.”</p>
-                  <cite>Pháp Cú 5 · HT. Thích Minh Châu dịch</cite>
+                  <p>“Người trí thích bố thí, đời sau, được hưởng lạc.”</p>
+                  <cite>Pháp Cú 177 · HT. Thích Minh Châu dịch</cite>
                 </blockquote>
               ) : <p className="mt-5 text-xs font-semibold uppercase tracking-[.18em] text-[#a43d6a]">DĀNA PUÑÑA</p>}
               <h1 className="mt-2 max-w-3xl break-words rounded-lg border border-white/70 bg-white/50 px-4 py-3 text-2xl font-bold leading-tight text-[#4a1838] shadow-[0_8px_22px_rgba(76,23,59,0.1)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-4xl sm:shadow-none sm:backdrop-blur-none">
