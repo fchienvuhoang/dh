@@ -969,7 +969,7 @@ function TransactionTable({
 function StatementReceiptModal({ bank, transaction, onClose }: { bank: BankScope; transaction: TransactionSummary; onClose: () => void }) {
   const campaignName = transaction.campaign?.name ?? (transaction.allocations.length ? transaction.allocations.map(item => `${item.campaign.name} (${money(item.amount)})`).join(" · ") : "Giao dịch chưa gán thiện pháp");
   const campaignCode = transaction.campaign?.code ?? (transaction.allocations.length ? transaction.allocations.map(item => item.campaign.code).join(" · ") : bank === "MBBANK" ? "mb" : "tcb");
-  return <TransactionReceiptModal bankName={bank} campaignName={campaignName} campaignCode={campaignCode} onClose={onClose} transaction={{
+  return <TransactionReceiptModal source="statement" bankName={bank} campaignName={campaignName} campaignCode={campaignCode} onClose={onClose} transaction={{
     id: transaction.id, transactionDate: transaction.transactionDate, createdAt: transaction.createdAt,
     statementRow: transaction.statementRow, description: transaction.description,
     debitAmount: transaction.debitAmount, creditAmount: transaction.creditAmount, outflowType: transaction.outflowType,

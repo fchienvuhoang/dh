@@ -374,12 +374,14 @@ function PublicTransactionRow({
 }
 
 export function TransactionReceiptModal({
+  source = "public",
   bankName,
   campaignName,
   campaignCode,
   transaction,
   onClose,
 }: {
+  source?: "public" | "statement";
   bankName: string;
   campaignName: string;
   campaignCode: string;
@@ -459,7 +461,7 @@ export function TransactionReceiptModal({
             <cite>Pháp Cú 356 · HT. Thích Minh Châu dịch</cite>
           </blockquote>
 
-          <p className="receipt-footnote">Thông tin trích từ danh sách giao dịch công khai</p>
+          <p className="receipt-footnote">{source === "statement" ? "Thông tin trích từ sao kê tài khoản" : "Thông tin trích từ danh sách giao dịch công khai"}</p>
 
           <button
             type="button"
