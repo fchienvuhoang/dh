@@ -433,10 +433,6 @@ export function TransactionReceiptModal({
             </button>
           </div>
 
-          <div className="receipt-celestial">
-            <Image src="/assets/receipt-celestial-male-jade.jpg" alt="Chư thiên nam nâng sen trắng và chắp tay giữa mây ngọc xanh" width={1200} height={400} sizes="400px" loading="eager" />
-          </div>
-
           <div className="receipt-hero">
             <span className={`receipt-type ${meta.className}`}><CircleCheck className="h-3.5 w-3.5" />{meta.label}</span>
             <div className="receipt-amount" data-outflow={transaction.debitAmount > 0}>{money(meta.amount)}</div>
