@@ -1,3 +1,4 @@
+import { publicBankForHost } from "@/lib/bank-scope";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from "@/lib/auth";
 
@@ -14,6 +15,11 @@ const PUBLIC_PREFIXES = [
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  if (pathname === "/" && publicBankForHost(request.headers.get("host")) === "MBBANK") {
+    const publicUrl = request.nextUrl.clone();
+    publicUrl.pathname = "/thien-phap";
+    return NextResponse.rewrite(publicUrl);
+  }
 
   if (isPublicPath(pathname)) {
     return NextResponse.next();

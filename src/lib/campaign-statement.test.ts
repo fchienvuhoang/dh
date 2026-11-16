@@ -31,3 +31,13 @@ test("preserves TP04 expense details in the combined statement", () => {
   assert.match(text, /Cúng dường vật thực/);
   assert.ok(text.includes("/thien-phap/tp04") && text.includes("/thien-phap/tp09"));
 });
+
+test("Metta statements use Metta public links and group name, independently of Dhamma", () => {
+  const mb = { ...campaign("tp01"), bankName: "MBBANK" as const };
+  const metta = buildCombinedCampaignStatement([mb], [mb.id]);
+  assert.ok(metta.includes("https://metta.danasangha.org/thien-phap/tp01"));
+  assert.ok(metta.includes("Metta xin kính gửi"));
+  assert.ok(!metta.includes("Dhamma Group"));
+  const dhamma = buildCombinedCampaignStatement([campaign("tp01")], ["tp01"]);
+  assert.ok(dhamma.includes("https://dhamma-group.danasangha.org/thien-phap/tp01"));
+});

@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { publicBankForHost } from "@/lib/bank-scope";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PublicCampaignView } from "@/components/public-campaign-view";
@@ -10,13 +12,13 @@ type Props = {
 };
 
 export const revalidate = 60;
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
-  const data = await getCachedPublicCampaignMeta(code);
+  const data = await getCachedPublicCampaignMeta(code, publicBankForHost((await headers()).get("host")));
 
-  if (!data) {
+  if (!data || data.bankName !== publicBankForHost((await headers()).get("host"))) {
     return {
       title: "Không tìm thấy thiện pháp",
     };
@@ -30,9 +32,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicCampaignPage({ params }: Props) {
   const { code } = await params;
-  const data = await getCachedPublicCampaignData(code);
+  const data = await getCachedPublicCampaignData(code, publicBankForHost((await headers()).get("host")));
 
-  if (!data) {
+  if (!data || data.bankName !== publicBankForHost((await headers()).get("host"))) {
     notFound();
   }
 

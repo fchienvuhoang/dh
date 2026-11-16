@@ -43,7 +43,7 @@ const campaigns = [
 
 for (const campaign of campaigns) {
   const saved = await prisma.campaign.upsert({
-    where: { code: campaign.code },
+    where: { bankName_code: { bankName: "TECHCOMBANK", code: campaign.code } },
     update: {
       name: campaign.name,
       description: campaign.description,

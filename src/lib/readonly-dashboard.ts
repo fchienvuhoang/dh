@@ -1,3 +1,4 @@
+import { type BankScope, transactionBankWhere } from "@/lib/bank-scope";
 import { decimalToNumber } from "@/lib/money";
 import { getPrisma } from "@/lib/prisma";
 
@@ -30,10 +31,11 @@ export type ReadonlyDashboardData = {
   }[];
 };
 
-export async function getReadonlyDashboardData(): Promise<ReadonlyDashboardData> {
+export async function getReadonlyDashboardData(bank: BankScope = "TECHCOMBANK"): Promise<ReadonlyDashboardData> {
   const prisma = getPrisma();
   const [campaigns, transactionSums, refundSums, allocationSums, bankAccount, latestImport] = await Promise.all([
     prisma.campaign.findMany({
+      where: { bankName: bank },
       select: {
         id: true,
         code: true,
@@ -44,21 +46,23 @@ export async function getReadonlyDashboardData(): Promise<ReadonlyDashboardData>
     }),
     prisma.bankTransaction.groupBy({
       by: ["campaignId"],
-      where: { campaignId: { not: null }, outflowType: "DONATION" },
+      where: { ...transactionBankWhere(bank), campaignId: { not: null }, outflowType: "DONATION" },
       _sum: { creditAmount: true, debitAmount: true },
       _count: { _all: true },
     }),
     prisma.bankTransaction.groupBy({
       by: ["campaignId"],
-      where: { campaignId: { not: null }, outflowType: "REFUND" },
+      where: { ...transactionBankWhere(bank), campaignId: { not: null }, outflowType: "REFUND" },
       _sum: { debitAmount: true },
     }),
     prisma.transactionAllocation.groupBy({
+      where: { campaign: { bankName: bank } },
       by: ["campaignId"],
       _sum: { amount: true },
       _count: { _all: true },
     }),
     prisma.bankAccount.findFirst({
+      where: { bankName: bank },
       select: {
         accountNumber: true,
         accountName: true,
@@ -69,6 +73,7 @@ export async function getReadonlyDashboardData(): Promise<ReadonlyDashboardData>
       orderBy: { updatedAt: "desc" },
     }),
     prisma.importBatch.findFirst({
+      where: { sourceBank: bank },
       select: {
         fileName: true,
         importedAt: true,

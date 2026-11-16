@@ -6,7 +6,7 @@ import { normalizeTransferText } from "@/lib/text";
 type SheetCell = string | number | boolean | Date | null | undefined;
 
 export type StatementMeta = {
-  sourceBank: "TECHCOMBANK";
+  sourceBank: "TECHCOMBANK" | "MBBANK";
   accountNumber: string | null;
   accountName: string | null;
   currency: string;

@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { publicBankForHost } from "@/lib/bank-scope";
 import type { Metadata } from "next";
 import {
   Clock3,
@@ -47,7 +49,7 @@ export default async function ReadonlyReportPage() {
     return <ReadonlyLoginScreen configured={configured} />;
   }
 
-  const data = await getReadonlyDashboardData();
+  const data = await getReadonlyDashboardData(publicBankForHost((await headers()).get("host")));
   return (
     <div className="min-h-screen bg-[#f7f7f4] text-zinc-950">
       <header className="border-b border-zinc-200 bg-white">

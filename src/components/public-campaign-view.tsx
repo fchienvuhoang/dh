@@ -64,7 +64,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
           <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)] lg:gap-10">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.2)] sm:h-16 sm:w-16">
+                {data.bankName !== "MBBANK" ? <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.2)] sm:h-16 sm:w-16">
                   <Image
                     src="/assets/dhamma-group-logo.jpg"
                     alt="Logo Dhamma Group"
@@ -72,7 +72,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                     sizes="64px"
                     className="scale-[1.16] object-cover"
                   />
-                </span>
+                </span> : <span className="text-lg font-bold text-[#4a1838]">Metta</span>}
                 <span className="rounded-md bg-[#4c173b] px-3 py-1.5 font-mono text-xs font-semibold text-white shadow-sm">
                   Thiện pháp {data.code}
                 </span>

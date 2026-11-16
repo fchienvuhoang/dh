@@ -1,3 +1,4 @@
+import { assertSameBank } from "@/lib/bank-scope";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError } from "@/lib/api";
@@ -21,6 +22,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const previousTransaction = await prisma.bankTransaction.findUnique({
       where: { id },
       select: {
+        account: { select: { bankName: true } },
         debitAmount: true,
         campaignId: true,
         outflowType: true,
@@ -29,6 +31,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         allocations: { select: { campaign: { select: { code: true } } } },
       },
     });
+    if (body.campaignId) {
+      const target = await prisma.campaign.findUniqueOrThrow({ where: { id: body.campaignId }, select: { bankName: true } });
+      assertSameBank(target.bankName, previousTransaction?.account?.bankName);
+    }
     if (body.outflowType && Number(previousTransaction?.debitAmount ?? 0) <= 0) {
       return NextResponse.json(
         { error: "Chỉ giao dịch chuyển ra mới có thể đặt là cúng dường hoặc hoàn lại." },

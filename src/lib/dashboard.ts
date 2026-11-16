@@ -1,3 +1,4 @@
+import { type BankScope, transactionBankWhere } from "@/lib/bank-scope";
 import { decimalToNumber } from "@/lib/money";
 import { DatabaseNotConfiguredError, getPrisma, isTransientDatabaseError } from "@/lib/prisma";
 
@@ -13,6 +14,7 @@ export type DashboardState =
     };
 
 export type DashboardData = {
+  selectedBank: BankScope;
   overview: {
     totalIncome: number;
     totalDebit: number;
@@ -32,6 +34,7 @@ export type DashboardData = {
     currentBalance: number;
     balanceAsOf: string | null;
   } | null;
+  bankAccounts: { bankName: string; accountNumber: string; currentBalance: number }[];
   campaigns: CampaignSummary[];
   transactions: TransactionSummary[];
   debitTransactions: TransactionSummary[];
@@ -46,6 +49,7 @@ export type DashboardData = {
 };
 
 export type CampaignSummary = {
+  bankName?: BankScope;
   id: string;
   code: string;
   name: string;
@@ -105,13 +109,14 @@ export type TransactionSummary = {
   }[];
 };
 
-export function getDashboardState(): Promise<DashboardState> {
-  return getDashboardStateAttempt(0);
+export function getDashboardState(bank: BankScope = "TECHCOMBANK"): Promise<DashboardState> {
+  return getDashboardStateAttempt(0, bank);
 }
 
-async function getDashboardStateAttempt(attempt: number): Promise<DashboardState> {
+async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promise<DashboardState> {
   try {
     const prisma = getPrisma();
+    const bankWhere = transactionBankWhere(bank);
 
     const [
       campaigns,
@@ -124,10 +129,11 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
       unmatchedTransactionCount,
       transactions,
       debitTransactions,
-      bankAccount,
+      bankAccounts,
       latestImport,
     ] = await Promise.all([
       prisma.campaign.findMany({
+        where: { bankName: bank },
         include: {
           keywords: {
             orderBy: { createdAt: "asc" },
@@ -142,7 +148,7 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
       }),
       prisma.bankTransaction.groupBy({
         by: ["campaignId"],
-        where: { outflowType: "DONATION" },
+        where: { ...bankWhere, outflowType: "DONATION" },
         _sum: {
           creditAmount: true,
           debitAmount: true,
@@ -153,16 +159,18 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
       }),
       prisma.bankTransaction.groupBy({
         by: ["campaignId"],
-        where: { outflowType: "REFUND", campaignId: { not: null } },
+        where: { ...bankWhere, outflowType: "REFUND", campaignId: { not: null } },
         _sum: { debitAmount: true },
         _count: { _all: true },
       }),
       prisma.transactionAllocation.groupBy({
+        where: { campaign: { bankName: bank }, transaction: bankWhere },
         by: ["campaignId"],
         _sum: { amount: true },
         _count: { _all: true },
       }),
       prisma.bankTransaction.aggregate({
+        where: bankWhere,
         _sum: {
           creditAmount: true,
           debitAmount: true,
@@ -171,6 +179,7 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
       }),
       prisma.bankTransaction.aggregate({
         where: {
+          ...bankWhere,
           campaignId: null,
           allocations: { none: {} },
           creditAmount: {
@@ -184,6 +193,7 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
       }),
       prisma.bankTransaction.aggregate({
         where: {
+          ...bankWhere,
           campaignId: null,
           allocations: { none: {} },
           debitAmount: {
@@ -197,11 +207,13 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
       }),
       prisma.bankTransaction.count({
         where: {
+          ...bankWhere,
           campaignId: null,
           allocations: { none: {} },
         },
       }),
       prisma.bankTransaction.findMany({
+        where: bankWhere,
         include: {
           campaign: {
             select: {
@@ -227,6 +239,7 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
       }),
       prisma.bankTransaction.findMany({
         where: {
+          ...bankWhere,
           debitAmount: {
             gt: 0,
           },
@@ -255,14 +268,17 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
         orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
         take: 500,
       }),
-      prisma.bankAccount.findFirst({
+      prisma.bankAccount.findMany({
+        where: { bankName: bank },
         orderBy: { updatedAt: "desc" },
       }),
       prisma.importBatch.findFirst({
+        where: { sourceBank: bank },
         orderBy: { importedAt: "desc" },
       }),
     ]);
 
+    const bankAccount = bankAccounts[0] ?? null;
     const txByCampaign = new Map(
       transactionSums.map((item) => [
         item.campaignId,
@@ -303,6 +319,7 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
       const income = grossIncome - refunds;
 
       return {
+        bankName: bank,
         id: campaign.id,
         code: campaign.code,
         name: campaign.name,
@@ -331,12 +348,13 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
     return {
       ok: true,
       data: {
+        selectedBank: bank,
         overview: {
           totalIncome,
           totalDebit,
           totalExpenses,
           trackedFundBalance: campaignSummaries.reduce((sum, campaign) => sum + campaign.balance, 0),
-          bankBalance: decimalToNumber(bankAccount?.currentBalance),
+          bankBalance: bankAccounts.reduce((sum, account) => sum + decimalToNumber(account.currentBalance), 0),
           transactionCount: overallTransactionSums._count,
           unmatchedCount: unmatchedTransactionCount,
           unmatchedIncome: decimalToNumber(unmatchedIncome._sum.creditAmount),
@@ -352,6 +370,10 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
               balanceAsOf: bankAccount.balanceAsOf?.toISOString() ?? null,
             }
           : null,
+        bankAccounts: bankAccounts.map((account) => ({
+          bankName: account.bankName, accountNumber: account.accountNumber,
+          currentBalance: decimalToNumber(account.currentBalance),
+        })),
         campaigns: campaignSummaries,
         transactions: transactions.map((transaction) => ({
           id: transaction.id,
@@ -436,7 +458,7 @@ async function getDashboardStateAttempt(attempt: number): Promise<DashboardState
 
     if (attempt < 2 && isTransientDatabaseError(error)) {
       await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 750));
-      return getDashboardStateAttempt(attempt + 1);
+      return getDashboardStateAttempt(attempt + 1, bank);
     }
 
     return {

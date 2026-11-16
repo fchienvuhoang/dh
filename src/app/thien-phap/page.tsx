@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { publicBankForHost } from "@/lib/bank-scope";
 import type { Metadata } from "next";
 import { ArrowRight, HeartHandshake } from "lucide-react";
 import { TransferSyntax } from "@/components/transfer-syntax";
@@ -9,7 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default async function ActiveCampaignsPage() {
-  const campaigns = await getCachedActivePublicCampaigns();
+  const bank = publicBankForHost((await headers()).get("host"));
+  const campaigns = await getCachedActivePublicCampaigns(bank);
 
   return (
     <div className="min-h-screen bg-[#f7f7f4] text-zinc-950">
@@ -17,7 +20,7 @@ export default async function ActiveCampaignsPage() {
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase text-emerald-700">
             <HeartHandshake className="h-4 w-4" />
-            Thiện pháp của nhóm
+            {bank === "MBBANK" ? "Thiện pháp Metta" : "Thiện pháp Dhamma"}
           </div>
           <h1 className="mt-2 text-2xl font-semibold tracking-normal sm:text-3xl">
             Các thiện pháp đang thực hiện

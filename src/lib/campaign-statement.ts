@@ -1,9 +1,9 @@
+import { publicBankOrigin } from "@/lib/bank-scope";
 import type { CampaignSummary } from "@/lib/dashboard";
 import { normalizeTransferText } from "@/lib/text";
 
 type StatementExpense = { transactionDate: string; description: string; amount: number };
 
-const PUBLIC_CAMPAIGN_ORIGIN = "https://dhamma-group.danasangha.org";
 
 const statementIntroductions = [
   "Dhamma Group xin kính gửi đến quý vị bản cập nhật sao kê của thiện pháp",
@@ -43,9 +43,9 @@ export function buildCampaignStatement(campaign: CampaignSummary, expenses: Stat
   const date = vietnamDate(new Date());
   const code = campaign.code.toLocaleUpperCase("vi-VN");
   const name = campaign.name.trim().replace(/[.。]+$/, "").toLocaleUpperCase("vi-VN");
-  const publicUrl = `${PUBLIC_CAMPAIGN_ORIGIN}${publicCampaignPath(campaign.code)}`;
+  const publicUrl = `${publicBankOrigin(campaign.bankName)}${publicCampaignPath(campaign.code)}`;
 
-  if (campaign.code.toLocaleLowerCase("vi-VN") === "tp04") {
+  if (campaign.bankName !== "MBBANK" && campaign.code.toLocaleLowerCase("vi-VN") === "tp04") {
     return [
       ...(!bodyOnly ? [`🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code} · ${date}`, `🌺 ${name}`, ""] : []),
       `💰 Tổng hùn phước: ${money(campaign.income)}`,
@@ -64,7 +64,7 @@ export function buildCampaignStatement(campaign: CampaignSummary, expenses: Stat
   return [
     ...(!bodyOnly ? [
       `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code} · ${date}`, "", statementGreeting,
-      `🙏 ${statementIntroductions[variant]} ${code}: ${name}`, "",
+      `🙏 ${statementIntroductions[variant].replaceAll("Dhamma Group", campaign.bankName === "MBBANK" ? "Metta" : "Dhamma Group")} ${code}: ${name}`, "",
     ] : []),
     `💰 ${statementTotals[variant]} ${money(campaign.income)}`,
     `🔎 ${statementLinkInvitations[variant]} ${publicUrl}`,
@@ -146,7 +146,7 @@ export function buildCombinedCampaignStatement(campaigns: CampaignSummary[], ids
   return [
     `🏦 CẬP NHẬT SAO KÊ TỔNG HỢP ${selected.map((campaign) => campaign.code.toLocaleUpperCase("vi-VN")).join(" · ")} · ${vietnamDate(new Date())}`,
     "", statementGreeting,
-    `🙏 Dhamma Group xin kính gửi quý vị bản cập nhật sao kê của ${selected.length} thiện pháp:`, "",
+    `🙏 ${selected[0].bankName === "MBBANK" ? "Metta" : "Dhamma Group"} xin kính gửi quý vị bản cập nhật sao kê của ${selected.length} thiện pháp:`, "",
     ...selected.flatMap((campaign, index) => [
       `${index + 1}. ${campaign.code.toLocaleUpperCase("vi-VN")} — ${campaign.name.trim().toLocaleUpperCase("vi-VN")}`,
       buildCampaignStatement(campaign, [...(expensesById[campaign.id] ?? [])].sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()), true), "",

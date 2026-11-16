@@ -1,3 +1,4 @@
+import { bankScope } from "@/lib/bank-scope";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError } from "@/lib/api";
@@ -11,6 +12,7 @@ import {
 } from "@/lib/public-campaign";
 
 const campaignSchema = z.object({
+  bank: z.enum(["TECHCOMBANK", "MBBANK"]).default("TECHCOMBANK"),
   code: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional().nullable(),
@@ -18,10 +20,11 @@ const campaignSchema = z.object({
   keywords: z.array(z.string().min(1)).default([]),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const prisma = getPrisma();
     const campaigns = await prisma.campaign.findMany({
+      where: { bankName: bankScope(new URL(request.url).searchParams.get("bank")) },
       include: {
         keywords: {
           orderBy: { createdAt: "asc" },
@@ -45,6 +48,7 @@ export async function POST(request: Request) {
 
     const campaign = await prisma.campaign.create({
       data: {
+        bankName: body.bank,
         code,
         name: body.name.trim(),
         description: body.description?.trim() || null,

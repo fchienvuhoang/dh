@@ -1,3 +1,4 @@
+import { bankScope, transactionBankWhere } from "@/lib/bank-scope";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -25,6 +26,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     const refundTransaction = await prisma.bankTransaction.findUnique({
       where: { id },
       select: {
+        account: { select: { bankName: true } },
         id: true,
         campaignId: true,
         debitAmount: true,
@@ -41,6 +43,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 
     const candidates = await prisma.bankTransaction.findMany({
       where: {
+        AND: [transactionBankWhere(bankScope(refundTransaction!.account?.bankName))],
         creditAmount: { gt: 0 },
         OR: [
           { campaignId },
@@ -111,6 +114,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       const refundTransaction = await tx.bankTransaction.findUnique({
         where: { id },
         select: {
+          account: { select: { bankName: true } },
           campaignId: true,
           debitAmount: true,
           outflowType: true,
@@ -128,7 +132,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 
       const campaignId = refundTransaction!.campaignId!;
       const originals = await tx.bankTransaction.findMany({
-        where: { id: { in: originalIds }, creditAmount: { gt: 0 } },
+        where: { id: { in: originalIds }, creditAmount: { gt: 0 }, AND: [transactionBankWhere(bankScope(refundTransaction!.account?.bankName))] },
         select: {
           id: true,
           campaignId: true,

@@ -1,3 +1,4 @@
+import { assertSameBank } from "@/lib/bank-scope";
 import type { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -40,6 +41,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     const transaction = await prisma.bankTransaction.findUnique({
       where: { id },
       include: {
+        account: { select: { bankName: true } },
         campaign: { select: { code: true } },
         allocations: { include: { campaign: { select: { code: true } } } },
         _count: { select: { receivedRefundLinks: true } },
@@ -73,7 +75,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 
     const campaigns = await prisma.campaign.findMany({
       where: { id: { in: campaignIds }, status: { not: "COMPLETED" } },
-      select: { id: true, code: true },
+      select: { id: true, code: true, bankName: true },
     });
     if (campaigns.length !== campaignIds.length) {
       return NextResponse.json(
@@ -81,6 +83,8 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
         { status: 400 },
       );
     }
+
+    for (const campaign of campaigns) assertSameBank(campaign.bankName, transaction.account?.bankName);
 
     await prisma.$transaction(async (tx: TransactionClient) => {
       await tx.transactionAllocation.deleteMany({ where: { transactionId: id } });

@@ -1,3 +1,4 @@
+import { bankScope } from "@/lib/bank-scope";
 import { after, NextResponse } from "next/server";
 import { prepareStatementUpload } from "@/lib/statement-upload";
 import { apiError } from "@/lib/api";
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const uploadPassword = typeof password === "string" ? password : undefined;
     const prepared = await prepareStatementUpload(file.name, buffer, process.env.ZIP_PASS);
-    const result = await importTechcombankStatement(prepared.fileName, prepared.buffer, uploadedAt, uploadPassword);
+    const result = await importTechcombankStatement(prepared.fileName, prepared.buffer, uploadedAt, uploadPassword, bankScope(formData.get("bank")));
     const affectedCodes = invalidatePublicCampaignCache(result.affectedCampaignCodes);
     after(async () => {
       try {

@@ -66,8 +66,9 @@ model ImportBatch {
 }
 
 model Campaign {
+  bankName     String            @default("TECHCOMBANK")
   id           String            @id @default(cuid())
-  code         String            @unique
+  code         String
   name         String
   description  String?
   status       CampaignStatus    @default(ACTIVE)
@@ -83,6 +84,8 @@ model Campaign {
   bills        CampaignBill[]
 
   @@index([status, createdAt])
+  @@index([bankName, status, createdAt])
+  @@unique([bankName, code])
 }
 
 model CampaignBill {

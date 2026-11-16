@@ -1,9 +1,11 @@
+import { bankScope, type BankScope, transactionBankWhere } from "@/lib/bank-scope";
 import type { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError, type InputJsonObject } from "@prisma/client/runtime/client";
 import { classifyDescription, type KeywordRule } from "@/lib/classifier";
 import { newStatementRows } from "@/lib/statement-deduplication";
 import { toPrismaDecimal } from "@/lib/money";
 import { getPrisma, withDatabaseReadRetry } from "@/lib/prisma";
+import { parseMbStatement } from "@/lib/mbbank";
 import { parseTechcombankStatement } from "@/lib/techcombank";
 import { parseTechcombankPdf } from "@/lib/techcombank-pdf";
 import { normalizeTransferText } from "@/lib/text";
@@ -30,12 +32,14 @@ export async function importTechcombankStatement(
   buffer: Buffer,
   uploadedAt = new Date(),
   password?: string,
+  selectedBank?: BankScope,
 ) {
   const parsed = /\.pdf$/i.test(fileName)
     ? await parseTechcombankPdf(buffer, password)
-    : parseTechcombankStatement(buffer);
+    : parseMbStatement(buffer) ?? parseTechcombankStatement(buffer);
+  if (selectedBank && parsed.meta.sourceBank !== selectedBank) throw new Error("File sao kê không thuộc ngân hàng đang chọn. Hãy chuyển đúng tab ngân hàng rồi nhập lại.");
   const prisma = getPrisma();
-  const rules = await withDatabaseReadRetry(() => loadKeywordRules(prisma));
+  const rules = await withDatabaseReadRetry(() => loadKeywordRules(prisma, bankScope(parsed.meta.sourceBank)));
 
   const uniqueRows = new Map<string, (typeof parsed.rows)[number]>();
   for (const row of parsed.rows) {
@@ -162,11 +166,12 @@ export async function importTechcombankStatement(
   }, { maxWait: 20_000, timeout: 20_000 });
 }
 
-export async function reclassifyImportedTransactions() {
+export async function reclassifyImportedTransactions(bank: BankScope = "TECHCOMBANK") {
   const prisma = getPrisma();
-  const rules = await withDatabaseReadRetry(() => loadKeywordRules(prisma));
+  const rules = await withDatabaseReadRetry(() => loadKeywordRules(prisma, bank));
   const transactions = await prisma.bankTransaction.findMany({
     where: {
+      AND: [transactionBankWhere(bank)],
       classificationStatus: { not: "MANUAL" },
       allocations: { none: {} },
       OR: [
@@ -234,11 +239,12 @@ export async function reclassifyImportedTransactions() {
   };
 }
 
-async function loadKeywordRules(prisma: PrismaClient): Promise<KeywordRule[]> {
+async function loadKeywordRules(prisma: PrismaClient, bank: BankScope): Promise<KeywordRule[]> {
   const keywords = await prisma.campaignKeyword.findMany({
     where: {
       active: true,
       campaign: {
+        bankName: bank,
         status: { not: "COMPLETED" },
       },
     },

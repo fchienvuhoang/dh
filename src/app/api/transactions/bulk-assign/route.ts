@@ -1,3 +1,4 @@
+import { assertSameBank } from "@/lib/bank-scope";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError } from "@/lib/api";
@@ -21,11 +22,12 @@ export async function PATCH(request: Request) {
     const [campaign, transactions] = await Promise.all([
       prisma.campaign.findUnique({
         where: { id: parsed.campaignId },
-        select: { id: true, code: true },
+        select: { id: true, code: true, bankName: true },
       }),
       prisma.bankTransaction.findMany({
         where: { id: { in: transactionIds } },
         select: {
+          account: { select: { bankName: true } },
           id: true,
           campaignId: true,
           campaign: { select: { code: true } },
@@ -41,6 +43,8 @@ export async function PATCH(request: Request) {
     if (transactions.length !== transactionIds.length) {
       return NextResponse.json({ error: "Một số giao dịch không còn tồn tại. Vui lòng tải lại trang." }, { status: 404 });
     }
+
+    for (const transaction of transactions) assertSameBank(campaign.bankName, transaction.account?.bankName);
 
     const blockedCount = transactions.filter(
       (transaction) =>

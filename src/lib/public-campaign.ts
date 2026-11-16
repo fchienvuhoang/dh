@@ -1,3 +1,4 @@
+import { type BankScope } from "@/lib/bank-scope";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 import { decimalToNumber } from "@/lib/money";
@@ -6,7 +7,7 @@ import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bills-hidden-v8";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bank-v9";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
@@ -16,6 +17,7 @@ export type ActivePublicCampaign = {
 };
 
 export type PublicCampaignData = {
+  bankName: string;
   code: string;
   name: string;
   description: string | null;
@@ -56,13 +58,14 @@ export type PublicRefundLink = {
   description: string;
 };
 
-export async function getPublicCampaignMeta(code: string) {
+export async function getPublicCampaignMeta(code: string, bank: BankScope = "TECHCOMBANK") {
   const prisma = getPrisma();
   const normalizedCode = makeCampaignCode(code);
 
   return withDatabaseReadRetry(() => prisma.campaign.findUnique({
-    where: { code: normalizedCode },
+    where: { bankName_code: { bankName: bank, code: normalizedCode } },
     select: {
+      bankName: true,
       code: true,
       name: true,
       description: true,
@@ -70,10 +73,10 @@ export async function getPublicCampaignMeta(code: string) {
   }));
 }
 
-export async function getActivePublicCampaigns(): Promise<ActivePublicCampaign[]> {
+export async function getActivePublicCampaigns(bank: BankScope = "TECHCOMBANK"): Promise<ActivePublicCampaign[]> {
   const prisma = getPrisma();
   return withDatabaseReadRetry(() => prisma.campaign.findMany({
-    where: { status: "ACTIVE" },
+    where: { status: "ACTIVE", bankName: bank },
     select: {
       code: true,
       name: true,
@@ -83,8 +86,8 @@ export async function getActivePublicCampaigns(): Promise<ActivePublicCampaign[]
   }));
 }
 
-export function getCachedActivePublicCampaigns() {
-  return unstable_cache(getActivePublicCampaigns, ["active-public-campaigns"], {
+export function getCachedActivePublicCampaigns(bank: BankScope = "TECHCOMBANK") {
+  return unstable_cache(() => getActivePublicCampaigns(bank), ["active-public-campaigns-bank-v3", bank], {
     revalidate: false,
     tags: [PUBLIC_CAMPAIGN_LIST_TAG],
   })();
@@ -102,17 +105,17 @@ function publicCampaignTag(code: string) {
   return `public-campaign:${makeCampaignCode(code)}`;
 }
 
-export function getCachedPublicCampaignMeta(code: string) {
+export function getCachedPublicCampaignMeta(code: string, bank: BankScope = "TECHCOMBANK") {
   const normalizedCode = makeCampaignCode(code);
   return unstable_cache(
-    () => getPublicCampaignMeta(normalizedCode),
-    ["public-campaign-meta", normalizedCode],
+    () => getPublicCampaignMeta(normalizedCode, bank),
+    ["public-campaign-meta-bank-v2", bank, normalizedCode],
     { revalidate: false, tags: [publicCampaignTag(normalizedCode)] },
   )();
 }
 
-export function getPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
-  return withDatabaseReadRetry(() => loadPublicCampaignData(code));
+export function getPublicCampaignData(code: string, bank: BankScope = "TECHCOMBANK"): Promise<PublicCampaignData | null> {
+  return withDatabaseReadRetry(() => loadPublicCampaignData(code, bank));
 }
 
 async function loadPublicCampaignBills(campaignId: string) {
@@ -134,13 +137,14 @@ async function loadPublicCampaignBills(campaignId: string) {
   }
 }
 
-async function loadPublicCampaignData(code: string): Promise<PublicCampaignData | null> {
+async function loadPublicCampaignData(code: string, bank: BankScope): Promise<PublicCampaignData | null> {
   const prisma = getPrisma();
   const normalizedCode = makeCampaignCode(code);
   const campaign = await prisma.campaign.findUnique({
-    where: { code: normalizedCode },
+    where: { bankName_code: { bankName: bank, code: normalizedCode } },
     select: {
       id: true,
+      bankName: true,
       code: true,
       name: true,
       description: true,
@@ -301,6 +305,7 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
     .slice(0, 1000);
 
   return {
+    bankName: campaign.bankName,
     code: campaign.code,
     name: campaign.name,
     description: campaign.description,
@@ -327,11 +332,11 @@ async function loadPublicCampaignData(code: string): Promise<PublicCampaignData 
   };
 }
 
-export function getCachedPublicCampaignData(code: string) {
+export function getCachedPublicCampaignData(code: string, bank: BankScope = "TECHCOMBANK") {
   const normalizedCode = makeCampaignCode(code);
   return unstable_cache(
-    () => getPublicCampaignData(normalizedCode),
-    ["public-campaign-data", PUBLIC_CAMPAIGN_DATA_CACHE_VERSION, normalizedCode],
+    () => getPublicCampaignData(normalizedCode, bank),
+    ["public-campaign-data", PUBLIC_CAMPAIGN_DATA_CACHE_VERSION, bank, normalizedCode],
     { revalidate: 60, tags: [publicCampaignTag(normalizedCode)] },
   )();
 }
@@ -353,7 +358,9 @@ export async function warmPublicCampaignCaches(codes: Iterable<string>) {
   // Imports can affect many campaigns. Warm them sequentially so refreshing the
   // public cache does not create a burst of database connections.
   for (const code of normalizedCodes) {
-    await getCachedPublicCampaignMeta(code);
-    await getCachedPublicCampaignData(code);
+    for (const bank of ["TECHCOMBANK", "MBBANK"] as const) {
+      await getCachedPublicCampaignMeta(code, bank);
+      await getCachedPublicCampaignData(code, bank);
+    }
   }
 }

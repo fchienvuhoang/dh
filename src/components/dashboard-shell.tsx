@@ -1,5 +1,7 @@
 "use client";
 
+import { publicBankOrigin } from "@/lib/bank-scope";
+
 import {
   AlertCircle,
   ArrowUpFromLine,
@@ -187,9 +189,11 @@ function Dashboard({ data }: { data: DashboardData }) {
 
     try {
       const form = event.currentTarget;
+      const upload = new FormData(form);
+      upload.set("bank", data.selectedBank);
       const response = await fetch("/api/import", {
         method: "POST",
-        body: new FormData(form),
+        body: upload,
       });
       const json = await readJson<ImportResponse>(response);
       setImportResult(json);
@@ -212,7 +216,7 @@ function Dashboard({ data }: { data: DashboardData }) {
     try {
       const form = event.currentTarget;
       const formData = new FormData(form);
-      const payload = campaignPayloadFromForm(formData);
+      const payload = { ...campaignPayloadFromForm(formData), bank: data.selectedBank };
       await readJson(
         await fetch("/api/campaigns", {
           method: "POST",
@@ -239,7 +243,7 @@ function Dashboard({ data }: { data: DashboardData }) {
 
     try {
       const formData = new FormData(event.currentTarget);
-      const payload = campaignPayloadFromForm(formData);
+      const payload = { ...campaignPayloadFromForm(formData), bank: data.selectedBank };
       await readJson(
         await fetch(`/api/campaigns/${campaignId}`, {
           method: "PATCH",
@@ -296,7 +300,7 @@ function Dashboard({ data }: { data: DashboardData }) {
 
     try {
       const result = await readJson<{ totalRows: number; matchedRows: number; unmatchedRows: number }>(
-        await fetch("/api/reclassify", { method: "POST" }),
+        await fetch(`/api/reclassify?bank=${data.selectedBank}`, { method: "POST" }),
       );
       setMessage(
         `Đã phân loại lại ${result.totalRows} giao dịch: ${result.matchedRows} khớp, ${result.unmatchedRows} chưa khớp.`,
@@ -421,7 +425,7 @@ function Dashboard({ data }: { data: DashboardData }) {
         <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              Techcombank statement classifier
+              {data.selectedBank === "MBBANK" ? "Metta · MB" : "Nhóm Dhamma · Techcombank"}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-normal text-zinc-950">
               Quản lý thiện pháp và sao kê
@@ -455,6 +459,14 @@ function Dashboard({ data }: { data: DashboardData }) {
       </header>
 
       <main className="mx-auto max-w-[1600px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
+        <nav aria-label="Chọn ngân hàng" className="flex gap-2">
+          {(["TECHCOMBANK", "MBBANK"] as const).map((bank) => (
+            <a key={bank} href={`/?bank=${bank}`} aria-current={data.selectedBank === bank ? "page" : undefined}
+              className={`rounded-md border px-4 py-2 text-sm font-semibold ${data.selectedBank === bank ? "border-emerald-700 bg-emerald-700 text-white" : "border-zinc-300 bg-white text-zinc-700"}`}>
+              {bank === "TECHCOMBANK" ? "Techcombank · Dhamma" : "MB · Metta"}
+            </a>
+          ))}
+        </nav>
         <StatusMessages message={message} error={error} />
 
         <Panel>
@@ -482,7 +494,7 @@ function Dashboard({ data }: { data: DashboardData }) {
                   <input name="password" type="password" autoComplete="off" disabled={isImporting} placeholder="Chỉ nhập nếu PDF có mật khẩu" className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm sm:max-w-sm" />
                 </label>
                 <p className="text-xs leading-5 text-zinc-500 lg:col-span-2">
-                  Hỗ trợ Excel, PDF và ZIP chứa một file Excel hoặc PDF sao kê Techcombank, tối đa 4 MB tải lên. ZIP tự dùng mật khẩu đã cấu hình.
+                  Hỗ trợ Excel, PDF và ZIP chứa một file Excel hoặc PDF sao kê Techcombank hoặc Excel MB (chỉ lấy từ 16/11/2026), tối đa 4 MB tải lên. ZIP tự dùng mật khẩu đã cấu hình.
                   Trên iPhone: lưu file vào Tệp rồi chọn tại đây. ZIP sẽ được giải nén tự động; File sao kê sau giải nén tối đa 20 MB. PDF ảnh quét chưa được hỗ trợ.
                 </p>
               </form>
@@ -1205,7 +1217,7 @@ function CampaignTable({
                 </td>
                 <td data-label="Link công khai" className="whitespace-nowrap px-3 py-2 text-right">
                   <a
-                    href={publicCampaignPath(campaign.code)}
+                    href={publicCampaignPath(campaign.code, campaign.bankName)}
                     target="_blank"
                     rel="noreferrer"
                     onClick={(event) => event.stopPropagation()}
@@ -1426,8 +1438,8 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
     {
       label: "Số dư tài khoản ngân hàng",
       value: data.overview.bankBalance,
-      note: data.bankAccount
-        ? `${data.bankAccount.bankName} ${data.bankAccount.accountNumber}`
+      note: data.bankAccounts.length
+        ? data.bankAccounts.map((account) => `${account.bankName} ${account.accountNumber}`).join(" · ")
         : "Chưa có thông tin tài khoản từ sao kê.",
       className: "text-zinc-950",
     },
@@ -1979,7 +1991,7 @@ function CombinedCampaignStatementTemplate({ campaigns, onSelect, headerActions 
   const [retry, setRetry] = useState(0);
   const activeCampaigns = sortCampaignsForSelection(campaigns.filter((campaign) => campaign.status === "ACTIVE"));
   const selected = selectedStatementCampaigns(campaigns, selectedIds);
-  const detailedCampaign = selected.find((campaign) => campaign.code.toLowerCase() === "tp04");
+  const detailedCampaign = selected.find((campaign) => campaign.bankName !== "MBBANK" && campaign.code.toLowerCase() === "tp04");
   const detailedCampaignId = detailedCampaign?.id;
   const detailedExpensesTotal = detailedCampaign?.expenses;
   const detailedTransactionCount = detailedCampaign?.transactionCount;
@@ -2069,7 +2081,7 @@ function CampaignStatementTemplate({ campaign }: { campaign: CampaignSummary }) 
   const [copied, setCopied] = useState(false);
   const [expenses, setExpenses] = useState<StatementExpense[] | null>(null);
   const [expenseError, setExpenseError] = useState<string | null>(null);
-  const includesExpenseDetails = campaign.code.toLocaleLowerCase("vi-VN") === "tp04";
+  const includesExpenseDetails = campaign.bankName !== "MBBANK" && campaign.code.toLocaleLowerCase("vi-VN") === "tp04";
   const sortedExpenses = useMemo(() =>
     [...(expenses ?? [])].sort((left, right) =>
       new Date(right.transactionDate).getTime() - new Date(left.transactionDate).getTime(),
@@ -2340,7 +2352,7 @@ function CampaignModal({
                   <MiniStat label="GD" value={campaign.transactionCount.toLocaleString("vi-VN")} />
                 </div>
                 <a
-                  href={publicCampaignPath(campaign.code)}
+                  href={publicCampaignPath(campaign.code, campaign.bankName)}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-3 inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
@@ -2646,8 +2658,8 @@ function campaignPayloadFromForm(formData: FormData) {
   };
 }
 
-function publicCampaignPath(code: string) {
-  return `/thien-phap/${encodeURIComponent(code)}`;
+function publicCampaignPath(code: string, bank?: string) {
+  return `${publicBankOrigin(bank)}/thien-phap/${encodeURIComponent(code)}`;
 }
 
 async function readJson<T>(response: Response): Promise<T> {
