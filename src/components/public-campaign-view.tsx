@@ -434,7 +434,7 @@ export function TransactionReceiptModal({
           </div>
 
           <div className="receipt-celestial">
-            <Image src="/assets/dhamma-celestial-mangosteen-painted.jpg" alt="Chư thiên chắp tay và nâng hoa sen" width={1080} height={360} sizes="400px" loading="eager" />
+            <Image src="/assets/receipt-celestial-jade.jpg" alt="Chư thiên nâng sen trắng và chắp tay giữa mây ngọc xanh" width={1200} height={400} sizes="400px" loading="eager" />
           </div>
 
           <div className="receipt-hero">
