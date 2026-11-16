@@ -59,16 +59,16 @@ export function parseMbPdfPages(pages: PdfText[][]): ParsedStatement | null {
     const dates = page.filter(item => item.x < 85 && /^\d{2}\/\d{2}\/\d{4} /.test(item.s)).sort((a,b)=>a.y-b.y);
     const total = page.find(item => item.s.includes("Tổng phát sinh trong kỳ/Total"));
     if (total) {
-      if (totals || dates.length) throw invalid();
-      const column = (left: number,right: number) => page.filter(item=>item.x>=left && item.x<right && item.y<total.y+15).sort((a,b)=>a.y-b.y||a.x-b.x).map(item=>item.s).join("");
+      if (totals) throw invalid();
+      const column = (left: number,right: number) => page.filter(item=>item.x>=left && item.x<right && item.y>total.y-12 && item.y<total.y+15).sort((a,b)=>a.y-b.y||a.x-b.x).map(item=>item.s).join("");
       totals=[amount(column(228,290)),amount(column(290,352))];
-      continue;
     }
-    if (!dates.length || totals || !page.some(item=>item.s==="Transaction No")) throw invalid();
+    if (!dates.length && total) continue;
+    if (!dates.length || (totals && !total) || !page.some(item=>item.s==="Transaction No")) throw invalid();
     const headerY = Math.max(...page.filter(item=>["Transaction Date","Transaction No","Debit","Credit","Details"].includes(item.s)).map(item=>item.y));
     for (const [index, anchor] of dates.entries()) {
       const top=index ? (dates[index-1].y+anchor.y)/2 : headerY+5;
-      const bottom=index+1<dates.length ? (anchor.y+dates[index+1].y)/2 : 550;
+      const bottom=index+1<dates.length ? (anchor.y+dates[index+1].y)/2 : (total ? total.y-14 : 550);
       const cells=page.filter(item=>item.y>top && item.y<bottom);
       const column=(left:number,right:number)=>cells.filter(item=>item.x>=left&&item.x<right).sort((a,b)=>a.y-b.y||a.x-b.x).map(item=>item.s).join(" ");
       const transactionDate=date(anchor.s), reference=column(85,228), description=column(352,568);

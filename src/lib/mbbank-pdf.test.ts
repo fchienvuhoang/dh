@@ -40,3 +40,12 @@ test("rejects incomplete PDF rows, missing totals and invalid financial values",
   const wrong=pages();wrong[1][1].s="51,000.";
   assert.throws(()=>parseMbPdfPages(wrong),/không khớp/);
 });
+
+test("accepts totals below transactions on the same final page without mixing financial cells", () => {
+  const fixture = pages();
+  fixture[0].push(...fixture[1].map(item=>({...item,y:item.y+352})));
+  const parsed=parseMbPdfPages([fixture[0]])!;
+  assert.equal(parsed.rows.length,2);
+  assert.equal(parsed.rows[1].debitAmount,50000);
+  assert.equal(parsed.rows[1].description,"Chi");
+});
