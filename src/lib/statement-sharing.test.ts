@@ -24,10 +24,11 @@ test("summary includes only selected receipts/outflows and uses the correct publ
   assert.match(text,/First receipt/);
   assert.match(text,/Offering/);
   assert.match(text,/Sādhu Sādhu Anumodana/);
-  assert.match(text,/2 giao dịch trong đợt này/);
-  assert.match(text,/17\/11\/2026/);
-  assert.match(text,/Tổng thu đợt này: 100.000đ/);
-  assert.match(text,/Tổng chi đợt này: 20.000đ/);
+  assert.match(text,/1\. 100.000đ — First receipt/);
+  assert.match(text,/2\. Chi 20.000đ — Offering/);
+  assert.match(text,/Cúng dường vật thực tới tăng đoàn/);
+  assert.match(text,/cô Diệu Quy để sắp xếp danh sách hồi hướng/);
+  assert.ok(!text.includes("Tổng thu") && !text.includes("Tổng chi") && !text.includes("Tổng hùn phước"));
   assert.equal(text.split("https://metta.danasangha.org/thien-phap/cdvatthuc").length-1,1);
   assert.ok(!text.includes("420.000"));
   assert.match(buildShareSummary("TECHCOMBANK",rows),/https:\/\/dhamma-group.danasangha.org/);

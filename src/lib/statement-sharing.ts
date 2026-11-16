@@ -16,21 +16,21 @@ export function buildShareSummary(bank: BankScope, rows: SharedStatementRow[], s
   const date = (value: string) => new Intl.DateTimeFormat("vi-VN", { timeZone:"Asia/Ho_Chi_Minh",day:"2-digit",month:"2-digit",year:"numeric" }).format(new Date(value));
   const sorted = [...rows].sort((a,b)=>a.transactionDate.localeCompare(b.transactionDate)||a.id.localeCompare(b.id));
   const campaigns = [...new Map(rows.flatMap(row=>row.campaigns).map(campaign=>[campaign.code,campaign])).values()];
+  const isMetta = bank === "MBBANK";
   return [
-    `🏦 SAO KÊ HÙN PHƯỚC VÀ CHI · ${bank === "MBBANK" ? "METTA" : "DHAMMA"}`,
-    `NGÀY ${date(sentAt.toISOString()).replaceAll("/", ".")}`,
+    `🌿 DANH SÁCH HÙN PHƯỚC NGÀY ${date(sentAt.toISOString()).replaceAll("/", ".")}`,
+    ...(isMetta ? ["Cúng dường vật thực tới tăng đoàn"] : campaigns.map(campaign=>campaign.name)),
     "",
-    "✍️ Con xin gửi danh sách các thí chủ cúng dường vật thực hôm nay.",
-    ...(campaigns.length ? campaigns.map(campaign=>campaign.name) : []),
+    isMetta
+      ? "Con xin gửi các khoản cúng dường vật thực hôm nay theo nội dung giao dịch để ghi nhận vào danh sách chia phước ngày mai ạ."
+      : "Con xin gửi các khoản hùn phước và chi theo nội dung giao dịch trong đợt này.",
     "",
-    `${rows.length} giao dịch trong đợt này`,
-    ...sorted.map((row,index)=>`${index+1}. ${date(row.transactionDate)} · ${row.creditAmount>0?"Hùn phước":"Chi"} ${money(row.creditAmount||row.debitAmount)}\n${row.description.replace(/\s+/g," ").trim()}`),
+    ...sorted.map((row,index)=>`${index+1}. ${row.debitAmount>0?"Chi ":""}${money(row.creditAmount||row.debitAmount)} — ${row.description.replace(/\s+/g," ").trim()}`),
+    ...(campaigns.length ? ["", "👉 Sao kê tổng hợp thu, chi và số dư quỹ:",...campaigns.map(campaign=>`${campaigns.length>1?`${campaign.name}: `:""}${publicBankOrigin(bank)}/thien-phap/${encodeURIComponent(campaign.code)}`)] : []),
+    ...(isMetta ? ["", "🌼 Quý thí chủ muốn hồi hướng phước báu tới cha mẹ, thân bằng quyến thuộc còn hiện tiền hoặc đã quá vãng, xin vui lòng liên hệ cô Diệu Quy để sắp xếp danh sách hồi hướng."] : []),
     "",
-    `💰 Tổng thu đợt này: ${money(rows.reduce((sum,row)=>sum+row.creditAmount,0))}`,
-    `Tổng chi đợt này: ${money(rows.reduce((sum,row)=>sum+row.debitAmount,0))}`,
-    ...(campaigns.length ? ["", "👉 Sao kê tổng hợp thu, chi và số dư quỹ (gồm các đợt trước):",...campaigns.map(campaign=>`${campaigns.length>1?`${campaign.name}: `:""}${publicBankOrigin(bank)}/thien-phap/${encodeURIComponent(campaign.code)}`)] : []),
+    "Các khoản phát sinh sau đợt này con xin gửi bổ sung vào tối mai ạ. Xin tùy hỷ phước báu của quý thí chủ 🙏",
     "",
-    "Các khoản phát sinh sau đợt này con xin cập nhật vào danh sách gửi tối mai ạ.",
     "🌺 Sādhu Sādhu Anumodana",
     "🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu.",
     "🌺 Buddhasāsanaṃ Ciraṃ Tiṭṭhatu.",
