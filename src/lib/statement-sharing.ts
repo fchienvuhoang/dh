@@ -20,7 +20,7 @@ export function buildShareSummary(bank: BankScope, rows: SharedStatementRow[], s
     `🏦 SAO KÊ HÙN PHƯỚC VÀ CHI · ${bank === "MBBANK" ? "METTA" : "DHAMMA"}`,
     `NGÀY ${date(sentAt.toISOString()).replaceAll("/", ".")}`,
     "",
-    "✍️ Con xin gửi danh sách các thí chủ cúng dường để cô lập danh sách chia phước ngày mai ạ.",
+    "✍️ Con xin gửi danh sách các thí chủ cúng dường vật thực hôm nay.",
     ...(campaigns.length ? campaigns.map(campaign=>campaign.name) : []),
     "",
     `${rows.length} giao dịch trong đợt này`,
