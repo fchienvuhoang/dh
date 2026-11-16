@@ -19,7 +19,11 @@ test("summary includes only selected receipts/outflows and uses the correct publ
     {id:"one",transactionDate:"2026-11-16T17:05:00Z",description:"First receipt",creditAmount:100000,debitAmount:0,campaigns:[{code:"cdvatthuc",name:"Vật thực"}]},
     {id:"two",transactionDate:"2026-11-17T14:00:00Z",description:"Offering",creditAmount:0,debitAmount:20000,campaigns:[{code:"cdvatthuc",name:"Vật thực"}]},
   ];
-  const text=buildShareSummary("MBBANK",rows);
+  const text=buildShareSummary("MBBANK",rows,new Date("2026-11-17T18:00:00Z"));
+  assert.match(text,/NGÀY 18\.11\.2026/);
+  assert.match(text,/First receipt/);
+  assert.match(text,/Offering/);
+  assert.match(text,/Sādhu Sādhu Anumodana/);
   assert.match(text,/2 giao dịch trong đợt này/);
   assert.match(text,/17\/11\/2026/);
   assert.match(text,/Tổng thu đợt này: 100.000đ/);
