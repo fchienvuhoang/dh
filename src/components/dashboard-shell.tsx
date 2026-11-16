@@ -518,6 +518,9 @@ function Dashboard({ data }: { data: DashboardData }) {
                 <Plus className="h-4 w-4" />
                 Thêm thiện pháp
               </button>
+              <button type="button" onClick={() => { setMainTab("transactions"); setActiveTab("unmatched"); setQuery(""); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100">
+                <Tags className="h-4 w-4" />Chọn nhiều giao dịch để gán
+              </button>
               {importResult ? (
                 <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
                   <div className="flex items-center gap-2 font-medium">
@@ -734,7 +737,7 @@ function TransactionTable({
 
   return (
     <>
-      <div className="mt-4 flex flex-col gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="sticky top-2 z-20 mt-4 flex flex-col gap-2 rounded-md border border-emerald-200 bg-white/95 p-3 shadow-sm backdrop-blur lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700">
             <input
@@ -743,7 +746,7 @@ function TransactionTable({
               checked={allTransactionsSelected}
               disabled={transactions.length === 0 || isBulkAssigning || pendingTransactionId !== null}
               onChange={toggleAllTransactions}
-              className="h-4 w-4 rounded border-zinc-300 accent-emerald-600"
+              className="h-5 w-5 shrink-0 rounded border-zinc-300 accent-emerald-600"
             />
             Chọn tất cả kết quả
           </label>
@@ -753,6 +756,7 @@ function TransactionTable({
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <select
+            aria-label="Thiện pháp để gán các giao dịch đã chọn"
             value={bulkCampaignId}
             disabled={isBulkAssigning || pendingTransactionId !== null}
             onChange={(event) => setBulkCampaignId(event.target.value)}
@@ -802,7 +806,7 @@ function TransactionTable({
                   disabled={transactions.length === 0 || isBulkAssigning || pendingTransactionId !== null}
                   onChange={toggleAllTransactions}
                   aria-label="Chọn tất cả giao dịch đang hiển thị"
-                  className="h-4 w-4 rounded border-zinc-300 accent-emerald-600"
+                  className="h-5 w-5 shrink-0 rounded border-zinc-300 accent-emerald-600"
                 />
               </th>
               <th className="px-3 py-2">Ngày</th>
@@ -833,7 +837,7 @@ function TransactionTable({
                     disabled={isBulkAssigning || pendingTransactionId !== null}
                     onChange={() => toggleTransaction(transaction.id)}
                     aria-label={`Chọn giao dịch ${transaction.description}`}
-                    className="h-4 w-4 rounded border-zinc-300 accent-emerald-600"
+                    className="h-5 w-5 shrink-0 rounded border-zinc-300 accent-emerald-600"
                   />
                 </td>
                 <td data-label="Ngày" className="whitespace-nowrap px-3 py-2 text-zinc-600">{dateOnly(transaction.transactionDate)}</td>

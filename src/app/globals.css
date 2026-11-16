@@ -226,3 +226,28 @@ select:disabled,
   .mobile-compact-report > .grid { gap: 0.375rem; padding: 0.375rem; }
   .mobile-compact-report > a { margin-top: 0.375rem; padding-top: 0.25rem; padding-bottom: 0.25rem; min-height: 2rem; }
 }
+
+/* Metta has its own public identity; Dhamma keeps its existing theme. */
+.metta-public { background: #f8faf7; color: #183e38; }
+.metta-public .public-campaign-hero { background: #edf5ef; border-color: #d8e6dd; }
+.metta-hero-pattern { position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 90% 0%, #d1e9d8 0%, transparent 55%), radial-gradient(ellipse at 0% 100%, #f7ead5 0%, transparent 60%); }
+.metta-wordmark { display: inline-flex; align-items: center; gap: .55rem; margin-right: .4rem; color: #235b4b; font-family: Georgia, serif; font-size: 1.65rem; letter-spacing: -.04em; }
+.metta-public h1 { color: #193f35; font-family: Georgia, serif; font-weight: 500; line-height: 1.25; background: transparent; border: 0; padding: 0; box-shadow: none; backdrop-filter: none; }
+.metta-public h2 { color: #214c40; }
+.metta-public .public-campaign-hero p { color: #547064; }
+.metta-public [aria-label="Tổng quan tịnh tài"] { border-color: #ccded2; border-radius: 1rem; box-shadow: 0 12px 35px #264d3b0d; }
+.metta-public [aria-label="Tổng quan tịnh tài"] > div:first-child { background: #235b4b; }
+.metta-public [aria-label="Tổng quan tịnh tài"] > div:first-child p { color: #fff; }
+.metta-public main > section { border-color: #dce7df; border-radius: 1rem; box-shadow: 0 4px 18px #264d3b05; }
+.metta-public input { border-color: #c8dace; background: #f9fcfa; border-radius: .65rem; }
+.metta-public input:focus { border-color: #3c8068; box-shadow: 0 0 0 3px #e3efe8; }
+.metta-public .mobile-compact-card { border-color: #dce7df; border-radius: .75rem; box-shadow: none; }
+.metta-public .mobile-compact-card > div:first-child { background: #f3f8f4; border-color: #e0ebe3; }
+.metta-public .mobile-compact-card > div:first-child > span { border-color: #d4e4d9; background: #fff; color: #39604e; box-shadow: none; height: 2rem; width: 2rem; }
+.metta-public .mobile-compact-card > p { font-weight: 500; color: #2c453b; }
+.metta-public table thead { background: #edf5ef; color: #4a6657; }
+@media (max-width: 767px) {
+  .metta-public .public-campaign-hero > div:last-child { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+  .metta-public h1 { font-size: 1.65rem; }
+  .metta-public .public-campaign-hero > div:last-child > .grid { gap: 1.25rem; }
+}
