@@ -6,6 +6,9 @@ export async function downloadElementAsPng(element: HTMLElement, fileName: strin
     cacheBust: true,
     pixelRatio: 2,
     backgroundColor: "#fffdf9",
+    width: element.offsetWidth,
+    height: element.scrollHeight + element.offsetHeight - element.clientHeight,
+    style: { maxHeight: "none", overflow: "visible" },
     filter: (node) =>
       !(node instanceof HTMLElement && node.dataset.imageExportIgnore === "true"),
   });
