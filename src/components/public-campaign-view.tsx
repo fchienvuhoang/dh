@@ -416,75 +416,41 @@ function TransactionReceiptModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="transaction-receipt-title"
-        className="relative max-h-[calc(100vh-2rem)] w-full max-w-[420px] overflow-y-auto rounded-2xl border border-emerald-900/10 bg-[#fffdf7] shadow-2xl"
+        className={`public-receipt ${bankName === "MBBANK" ? "receipt-metta" : "receipt-dhamma"}`}
       >
-        <div className="relative p-4 sm:p-5">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng chi tiết giao dịch"
-            data-image-export-ignore="true"
-            className="absolute right-3 top-3 rounded-full bg-white/80 p-2 text-zinc-500 shadow-sm ring-1 ring-zinc-200 transition hover:text-zinc-900"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
-          <div className="pr-9 text-center">
-            {bankName === "MBBANK" ? <div className="mb-3 flex items-center justify-center gap-2 text-lg font-semibold text-teal-800"><HeartHandshake className="h-6 w-6" />Metta</div> : <span className="mx-auto mb-2 block h-12 w-12 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.18)]">
-              <Image
-                src="/assets/dhamma-group-logo.jpg"
-                alt="Logo Dhamma Group"
-                width={48}
-                height={48}
-                className="h-full w-full scale-[1.12] object-cover"
-              />
-            </span>}
-            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              <CircleCheck className="h-5 w-5" />
+        <div className="receipt-body">
+          <div className="receipt-topbar">
+            <div className="receipt-brand">
+              {bankName === "MBBANK" ? <><HeartHandshake className="h-6 w-6" /><span>Metta</span></> : <>
+                <Image src="/assets/dhamma-group-logo.jpg" alt="Logo Dhamma Group" width={36} height={36} className="h-9 w-9 rounded-full object-cover" />
+                <span>Dhamma</span>
+              </>}
             </div>
-            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-              Chi tiết giao dịch
-            </p>
-            <h2 id="transaction-receipt-title" className="mt-1 text-base font-semibold leading-5 text-zinc-950">
-              {campaignName}
-            </h2>
-            <p className="mt-1 font-mono text-xs text-zinc-500">{campaignCode}</p>
+            <button type="button" onClick={onClose} aria-label="Đóng chi tiết giao dịch" data-image-export-ignore="true" className="receipt-close">
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          <div className="my-3 border-t border-dashed border-zinc-300" />
-
-          <div className="text-center">
-            <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.className}`}>
-              {meta.label}
-            </span>
-            <div className={`mt-1.5 text-2xl font-bold tracking-tight ${meta.amountClassName}`}>
-              {money(meta.amount)}
-            </div>
+          <div className="receipt-hero">
+            <p className="receipt-eyebrow">Chi tiết giao dịch</p>
+            <span className={`receipt-type ${meta.className}`}><CircleCheck className="h-3.5 w-3.5" />{meta.label}</span>
+            <div className="receipt-amount" data-outflow={transaction.debitAmount > 0}>{money(meta.amount)}</div>
+            <p className="receipt-date">Ngày {dateOnly(transaction.transactionDate)}</p>
           </div>
 
-          <div className="mt-4 rounded-xl border-2 border-[#b63f70] bg-white/90 p-3.5 shadow-[0_8px_24px_rgba(76,23,59,0.12)]">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#b63f70]" />
-              <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a3315f]">
-                Nội dung chuyển khoản
-              </div>
-            </div>
-            <div className="mt-2 whitespace-pre-wrap break-words text-base font-bold leading-6 text-zinc-950">
-              {transaction.description}
-            </div>
+          <div className="receipt-campaign">
+            <div className="receipt-section-heading"><span>Thiện pháp</span><span className="receipt-code">{campaignCode}</span></div>
+            <h2 id="transaction-receipt-title">{campaignName}</h2>
           </div>
 
-          <div className="my-3 border-t border-dashed border-zinc-300" />
-
-          <dl className="rounded-xl border border-white/80 bg-white/72 p-3 text-sm shadow-sm backdrop-blur-[2px]">
-            <ReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
-          </dl>
+          <div className="receipt-memo">
+            <p className="receipt-eyebrow">Nội dung chuyển khoản</p>
+            <p className="receipt-description">{transaction.description}</p>
+          </div>
 
           <RefundRelationship transaction={transaction} />
 
-          <div className="mt-4 border-t border-dashed border-zinc-300 pt-3 text-center text-[11px] leading-4 text-zinc-500">
-            Thông tin được trích từ danh sách giao dịch công khai
-          </div>
+          <p className="receipt-footnote">Thông tin trích từ danh sách giao dịch công khai</p>
 
           <button
             type="button"
@@ -502,22 +468,13 @@ function TransactionReceiptModal({
                 setIsDownloading(false);
               }
             }}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#4c173b] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#612149] disabled:cursor-wait disabled:opacity-70"
+            className="receipt-download"
           >
             {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh giao dịch"}
           </button>
         </div>
       </section>
-    </div>
-  );
-}
-
-function ReceiptRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-5">
-      <dt className="shrink-0 text-xs text-zinc-500">{label}</dt>
-      <dd className="text-right font-medium text-zinc-900">{value}</dd>
     </div>
   );
 }
