@@ -3,7 +3,6 @@ import * as XLSX from "xlsx";
 import type { ParsedStatement, StatementTransactionRow } from "@/lib/techcombank";
 import { normalizeTransferText } from "@/lib/text";
 
-export const MB_IMPORT_START = "2026-11-16";
 const invalid = () => new Error("Sao kê MB thiếu dữ liệu hoặc số dư không khớp. Chưa có giao dịch nào được nhập.");
 
 export function parseMbStatement(buffer: Buffer): ParsedStatement | null {
@@ -58,13 +57,10 @@ export function parseMbStatement(buffer: Buffer): ParsedStatement | null {
       rows.push({ transactionDate: date, statementRow: index + 1, description, detail: `MB-${accountNumber}-${reference}-${identity}`, debitAmount, creditAmount, balanceAfter, raw: { cells: row } });
     }
     if (!total || Math.abs(debitTotal - amount(total[3])) > 0.01 || Math.abs(creditTotal - amount(total[4])) > 0.01 || Math.abs(balance - amount(closing)) > 0.01) throw invalid();
-    const cutoff = new Date(`${MB_IMPORT_START}T00:00:00+07:00`);
-    const eligible = rows.filter((row) => row.transactionDate >= cutoff);
-    if (!eligible.length) throw new Error("Sao kê MB không có giao dịch từ ngày 16/11/2026 trở đi. Vui lòng chọn sao kê mới hơn; chưa có dữ liệu nào được nhập.");
-    return { sheetName, rows: eligible, meta: {
+    return { sheetName, rows, meta: {
       sourceBank: "MBBANK", accountNumber, accountName, currency,
-      fromDate: new Date(Math.max(cutoff.getTime(), periodStart)), toDate: new Date(periodEnd),
-      openingBalance: eligible[0].balanceAfter! - eligible[0].creditAmount + eligible[0].debitAmount,
+      fromDate: new Date(periodStart), toDate: new Date(periodEnd),
+      openingBalance: amount(opening),
       closingBalance: amount(closing),
     } };
   }

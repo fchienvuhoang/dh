@@ -23,6 +23,12 @@ function identity(row: ComparableStatementRow) {
   ]);
 }
 
+function mbIdentity(row: ComparableStatementRow) {
+  const match = row.detail.match(/^MB(?:PDF)?-\d+-(.+)-[a-f0-9]{64}$/);
+  if (!match) return null;
+  return JSON.stringify([match[1], new Date(row.transactionDate.getTime() + 7 * 3600000).toISOString().slice(0, 10), row.debitAmount.toFixed(2), row.creditAmount.toFixed(2)]);
+}
+
 // A PDF may omit an Excel transaction reference (e.g. interest and bank fees).
 // Match those rows only on the same account, bank date, full normalized content,
 // debit/credit direction, amounts and running balance. Consume matches one-to-one.
@@ -34,6 +40,12 @@ export function newStatementRows<T extends ComparableStatementRow>(rows: T[], ex
     const match = existingByDetail.get(row.detail);
     if (match) { consumed.add(match); exactDuplicates.add(row); }
   }
+  const mbMatches = new Map<string, ExistingStatementRow[]>();
+  for (const row of existing) {
+    if (row.accountId !== accountId || consumed.has(row)) continue;
+    const key = mbIdentity(row);
+    if (key) mbMatches.set(key, [...(mbMatches.get(key) ?? []), row]);
+  }
   const byIdentity = new Map<string, ExistingStatementRow[]>();
   for (const row of existing) {
     if (row.accountId !== accountId || consumed.has(row)) continue;
@@ -42,6 +54,10 @@ export function newStatementRows<T extends ComparableStatementRow>(rows: T[], ex
   }
   return rows.filter((row) => {
     if (exactDuplicates.has(row)) return false;
+    const mbKey = mbIdentity(row);
+    const mbCandidates = mbKey ? mbMatches.get(mbKey) : undefined;
+    const mbIndex = mbCandidates?.findIndex((match) => row.detail.startsWith("MBPDF-") !== match.detail.startsWith("MBPDF-")) ?? -1;
+    if (mbCandidates && mbIndex >= 0) { mbCandidates.splice(mbIndex, 1); return false; }
     const key = identity(row);
     if (key === null) return true;
     const matches = byIdentity.get(key);

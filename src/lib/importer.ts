@@ -5,6 +5,7 @@ import { classifyDescription, type KeywordRule } from "@/lib/classifier";
 import { newStatementRows } from "@/lib/statement-deduplication";
 import { toPrismaDecimal } from "@/lib/money";
 import { getPrisma, withDatabaseReadRetry } from "@/lib/prisma";
+import { parseMbPdf } from "@/lib/mbbank-pdf";
 import { parseMbStatement } from "@/lib/mbbank";
 import { parseTechcombankStatement } from "@/lib/techcombank";
 import { parseTechcombankPdf } from "@/lib/techcombank-pdf";
@@ -35,7 +36,7 @@ export async function importTechcombankStatement(
   selectedBank?: BankScope,
 ) {
   const parsed = /\.pdf$/i.test(fileName)
-    ? await parseTechcombankPdf(buffer, password)
+    ? await parseMbPdf(buffer, password) ?? await parseTechcombankPdf(buffer, password)
     : parseMbStatement(buffer) ?? parseTechcombankStatement(buffer);
   if (selectedBank && parsed.meta.sourceBank !== selectedBank) throw new Error("File sao kê không thuộc ngân hàng đang chọn. Hãy chuyển đúng tab ngân hàng rồi nhập lại.");
   const prisma = getPrisma();
@@ -56,8 +57,9 @@ export async function importTechcombankStatement(
         bankName: parsed.meta.sourceBank,
         accountName: parsed.meta.accountName,
         currency: parsed.meta.currency,
-        currentBalance: toPrismaDecimal(parsed.meta.closingBalance ?? 0),
-        balanceAsOf: parsed.meta.toDate,
+        ...(parsed.meta.closingBalance == null ? {} : {
+          currentBalance: toPrismaDecimal(parsed.meta.closingBalance), balanceAsOf: parsed.meta.toDate,
+        }),
       },
       create: {
         bankName: parsed.meta.sourceBank,
@@ -65,7 +67,7 @@ export async function importTechcombankStatement(
         accountName: parsed.meta.accountName,
         currency: parsed.meta.currency,
         currentBalance: toPrismaDecimal(parsed.meta.closingBalance ?? 0),
-        balanceAsOf: parsed.meta.toDate,
+        balanceAsOf: parsed.meta.closingBalance == null ? null : parsed.meta.toDate,
       },
     });
 

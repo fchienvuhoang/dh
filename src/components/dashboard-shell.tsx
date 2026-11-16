@@ -437,7 +437,7 @@ function Dashboard({ data }: { data: DashboardData }) {
               <HeaderStat label="Chưa phân loại" value={data.overview.unmatchedCount.toLocaleString("vi-VN")} />
               <HeaderStat
                 label="TK ngân hàng"
-                value={money(data.overview.bankBalance)}
+                value={data.bankAccount?.balanceAsOf ? money(data.overview.bankBalance) : "Chưa có số dư"}
                 tone="emerald"
               />
               <HeaderStat
@@ -494,7 +494,7 @@ function Dashboard({ data }: { data: DashboardData }) {
                   <input name="password" type="password" autoComplete="off" disabled={isImporting} placeholder="Chỉ nhập nếu PDF có mật khẩu" className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm sm:max-w-sm" />
                 </label>
                 <p className="text-xs leading-5 text-zinc-500 lg:col-span-2">
-                  Hỗ trợ Excel, PDF và ZIP chứa một file Excel hoặc PDF sao kê Techcombank hoặc Excel MB (chỉ lấy từ 16/11/2026), tối đa 4 MB tải lên. ZIP tự dùng mật khẩu đã cấu hình.
+                  Hỗ trợ Excel, PDF và ZIP chứa một file Excel hoặc PDF sao kê Techcombank hoặc MB, tối đa 4 MB tải lên. ZIP tự dùng mật khẩu đã cấu hình.
                   Trên iPhone: lưu file vào Tệp rồi chọn tại đây. ZIP sẽ được giải nén tự động; File sao kê sau giải nén tối đa 20 MB. PDF ảnh quét chưa được hỗ trợ.
                 </p>
               </form>
@@ -1437,6 +1437,7 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
     },
     {
       label: "Số dư tài khoản ngân hàng",
+      unknown: !data.bankAccount?.balanceAsOf,
       value: data.overview.bankBalance,
       note: data.bankAccounts.length
         ? data.bankAccounts.map((account) => `${account.bankName} ${account.accountNumber}`).join(" · ")
@@ -1445,6 +1446,7 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
     },
     {
       label: "Chênh lệch tài khoản và sổ theo dõi",
+      unknown: !data.bankAccount?.balanceAsOf,
       value: bankDifference,
       note: "Số dư ngân hàng trừ số tiền hiện tại theo thu chi.",
       className: bankDifference === 0 ? "text-zinc-700" : "text-rose-700",
@@ -1479,7 +1481,7 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
               <td data-label="Khoản mục" className="px-3 py-2 font-medium text-zinc-900">{row.label}</td>
               <td data-label="Cách tính / ghi chú" className="px-3 py-2 text-zinc-500">{row.note}</td>
               <td data-label="Số tiền" className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${row.className}`}>
-                {money(row.value)}
+                {row.unknown ? "Chưa có số dư" : money(row.value)}
               </td>
             </tr>
           ))}

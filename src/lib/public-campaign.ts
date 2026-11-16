@@ -7,7 +7,7 @@ import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bank-v9";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bank-mb-history-v10";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {

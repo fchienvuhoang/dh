@@ -27,3 +27,13 @@ test("distinct bank references are kept and matching rows are consumed once", ()
   assert.equal(newStatementRows([pdf, { ...pdf, detail: "TCB-PDF-second" }], [original], "account").length, 1);
   assert.equal(newStatementRows([pdf, original], [original], "account").length, 1);
 });
+
+test("MB PDF and Excel deduplicate by bank reference, local date and direction even without PDF balances", () => {
+  const base = {transactionDate:new Date("2026-11-15T17:00:00Z"),description:"cung duong",debitAmount:0,creditAmount:100,balanceAfter:null};
+  const pdf = {...base,detail:`MBPDF-123-FT123-${"a".repeat(64)}`};
+  const excel = {...base,detail:`MB-123-FT123-${"b".repeat(64)}`,balanceAfter:500,accountId:"mb"};
+  assert.equal(newStatementRows([pdf],[excel],"mb").length,0);
+  assert.equal(newStatementRows([excel],[{...pdf,accountId:"mb"}],"mb").length,0);
+  assert.equal(newStatementRows([pdf],[excel],"other-bank").length,1);
+  assert.equal(newStatementRows([{...pdf,creditAmount:101}],[excel],"mb").length,1);
+});

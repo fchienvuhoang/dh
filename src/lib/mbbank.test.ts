@@ -24,23 +24,24 @@ function fixture(change?: (rows: unknown[][]) => void) {
   return XLSX.write(book, { type: "buffer", bookType: "xlsx" });
 }
 
-test("MB validates full statement then includes only dates from local midnight November 16", () => {
+test("MB validates full statement then includes all historical dates", () => {
   const parsed = parseMbStatement(fixture())!;
   assert.equal(parsed.meta.sourceBank, "MBBANK");
   assert.equal(parsed.meta.accountNumber, "123456789");
-  assert.equal(parsed.rows.length, 2);
-  assert.equal(parsed.rows[0].transactionDate.toISOString(), "2026-11-15T17:00:00.000Z");
-  assert.equal(parsed.meta.openingBalance, 1300);
+  assert.equal(parsed.rows.length, 3);
+  assert.equal(parsed.rows[0].transactionDate.toISOString(), "2026-11-15T16:59:59.000Z");
+  assert.equal(parsed.meta.openingBalance, 1000);
   assert.equal(parsed.meta.closingBalance, 1700);
   assert.notEqual(parsed.rows[0].detail, parsed.rows[1].detail);
   assert.deepEqual(parsed.rows.map(r => r.detail), parseMbStatement(fixture())!.rows.map(r => r.detail));
 });
 
-test("rejects old-only statements before database access", () => {
-  assert.throws(() => parseMbStatement(fixture(rows => {
+test("accepts old-only statements without a November 16 cutoff", () => {
+  const parsed = parseMbStatement(fixture(rows => {
     rows[8][0] = "15/11/2026 23:59:59";
     rows[9][0] = "15/11/2026 23:59:59";
-  })), /không có giao dịch từ ngày 16\/11\/2026/);
+  }))!;
+  assert.equal(parsed.rows.length, 3);
 });
 
 test("rejects missing rows, invalid values, totals, balances and dates", () => {
