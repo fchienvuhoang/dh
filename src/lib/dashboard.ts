@@ -40,6 +40,7 @@ export type DashboardData = {
   campaigns: CampaignSummary[];
   transactions: TransactionSummary[];
   debitTransactions: TransactionSummary[];
+  shareBatches: ShareBatchSummary[];
   latestImport: {
     fileName: string;
     importedAt: string;
@@ -48,6 +49,15 @@ export type DashboardData = {
     duplicateRows: number;
     unmatchedRows: number;
   } | null;
+};
+
+export type ShareBatchSummary = {
+  id: string;
+  sentAt: string;
+  voidedAt: string | null;
+  transactionCount: number;
+  totalCredit: number;
+  totalDebit: number;
 };
 
 export type CampaignSummary = {
@@ -74,6 +84,7 @@ export type CampaignSummary = {
 };
 
 export type TransactionSummary = {
+  shareBatch: { id: string; sentAt: string } | null;
   id: string;
   transactionDate: string;
   createdAt: string;
@@ -135,6 +146,7 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
       debitTransactions,
       bankAccounts,
       latestImport,
+      shareBatches,
     ] = await Promise.all([
       prisma.campaign.findMany({
         where: { bankName: bank },
@@ -219,6 +231,7 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
       prisma.bankTransaction.findMany({
         where: bankWhere,
         include: {
+          shareBatch: { select: { id: true, sentAt: true } },
           campaign: {
             select: {
               id: true,
@@ -249,6 +262,7 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
           },
         },
         include: {
+          shareBatch: { select: { id: true, sentAt: true } },
           campaign: {
             select: {
               id: true,
@@ -279,6 +293,11 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
       prisma.importBatch.findFirst({
         where: { sourceBank: bank },
         orderBy: { importedAt: "desc" },
+      }),
+      prisma.statementShareBatch.findMany({
+        where: { bankName: bank },
+        select: { id: true, sentAt: true, voidedAt: true, transactionCount: true, totalCredit: true, totalDebit: true },
+        orderBy: { sentAt: "desc" }, take: 10,
       }),
     ]);
 
@@ -382,6 +401,7 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
         })),
         campaigns: campaignSummaries,
         transactions: transactions.map((transaction) => ({
+          shareBatch: transaction.shareBatch ? { id: transaction.shareBatch.id, sentAt: transaction.shareBatch.sentAt.toISOString() } : null,
           id: transaction.id,
           transactionDate: transaction.transactionDate.toISOString(),
           createdAt: transaction.createdAt.toISOString(),
@@ -412,6 +432,7 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
           })),
         })),
         debitTransactions: debitTransactions.map((transaction) => ({
+          shareBatch: transaction.shareBatch ? { id: transaction.shareBatch.id, sentAt: transaction.shareBatch.sentAt.toISOString() } : null,
           id: transaction.id,
           transactionDate: transaction.transactionDate.toISOString(),
           createdAt: transaction.createdAt.toISOString(),
@@ -441,6 +462,7 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
             },
           })),
         })),
+        shareBatches: shareBatches.map(batch => ({ ...batch, sentAt: batch.sentAt.toISOString(), voidedAt: batch.voidedAt?.toISOString() ?? null, totalCredit: Number(batch.totalCredit), totalDebit: Number(batch.totalDebit) })),
         latestImport: latestImport
           ? {
               fileName: latestImport.fileName,

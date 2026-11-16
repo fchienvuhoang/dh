@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Check,
   Copy,
-  Download,
   ExternalLink,
   FileSpreadsheet,
   LogOut,
@@ -26,17 +25,21 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { filterShareRows } from "@/lib/statement-sharing";
+import { TransactionReceiptModal } from "@/components/public-campaign-view";
+import { StatementShareControls, shareTime } from "@/components/statement-share-controls";
+import type { BankScope } from "@/lib/bank-scope";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type React from "react";
 import type {
+  ShareBatchSummary,
   CampaignSummary,
   DashboardData,
   DashboardState,
   TransactionSummary,
 } from "@/lib/dashboard";
 import { buildCampaignStatement, buildCombinedCampaignStatement, formatTp04ExpenseDescription, selectedStatementCampaigns, shortVietnamDate } from "@/lib/campaign-statement";
-import { downloadElementAsPng } from "@/lib/download-element-image";
 import { normalizeTransferText, splitKeywords } from "@/lib/text";
 import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
@@ -526,6 +529,7 @@ function Dashboard({ data }: { data: DashboardData }) {
               <button type="button" onClick={() => { setMainTab("transactions"); setActiveTab("unmatched"); setQuery(""); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100">
                 <Tags className="h-4 w-4" />Chọn nhiều giao dịch để gán
               </button>
+              <button type="button" onClick={() => { setMainTab("transactions"); setActiveTab("all"); setQuery(""); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-900 hover:bg-sky-100"><Copy className="h-4 w-4"/>Chuẩn bị danh sách gửi nhóm</button>
               {importResult ? (
                 <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
                   <div className="flex items-center gap-2 font-medium">
@@ -588,6 +592,7 @@ function Dashboard({ data }: { data: DashboardData }) {
               <Panel>
                 <PanelTitle icon={ArrowUpFromLine} title="Danh sách khoản chi từ sao kê" />
                 <DebitTransactionTable
+                  bank={data.selectedBank}
                   transactions={data.debitTransactions}
                   campaigns={data.campaigns}
                   pendingTransactionId={pendingTransactionId}
@@ -639,6 +644,8 @@ function Dashboard({ data }: { data: DashboardData }) {
               </div>
 
               <TransactionTable
+                bank={data.selectedBank}
+                shareBatches={data.shareBatches}
                 key={`${activeTab}:${normalizeTransferText(query)}`}
                 transactions={filteredTransactions}
                 campaigns={data.campaigns}
@@ -685,6 +692,8 @@ function Dashboard({ data }: { data: DashboardData }) {
 }
 
 function TransactionTable({
+  bank,
+  shareBatches,
   transactions,
   campaigns,
   pendingTransactionId,
@@ -693,6 +702,8 @@ function TransactionTable({
   onBulkAssign,
   onSplit,
 }: {
+  bank: BankScope;
+  shareBatches: ShareBatchSummary[];
   transactions: TransactionSummary[];
   campaigns: CampaignSummary[];
   pendingTransactionId: string | null;
@@ -701,6 +712,10 @@ function TransactionTable({
   onBulkAssign: (transactionIds: string[], campaignId: string) => Promise<boolean>;
   onSplit: (transaction: TransactionSummary) => void;
 }) {
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareFilter, setShareFilter] = useState<"unshared" | "shared" | "all">("unshared");
+  const busy = isBulkAssigning || isSharing;
+  const visibleTransactions = filterShareRows(transactions, shareFilter);
   const sortedCampaigns = sortCampaignsForSelection(campaigns);
   const [detailTransaction, setDetailTransaction] = useState<TransactionSummary | null>(null);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
@@ -708,7 +723,7 @@ function TransactionTable({
   const selectAllToolbarRef = useRef<HTMLInputElement>(null);
   const selectAllTableRef = useRef<HTMLInputElement>(null);
   const allTransactionsSelected =
-    transactions.length > 0 && transactions.every((transaction) => selectedTransactionIds.has(transaction.id));
+    visibleTransactions.length > 0 && visibleTransactions.every((transaction) => selectedTransactionIds.has(transaction.id));
 
   useEffect(() => {
     const isPartiallySelected = selectedTransactionIds.size > 0 && !allTransactionsSelected;
@@ -728,7 +743,7 @@ function TransactionTable({
 
   function toggleAllTransactions() {
     setSelectedTransactionIds(
-      allTransactionsSelected ? new Set() : new Set(transactions.map((transaction) => transaction.id)),
+      allTransactionsSelected ? new Set() : new Set(visibleTransactions.map((transaction) => transaction.id)),
     );
   }
 
@@ -743,6 +758,12 @@ function TransactionTable({
 
   return (
     <>
+      <div className="mt-3 flex flex-wrap gap-2" aria-label="Lọc theo trạng thái gửi danh sách">
+        {(["unshared", "shared", "all"] as const).map(filter => <button key={filter} type="button" disabled={busy} onClick={() => { setShareFilter(filter); setSelectedTransactionIds(new Set()); }} aria-pressed={shareFilter === filter} className={`rounded-md border px-3 py-2 text-xs font-semibold ${shareFilter === filter ? "border-sky-700 bg-sky-700 text-white" : "border-zinc-200 bg-white text-zinc-600"}`}>
+          {filter === "unshared" ? "Chưa gửi" : filter === "shared" ? "Đã gửi" : "Tất cả trạng thái"} ({filterShareRows(transactions, filter).length})
+        </button>)}
+      </div>
+      <StatementShareControls bank={bank} selected={visibleTransactions.filter(row => selectedTransactionIds.has(row.id))} batches={shareBatches} busy={busy} onBusyChange={setIsSharing} onRecorded={() => setSelectedTransactionIds(new Set())} />
       <div className="sticky top-2 z-20 mt-4 flex flex-col gap-2 rounded-md border border-emerald-200 bg-white/95 p-3 shadow-sm backdrop-blur lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700">
@@ -750,7 +771,7 @@ function TransactionTable({
               ref={selectAllToolbarRef}
               type="checkbox"
               checked={allTransactionsSelected}
-              disabled={transactions.length === 0 || isBulkAssigning || pendingTransactionId !== null}
+              disabled={visibleTransactions.length === 0 || busy || pendingTransactionId !== null}
               onChange={toggleAllTransactions}
               className="h-5 w-5 shrink-0 rounded border-zinc-300 accent-emerald-600"
             />
@@ -764,7 +785,7 @@ function TransactionTable({
           <select
             aria-label="Thiện pháp để gán các giao dịch đã chọn"
             value={bulkCampaignId}
-            disabled={isBulkAssigning || pendingTransactionId !== null}
+            disabled={busy || pendingTransactionId !== null}
             onChange={(event) => setBulkCampaignId(event.target.value)}
             className={`min-h-10 min-w-60 rounded-md border px-3 py-2 text-sm font-medium shadow-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:opacity-60 ${campaignSelectClassName(bulkCampaignId, sortedCampaigns)}`}
           >
@@ -776,19 +797,19 @@ function TransactionTable({
             disabled={
               selectedTransactionIds.size === 0 ||
               !bulkCampaignId ||
-              isBulkAssigning ||
+              busy ||
               pendingTransactionId !== null
             }
             onClick={() => void handleBulkAssign()}
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isBulkAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Tags className="h-4 w-4" />}
-            {isBulkAssigning ? "Đang gán..." : "Gán các giao dịch đã chọn"}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Tags className="h-4 w-4" />}
+            {busy ? "Đang gán..." : "Gán các giao dịch đã chọn"}
           </button>
           {selectedTransactionIds.size > 0 ? (
             <button
               type="button"
-              disabled={isBulkAssigning}
+              disabled={busy}
               onClick={() => setSelectedTransactionIds(new Set())}
               className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100 disabled:opacity-50"
               aria-label="Bỏ chọn tất cả giao dịch"
@@ -809,7 +830,7 @@ function TransactionTable({
                   ref={selectAllTableRef}
                   type="checkbox"
                   checked={allTransactionsSelected}
-                  disabled={transactions.length === 0 || isBulkAssigning || pendingTransactionId !== null}
+                  disabled={visibleTransactions.length === 0 || busy || pendingTransactionId !== null}
                   onChange={toggleAllTransactions}
                   aria-label="Chọn tất cả giao dịch đang hiển thị"
                   className="h-5 w-5 shrink-0 rounded border-zinc-300 accent-emerald-600"
@@ -825,7 +846,7 @@ function TransactionTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 bg-white">
-            {transactions.map((transaction) => (
+            {visibleTransactions.map((transaction) => (
               <tr
                 key={transaction.id}
                 className={
@@ -840,13 +861,13 @@ function TransactionTable({
                   <input
                     type="checkbox"
                     checked={selectedTransactionIds.has(transaction.id)}
-                    disabled={isBulkAssigning || pendingTransactionId !== null}
+                    disabled={busy || pendingTransactionId !== null}
                     onChange={() => toggleTransaction(transaction.id)}
                     aria-label={`Chọn giao dịch ${transaction.description}`}
                     className="h-5 w-5 shrink-0 rounded border-zinc-300 accent-emerald-600"
                   />
                 </td>
-                <td data-label="Ngày" className="whitespace-nowrap px-3 py-2 text-zinc-600">{dateOnly(transaction.transactionDate)}</td>
+                <td data-label="Ngày" className="px-3 py-2 text-zinc-600"><div className="whitespace-nowrap">{dateOnly(transaction.transactionDate)}</div><span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] ${transaction.shareBatch ? "bg-zinc-100 text-zinc-500" : "bg-sky-50 font-medium text-sky-800"}`}>{transaction.shareBatch ? `Đã gửi ${shareTime(transaction.shareBatch.sentAt)}` : "Chưa gửi"}</span></td>
                 <td data-label="Nội dung chuyển khoản" className="max-w-md px-3 py-2 align-top">
                   <div className="whitespace-pre-wrap break-words font-medium text-zinc-900">
                     {transaction.description}
@@ -897,7 +918,7 @@ function TransactionTable({
                   <div className="flex items-center gap-2">
                     <select
                       value={transaction.campaign?.id ?? ""}
-                      disabled={pendingTransactionId === transaction.id || isBulkAssigning}
+                      disabled={pendingTransactionId === transaction.id || busy}
                       onChange={(event) => onAssign(transaction.id, event.target.value || null)}
                       className={`w-56 rounded-md border px-3 py-2 text-xs font-medium shadow-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:cursor-wait disabled:opacity-70 ${campaignSelectClassName(transaction.campaign?.id, sortedCampaigns)}`}
                     >
@@ -915,7 +936,7 @@ function TransactionTable({
                     {transaction.creditAmount > 0 ? (
                       <button
                         type="button"
-                        disabled={pendingTransactionId === transaction.id || isBulkAssigning}
+                        disabled={pendingTransactionId === transaction.id || busy}
                         onClick={() => onSplit(transaction)}
                         className="inline-flex items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2 py-1.5 text-xs font-medium text-sky-700 hover:bg-sky-100 disabled:opacity-50"
                       >
@@ -927,10 +948,10 @@ function TransactionTable({
                 </td>
               </tr>
             ))}
-            {transactions.length === 0 ? (
+            {visibleTransactions.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-3 py-10 text-center text-zinc-500">
-                  Không có giao dịch phù hợp.
+                  {shareFilter === "unshared" ? "Không có giao dịch chưa gửi trong kết quả này. Các khoản đã chốt nằm ở bộ lọc Đã gửi." : "Không có giao dịch phù hợp."}
                 </td>
               </tr>
             ) : null}
@@ -939,176 +960,21 @@ function TransactionTable({
         </div>
       </div>
       {detailTransaction ? (
-        <StatementReceiptModal transaction={detailTransaction} onClose={() => setDetailTransaction(null)} />
+        <StatementReceiptModal bank={bank} transaction={detailTransaction} onClose={() => setDetailTransaction(null)} />
       ) : null}
     </>
   );
 }
 
-function StatementReceiptModal({
-  transaction,
-  onClose,
-}: {
-  transaction: TransactionSummary;
-  onClose: () => void;
-}) {
-  const receiptRef = useRef<HTMLElement>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const isCredit = transaction.creditAmount > 0;
-  const amount = isCredit ? transaction.creditAmount : transaction.debitAmount;
-  const transactionType = isCredit
-    ? "Tiền vào"
-    : transaction.outflowType === "REFUND"
-      ? "Hoàn lại"
-      : "Tiền ra";
-  const campaignText = transaction.allocations.length > 0
-    ? transaction.allocations.map((allocation) => allocation.campaign.code).join(", ")
-    : transaction.campaign?.code ?? "Chưa phân loại";
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/55 p-4 backdrop-blur-[2px]"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <section
-        ref={receiptRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="statement-receipt-title"
-        className="relative max-h-[calc(100vh-2rem)] w-full max-w-[430px] overflow-y-auto rounded-2xl border border-white/70 bg-[#fffdf9] shadow-2xl"
-      >
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden="true">
-          <Image
-            src="/assets/dhamma-celestial-mangosteen-deva-mobile.jpg"
-            alt=""
-            fill
-            sizes="430px"
-            className="object-cover object-top opacity-70 saturate-[0.95]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf9]/35 via-[#fffdf9]/58 to-[#fffdf9]/72" />
-        </div>
-
-        <div className="relative p-5 sm:p-6">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng chi tiết giao dịch"
-            data-image-export-ignore="true"
-            className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 text-zinc-500 shadow-sm hover:text-zinc-900"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
-          <div className="pr-10 text-center">
-            <span className="mx-auto mb-3 block h-14 w-14 overflow-hidden rounded-full border-2 border-white bg-white shadow-[0_5px_16px_rgba(76,23,59,0.18)]">
-              <Image
-                src="/assets/dhamma-group-logo.jpg"
-                alt="Logo Dhamma Group"
-                width={56}
-                height={56}
-                className="h-full w-full scale-[1.12] object-cover"
-              />
-            </span>
-            <span className={`mx-auto inline-flex h-11 w-11 items-center justify-center rounded-full ${isCredit ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-              {isCredit ? <ArrowUpFromLine className="h-5 w-5 rotate-180" /> : <ArrowUpFromLine className="h-5 w-5" />}
-            </span>
-            <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-              Chi tiết giao dịch sao kê
-            </p>
-            <h2 id="statement-receipt-title" className={`mt-2 text-3xl font-bold tracking-tight ${isCredit ? "text-emerald-700" : "text-amber-700"}`}>
-              {money(amount)}
-            </h2>
-            <span className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${isCredit ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
-              {transactionType}
-            </span>
-          </div>
-
-          <div className="my-5 border-t border-dashed border-zinc-300" />
-
-          <div className="rounded-xl border-2 border-[#b63f70] bg-white/90 p-4 shadow-[0_8px_24px_rgba(76,23,59,0.12)]">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#b63f70]" />
-              <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a3315f]">
-                Nội dung chuyển khoản
-              </div>
-            </div>
-            <div className="mt-2.5 whitespace-pre-wrap break-words text-[17px] font-bold leading-7 text-zinc-950">
-              {transaction.description}
-            </div>
-          </div>
-
-          <div className="my-5 border-t border-dashed border-zinc-300" />
-
-          <dl className="space-y-4 rounded-xl border border-white/80 bg-white/72 p-4 text-sm shadow-sm backdrop-blur-[2px]">
-            <StatementReceiptRow label="Ngày giao dịch" value={dateOnly(transaction.transactionDate)} />
-            <StatementReceiptRow label="Mã giao dịch" value={transaction.detail || "—"} mono />
-            <StatementReceiptRow label="Thiện pháp" value={campaignText} />
-          </dl>
-
-          <div className="mt-5 border-t border-dashed border-zinc-300 pt-4 text-center text-[11px] leading-5 text-zinc-500">
-            Dhamma Group · Thông tin trích từ sao kê
-          </div>
-
-          <button
-            type="button"
-            data-image-export-ignore="true"
-            disabled={isDownloading}
-            onClick={async () => {
-              if (!receiptRef.current) return;
-              setIsDownloading(true);
-              try {
-                await downloadElementAsPng(
-                  receiptRef.current,
-                  `giao-dich-${transaction.detail || transaction.id}`,
-                );
-              } finally {
-                setIsDownloading(false);
-              }
-            }}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#4c173b] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#612149] disabled:cursor-wait disabled:opacity-70"
-          >
-            {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            {isDownloading ? "Đang tạo ảnh..." : "Tải ảnh giao dịch"}
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function StatementReceiptRow({
-  label,
-  value,
-  mono = false,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-3">
-      <dt className="text-xs leading-5 text-zinc-500">{label}</dt>
-      <dd className={`break-words text-right font-semibold leading-5 text-zinc-900 ${mono ? "font-mono text-xs" : ""}`}>
-        {value}
-      </dd>
-    </div>
-  );
+function StatementReceiptModal({ bank, transaction, onClose }: { bank: BankScope; transaction: TransactionSummary; onClose: () => void }) {
+  const campaignName = transaction.campaign?.name ?? (transaction.allocations.length ? transaction.allocations.map(item => `${item.campaign.name} (${money(item.amount)})`).join(" · ") : "Giao dịch chưa gán thiện pháp");
+  const campaignCode = transaction.campaign?.code ?? (transaction.allocations.length ? transaction.allocations.map(item => item.campaign.code).join(" · ") : bank === "MBBANK" ? "mb" : "tcb");
+  return <TransactionReceiptModal bankName={bank} campaignName={campaignName} campaignCode={campaignCode} onClose={onClose} transaction={{
+    id: transaction.id, transactionDate: transaction.transactionDate, createdAt: transaction.createdAt,
+    statementRow: transaction.statementRow, description: transaction.description,
+    debitAmount: transaction.debitAmount, creditAmount: transaction.creditAmount, outflowType: transaction.outflowType,
+    refundLinks: transaction.refundLinks.map(link => ({amount: link.amount, transactionDate: link.originalTransaction.transactionDate, description: link.originalTransaction.description})),
+  }} />;
 }
 
 function CampaignTable({
@@ -1266,12 +1132,14 @@ function CampaignTable({
 }
 
 function DebitTransactionTable({
+  bank,
   transactions,
   campaigns,
   pendingTransactionId,
   onAssign,
   onLinkRefund,
 }: {
+  bank: BankScope;
   transactions: TransactionSummary[];
   campaigns: CampaignSummary[];
   pendingTransactionId: string | null;
@@ -1399,7 +1267,7 @@ function DebitTransactionTable({
         </div>
       </div>
       {detailTransaction ? (
-        <StatementReceiptModal transaction={detailTransaction} onClose={() => setDetailTransaction(null)} />
+        <StatementReceiptModal bank={bank} transaction={detailTransaction} onClose={() => setDetailTransaction(null)} />
       ) : null}
     </>
   );

@@ -373,7 +373,7 @@ function PublicTransactionRow({
   );
 }
 
-function TransactionReceiptModal({
+export function TransactionReceiptModal({
   bankName,
   campaignName,
   campaignCode,
@@ -436,7 +436,6 @@ function TransactionReceiptModal({
           </div>
 
           <div className="receipt-hero">
-            <p className="receipt-eyebrow">Chi tiết giao dịch</p>
             <span className={`receipt-type ${meta.className}`}><CircleCheck className="h-3.5 w-3.5" />{meta.label}</span>
             <div className="receipt-amount" data-outflow={transaction.debitAmount > 0}>{money(meta.amount)}</div>
             <p className="receipt-date">Ngày {dateOnly(transaction.transactionDate)}</p>
@@ -455,8 +454,8 @@ function TransactionReceiptModal({
           <RefundRelationship transaction={transaction} />
 
           <blockquote className="receipt-verse">
-            {normalizeTransferText(campaignName).includes("vat thuc") ? <span className="receipt-eyebrow">Cúng dường vật thực đến chư Tăng</span> : null}
-            <p>“Bố thí người ly tham,<br />Do vậy được quả lớn.”</p>
+            {normalizeTransferText(campaignName).includes("vat thuc") ? <span className="receipt-eyebrow">Cúng dường vật thực</span> : null}
+            <p>“Bố thí người ly tham, do vậy được quả lớn.”</p>
             <cite>Pháp Cú 356 · HT. Thích Minh Châu dịch</cite>
           </blockquote>
 

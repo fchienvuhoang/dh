@@ -133,8 +133,24 @@ model CampaignKeyword {
   @@index([normalizedKeyword])
 }
 
+model StatementShareBatch {
+  id               String @id @default(cuid())
+  bankName         String
+  sentAt           DateTime @default(now())
+  voidedAt         DateTime?
+  transactionCount Int
+  totalCredit      Decimal @db.Decimal(18, 2)
+  totalDebit       Decimal @db.Decimal(18, 2)
+  snapshot         Json
+  transactions     BankTransaction[]
+
+  @@index([bankName, sentAt])
+}
+
 model BankTransaction {
   id                    String               @id @default(cuid())
+  shareBatchId          String?
+  shareBatch            StatementShareBatch? @relation(fields: [shareBatchId], references: [id], onDelete: SetNull)
   accountId             String?
   account               BankAccount?         @relation(fields: [accountId], references: [id], onDelete: SetNull)
   importBatchId         String?
@@ -164,6 +180,7 @@ model BankTransaction {
   @@index([campaignId, transactionDate])
   @@index([campaignId, transactionDate, createdAt, statementRow])
   @@index([classificationStatus])
+  @@index([shareBatchId])
   @@index([creditAmount])
 }
 
