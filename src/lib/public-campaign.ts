@@ -1,3 +1,4 @@
+import { activeBankTransactionWhere, getBankLedger, ledgerOpeningForCampaign } from "@/lib/bank-ledger";
 import { type BankScope } from "@/lib/bank-scope";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
@@ -7,7 +8,7 @@ import { redactPhoneNumbers } from "@/lib/privacy";
 import { makeCampaignCode } from "@/lib/text";
 import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
-const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-bank-mb-history-v10";
+const PUBLIC_CAMPAIGN_DATA_CACHE_VERSION = "campaign-ledger-opening-v11";
 const PUBLIC_CAMPAIGN_LIST_TAG = "public-campaign-list";
 
 export type ActivePublicCampaign = {
@@ -18,6 +19,8 @@ export type ActivePublicCampaign = {
 
 export type PublicCampaignData = {
   bankName: string;
+  openingBalance: number;
+  trackingFrom: string | null;
   code: string;
   name: string;
   description: string | null;
@@ -156,9 +159,13 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
     return null;
   }
 
+  const ledger = await getBankLedger(bank);
+  const bankWhere = await activeBankTransactionWhere(bank);
+  const openingBalance = ledgerOpeningForCampaign(ledger, campaign.id);
   const [transactionSums, refundSums, allocationSums, transactions, allocations, bills, donations] = await Promise.all([
     prisma.bankTransaction.aggregate({
       where: {
+        ...bankWhere,
         campaignId: campaign.id,
         outflowType: "DONATION",
       },
@@ -169,17 +176,18 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
       _count: true,
     }),
     prisma.bankTransaction.aggregate({
-      where: { campaignId: campaign.id, outflowType: "REFUND" },
+      where: { ...bankWhere, campaignId: campaign.id, outflowType: "REFUND" },
       _sum: { debitAmount: true },
       _count: true,
     }),
     prisma.transactionAllocation.aggregate({
-      where: { campaignId: campaign.id },
+      where: { campaignId: campaign.id, transaction: bankWhere },
       _sum: { amount: true },
       _count: true,
     }),
     prisma.bankTransaction.findMany({
       where: {
+        ...bankWhere,
         campaignId: campaign.id,
       },
       select: {
@@ -192,6 +200,7 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
         creditAmount: true,
         outflowType: true,
         refundLinks: {
+          where: { originalTransaction: bankWhere },
           select: {
             amount: true,
             originalTransaction: {
@@ -201,7 +210,7 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
           orderBy: { createdAt: "asc" },
         },
         receivedRefundLinks: {
-          where: { refundTransaction: { campaignId: campaign.id } },
+          where: { refundTransaction: { ...bankWhere, campaignId: campaign.id } },
           select: {
             amount: true,
             refundTransaction: {
@@ -215,7 +224,7 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
       take: 1000,
     }),
     prisma.transactionAllocation.findMany({
-      where: { campaignId: campaign.id },
+      where: { campaignId: campaign.id, transaction: bankWhere },
       select: {
         id: true,
         amount: true,
@@ -226,7 +235,7 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
             statementRow: true,
             description: true,
             receivedRefundLinks: {
-              where: { refundTransaction: { campaignId: campaign.id } },
+              where: { refundTransaction: { ...bankWhere, campaignId: campaign.id } },
               select: {
                 amount: true,
                 refundTransaction: {
@@ -243,7 +252,7 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
     }),
     TRANSFER_BILLS_ENABLED ? loadPublicCampaignBills(campaign.id) : Promise.resolve([]),
     prisma.bankTransaction.findMany({
-      where: { campaignId: campaign.id, outflowType: "DONATION", debitAmount: { gt: 0 } },
+      where: { ...bankWhere, campaignId: campaign.id, outflowType: "DONATION", debitAmount: { gt: 0 } },
       select: { id: true, description: true, debitAmount: true, transactionDate: true },
       orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
     }),
@@ -306,6 +315,8 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
 
   return {
     bankName: campaign.bankName,
+    openingBalance,
+    trackingFrom: ledger?.trackingFrom.toISOString() ?? null,
     code: campaign.code,
     name: campaign.name,
     description: campaign.description,
@@ -313,7 +324,7 @@ async function loadPublicCampaignData(code: string, bank: BankScope): Promise<Pu
     income,
     expenses,
     refunds,
-    balance: income - expenses,
+    balance: openingBalance + income - expenses,
     transactionCount: transactionSums._count + allocationSums._count,
     transactions: publicTransactions,
     donations: donations.map((transaction) => ({

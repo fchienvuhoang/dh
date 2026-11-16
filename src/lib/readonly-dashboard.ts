@@ -1,3 +1,4 @@
+import { getBankLedger, ledgerOpeningForCampaign } from "@/lib/bank-ledger";
 import { type BankScope, transactionBankWhere } from "@/lib/bank-scope";
 import { decimalToNumber } from "@/lib/money";
 import { getPrisma } from "@/lib/prisma";
@@ -14,6 +15,8 @@ export type ReadonlyDashboardData = {
     currentBalance: number;
     balanceAsOf: string | null;
   } | null;
+  openingBalance: number;
+  trackingFrom: string | null;
   totalCampaignIncome: number;
   totalCampaignExpenses: number;
   totalCampaignRefunds: number;
@@ -33,6 +36,8 @@ export type ReadonlyDashboardData = {
 
 export async function getReadonlyDashboardData(bank: BankScope = "TECHCOMBANK"): Promise<ReadonlyDashboardData> {
   const prisma = getPrisma();
+  const ledger = await getBankLedger(bank);
+  const bankWhere = { ...transactionBankWhere(bank), ...(ledger ? { transactionDate: { gte: ledger.trackingFrom } } : {}) };
   const [campaigns, transactionSums, refundSums, allocationSums, bankAccount, latestImport] = await Promise.all([
     prisma.campaign.findMany({
       where: { bankName: bank },
@@ -46,17 +51,17 @@ export async function getReadonlyDashboardData(bank: BankScope = "TECHCOMBANK"):
     }),
     prisma.bankTransaction.groupBy({
       by: ["campaignId"],
-      where: { ...transactionBankWhere(bank), campaignId: { not: null }, outflowType: "DONATION" },
+      where: { ...bankWhere, campaignId: { not: null }, outflowType: "DONATION" },
       _sum: { creditAmount: true, debitAmount: true },
       _count: { _all: true },
     }),
     prisma.bankTransaction.groupBy({
       by: ["campaignId"],
-      where: { ...transactionBankWhere(bank), campaignId: { not: null }, outflowType: "REFUND" },
+      where: { ...bankWhere, campaignId: { not: null }, outflowType: "REFUND" },
       _sum: { debitAmount: true },
     }),
     prisma.transactionAllocation.groupBy({
-      where: { campaign: { bankName: bank } },
+      where: { campaign: { bankName: bank }, transaction: bankWhere },
       by: ["campaignId"],
       _sum: { amount: true },
       _count: { _all: true },
@@ -105,12 +110,14 @@ export async function getReadonlyDashboardData(bank: BankScope = "TECHCOMBANK"):
       income,
       expenses: sums?.expenses ?? 0,
       refunds,
-      balance: income - (sums?.expenses ?? 0),
+      balance: ledgerOpeningForCampaign(ledger, campaign.id) + income - (sums?.expenses ?? 0),
       transactionCount: (sums?.transactionCount ?? 0) + allocationCount,
     };
   });
 
   return {
+    openingBalance: ledger ? Number(ledger.openingBalance) : 0,
+    trackingFrom: ledger?.trackingFrom.toISOString() ?? null,
     latestImport: latestImport
       ? {
           fileName: latestImport.fileName,

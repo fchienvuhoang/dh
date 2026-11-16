@@ -66,7 +66,9 @@ export function buildCampaignStatement(campaign: CampaignSummary, expenses: Stat
       `🏦 CẬP NHẬT SAO KÊ THIỆN PHÁP ${code} · ${date}`, "", statementGreeting,
       `🙏 ${statementIntroductions[variant].replaceAll("Dhamma Group", campaign.bankName === "MBBANK" ? "Metta" : "Dhamma Group")} ${code}: ${name}`, "",
     ] : []),
+    ...((campaign.openingBalance ?? 0) > 0 ? [`🌿 Số dư chuyển sang: ${money(campaign.openingBalance!)}`] : []),
     `💰 ${statementTotals[variant]} ${money(campaign.income)}`,
+    ...((campaign.openingBalance ?? 0) > 0 ? [`🌿 Tịnh tài hiện tại: ${money(campaign.balance)}`] : []),
     `🔎 ${statementLinkInvitations[variant]} ${publicUrl}`,
     ...(!bodyOnly ? ["", ...statementBlessings] : []),
   ].join("\n");

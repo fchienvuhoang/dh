@@ -41,3 +41,12 @@ test("Metta statements use Metta public links and group name, independently of D
   const dhamma = buildCombinedCampaignStatement([campaign("tp01")], ["tp01"]);
   assert.ok(dhamma.includes("https://dhamma-group.danasangha.org/thien-phap/tp01"));
 });
+
+test("carryover is shown separately from new donations in a closing statement", () => {
+  const item = {...campaign("cdvatthuc"), bankName:"MBBANK" as const, openingBalance:100000, income:320000, expenses:0, balance:420000};
+  const text=buildCombinedCampaignStatement([item],[item.id]);
+  assert.match(text,/Số dư chuyển sang/);
+  assert.match(text,/100\.000/);
+  assert.match(text,/320\.000/);
+  assert.match(text,/Tịnh tài hiện tại: 420\.000/);
+});

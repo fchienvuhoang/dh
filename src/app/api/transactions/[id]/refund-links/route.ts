@@ -1,4 +1,5 @@
-import { bankScope, transactionBankWhere } from "@/lib/bank-scope";
+import { activeBankTransactionWhere } from "@/lib/bank-ledger";
+import { bankScope } from "@/lib/bank-scope";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -43,7 +44,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 
     const candidates = await prisma.bankTransaction.findMany({
       where: {
-        AND: [transactionBankWhere(bankScope(refundTransaction!.account?.bankName))],
+        AND: [await activeBankTransactionWhere(bankScope(refundTransaction!.account?.bankName))],
         creditAmount: { gt: 0 },
         OR: [
           { campaignId },
@@ -132,7 +133,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 
       const campaignId = refundTransaction!.campaignId!;
       const originals = await tx.bankTransaction.findMany({
-        where: { id: { in: originalIds }, creditAmount: { gt: 0 }, AND: [transactionBankWhere(bankScope(refundTransaction!.account?.bankName))] },
+        where: { id: { in: originalIds }, creditAmount: { gt: 0 }, AND: [await activeBankTransactionWhere(bankScope(refundTransaction!.account?.bankName))] },
         select: {
           id: true,
           campaignId: true,

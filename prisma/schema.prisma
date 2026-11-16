@@ -29,6 +29,18 @@ enum CampaignOutflowType {
   REFUND
 }
 
+model BankLedger {
+  bankName          String   @id
+  trackingFrom      DateTime
+  openingBalance    Decimal  @db.Decimal(18, 2)
+  openingCampaignId String?
+  openingCampaign   Campaign? @relation(fields: [openingCampaignId], references: [id], onDelete: Restrict)
+  confirmedBalance  Decimal  @db.Decimal(18, 2)
+  confirmedAt       DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
 model BankAccount {
   id             String            @id @default(cuid())
   bankName       String            @default("TECHCOMBANK")
@@ -58,6 +70,7 @@ model ImportBatch {
   totalRows      Int               @default(0)
   insertedRows   Int               @default(0)
   duplicateRows  Int               @default(0)
+  ignoredRows    Int               @default(0)
   unmatchedRows  Int               @default(0)
   importedAt     DateTime          @default(now())
   transactions   BankTransaction[]
@@ -82,6 +95,7 @@ model Campaign {
   allocations  TransactionAllocation[]
   expenses     Expense[]
   bills        CampaignBill[]
+  ledgerOpenings BankLedger[]
 
   @@index([status, createdAt])
   @@index([bankName, status, createdAt])

@@ -49,6 +49,7 @@ type ImportResponse = {
   totalRows: number;
   insertedRows: number;
   duplicateRows: number;
+  ignoredRows?: number;
   unmatchedRows: number;
   accountNumber: string | null;
   closingBalance: number | null;
@@ -467,6 +468,10 @@ function Dashboard({ data }: { data: DashboardData }) {
             </a>
           ))}
         </nav>
+        {data.ledger ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          Theo dõi từ <strong>{dateOnly(data.ledger.trackingFrom)}</strong> · Số dư chuyển sang <strong>{money(data.ledger.openingBalance)}</strong>.
+          <span className="ml-1 text-xs text-emerald-700">Chỉ ghi nhận thu chi từ mốc này; giao dịch cũ hơn trong file sao kê sẽ được bỏ qua.</span>
+        </div> : null}
         <StatusMessages message={message} error={error} />
 
         <Panel>
@@ -530,6 +535,7 @@ function Dashboard({ data }: { data: DashboardData }) {
                   <dl className="mt-2 grid grid-cols-2 gap-2">
                     <StatLine label="Mới" value={importResult.insertedRows} />
                     <StatLine label="Trùng" value={importResult.duplicateRows} />
+                    {importResult.ignoredRows ? <StatLine label="Trước mốc theo dõi" value={importResult.ignoredRows} /> : null}
                     <StatLine label="Tổng dòng" value={importResult.totalRows} />
                     <StatLine label="Chưa khớp" value={importResult.unmatchedRows} />
                   </dl>
@@ -1417,10 +1423,12 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
   const totalCampaignIncome = data.campaigns.reduce((sum, campaign) => sum + campaign.income, 0);
   const totalCampaignRefunds = data.campaigns.reduce((sum, campaign) => sum + campaign.refunds, 0);
   const totalExpenses = data.overview.totalExpenses;
-  const currentAmount = totalCampaignIncome + totalCampaignRefunds - totalExpenses;
+  const openingBalance = data.ledger?.openingBalance ?? 0;
+  const currentAmount = openingBalance + totalCampaignIncome + totalCampaignRefunds - totalExpenses;
   const bankDifference = data.overview.bankBalance - currentAmount;
 
   const rows = [
+    ...(data.ledger ? [{ label: "Số dư chuyển sang", value: openingBalance, note: `Đầu ngày ${dateOnly(data.ledger.trackingFrom)}, không tính là khoản hùn phước mới.`, className: "text-zinc-950" }] : []),
     {
       label: "Tổng hùn phước sau hoàn lại",
       value: totalCampaignIncome,
@@ -1436,7 +1444,7 @@ function FundSummaryTable({ data }: { data: DashboardData }) {
     {
       label: "Số tiền hiện tại",
       value: currentAmount,
-      note: "Hùn phước cộng hoàn lại rồi trừ toàn bộ cột NỢ, để không trừ hoàn hai lần.",
+      note: data.ledger ? "Số dư chuyển sang cộng thu và hoàn lại, rồi trừ toàn bộ chi từ mốc theo dõi." : "Hùn phước cộng hoàn lại rồi trừ toàn bộ cột NỢ, để không trừ hoàn hai lần.",
       className: "text-zinc-950",
     },
     {

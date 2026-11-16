@@ -112,6 +112,9 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
                 <SummaryStat label="Đã hoàn lại" value={money(data.refunds)} tone="gold" />
                 <SummaryStat label="Lượt hùn phước" value={data.transactionCount.toLocaleString("vi-VN")} tone="dark" />
               </div>
+              {data.trackingFrom ? <div className="border-t border-emerald-100 bg-white/80 px-4 py-2 text-xs leading-5 text-emerald-900">
+                Theo dõi từ {dateOnly(data.trackingFrom)} · Số dư chuyển sang: <strong>{money(data.openingBalance)}</strong>
+              </div> : null}
             </section>
           </div>
 

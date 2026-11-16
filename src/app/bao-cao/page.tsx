@@ -72,6 +72,7 @@ export default async function ReadonlyReportPage() {
             value={data.bankAccount?.balanceAsOf ? money(data.bankAccount.currentBalance) : "Chưa có số dư"}
             detail={data.bankAccount ? balanceDetail(data.bankAccount) : "Chưa có dữ liệu tài khoản"}
           />
+          {data.trackingFrom ? <p className="text-sm text-emerald-800">Theo dõi từ {new Date(data.trackingFrom).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })} · Số dư chuyển sang: {money(data.openingBalance)}</p> : null}
           <div className="grid gap-3 sm:grid-cols-4">
             <CompactSummaryStat
               label="Tổng hùn phước sau hoàn lại"

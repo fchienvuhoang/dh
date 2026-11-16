@@ -1,3 +1,4 @@
+import { getBankLedger, ledgerOpeningForCampaign } from "@/lib/bank-ledger";
 import { type BankScope, transactionBankWhere } from "@/lib/bank-scope";
 import { decimalToNumber } from "@/lib/money";
 import { DatabaseNotConfiguredError, getPrisma, isTransientDatabaseError } from "@/lib/prisma";
@@ -15,6 +16,7 @@ export type DashboardState =
 
 export type DashboardData = {
   selectedBank: BankScope;
+  ledger: { trackingFrom: string; openingBalance: number; confirmedBalance: number; confirmedAt: string } | null;
   overview: {
     totalIncome: number;
     totalDebit: number;
@@ -50,6 +52,7 @@ export type DashboardData = {
 
 export type CampaignSummary = {
   bankName?: BankScope;
+  openingBalance?: number;
   id: string;
   code: string;
   name: string;
@@ -116,7 +119,8 @@ export function getDashboardState(bank: BankScope = "TECHCOMBANK"): Promise<Dash
 async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promise<DashboardState> {
   try {
     const prisma = getPrisma();
-    const bankWhere = transactionBankWhere(bank);
+    const ledger = await getBankLedger(bank);
+    const bankWhere = { ...transactionBankWhere(bank), ...(ledger ? { transactionDate: { gte: ledger.trackingFrom } } : {}) };
 
     const [
       campaigns,
@@ -320,6 +324,7 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
 
       return {
         bankName: bank,
+        openingBalance: ledgerOpeningForCampaign(ledger, campaign.id),
         id: campaign.id,
         code: campaign.code,
         name: campaign.name,
@@ -329,7 +334,7 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
         debit,
         expenses: expensesAmount,
         refunds,
-        balance: income - expensesAmount,
+        balance: ledgerOpeningForCampaign(ledger, campaign.id) + income - expensesAmount,
         transactionCount: (tx?.count ?? 0) + (refund?.count ?? 0) + (allocation?.count ?? 0),
         keywords: campaign.keywords.map((keyword) => ({
           id: keyword.id,
@@ -349,12 +354,13 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
       ok: true,
       data: {
         selectedBank: bank,
+        ledger: ledger ? { trackingFrom: ledger.trackingFrom.toISOString(), openingBalance: Number(ledger.openingBalance), confirmedBalance: Number(ledger.confirmedBalance), confirmedAt: ledger.confirmedAt.toISOString() } : null,
         overview: {
           totalIncome,
           totalDebit,
           totalExpenses,
           trackedFundBalance: campaignSummaries.reduce((sum, campaign) => sum + campaign.balance, 0),
-          bankBalance: bankAccounts.reduce((sum, account) => sum + decimalToNumber(account.currentBalance), 0),
+          bankBalance: ledger ? Number(ledger.openingBalance) + totalIncome - totalDebit : bankAccounts.reduce((sum, account) => sum + decimalToNumber(account.currentBalance), 0),
           transactionCount: overallTransactionSums._count,
           unmatchedCount: unmatchedTransactionCount,
           unmatchedIncome: decimalToNumber(unmatchedIncome._sum.creditAmount),
