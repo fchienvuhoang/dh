@@ -101,7 +101,7 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
               ) : null}
             </div>
 
-            <section className="overflow-hidden rounded-lg border border-[#d79bb8] bg-white/95 shadow-lg shadow-[#4c173b]/12" aria-label="Tổng quan tịnh tài">
+            {!isMetta ? <section className="overflow-hidden rounded-lg border border-[#d79bb8] bg-white/95 shadow-lg shadow-[#4c173b]/12" aria-label="Tổng quan tịnh tài">
               <div className="bg-[#4c173b] px-5 py-5 text-white sm:px-6">
                 <p className="text-xs font-semibold uppercase text-[#f2c5d8]">Tịnh tài hiện còn</p>
                 <p className="mt-2 break-words text-3xl font-bold leading-tight sm:text-4xl">{money(data.balance)}</p>
@@ -115,16 +115,16 @@ export function PublicCampaignView({ data }: { data: PublicCampaignData }) {
               {data.trackingFrom ? <div className="border-t border-emerald-100 bg-white/80 px-4 py-2 text-xs leading-5 text-emerald-900">
                 Theo dõi từ {dateOnly(data.trackingFrom)} · Số dư chuyển sang: <strong>{money(data.openingBalance)}</strong>
               </div> : null}
-            </section>
+            </section> : null}
           </div>
 
-          <div className="mt-5 flex max-w-3xl items-start gap-2 border-l-2 border-[#b94f79] pl-3 text-xs leading-5 text-[#624b59]">
+          {!isMetta ? <div className="mt-5 flex max-w-3xl items-start gap-2 border-l-2 border-[#b94f79] pl-3 text-xs leading-5 text-[#624b59]">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#a43d6a]" />
             <p>
               Hoàn lại là những khoản chuyển trả cho thí chủ để thí chủ tác ý lại,
               hoặc do thí chủ chuyển nhầm thiện pháp nên được hoàn lại.
             </p>
-          </div>
+          </div> : null}
         </div>
       </header>
 
