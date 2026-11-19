@@ -17,6 +17,24 @@ export function buildShareSummary(bank: BankScope, rows: SharedStatementRow[], s
   const sorted = [...rows].sort((a,b)=>a.transactionDate.localeCompare(b.transactionDate)||a.id.localeCompare(b.id));
   const campaigns = [...new Map(rows.flatMap(row=>row.campaigns).map(campaign=>[campaign.code,campaign])).values()];
   const isMetta = bank === "MBBANK";
+  if (isMetta) return [
+    `🌿 HÙN PHƯỚC NGÀY ${date(sentAt.toISOString()).replaceAll("/", ".")}`,
+    "Cúng dường vật thực tới Tăng đoàn",
+    "",
+    "🙏 Kính thưa quý vị!",
+    "",
+    "Con xin gửi danh sách các thí chủ hùn phước để làm danh sách chia phước và hồi hướng ngày mai.",
+    "",
+    `${publicBankOrigin(bank)}/thien-phap/cdvatthuc`,
+    "",
+    "🌼 Quý thí chủ muốn hồi hướng phước báu tới cha mẹ, thân bằng quyến thuộc còn hiện tiền hoặc đã quá vãng, xin vui lòng liên hệ cô Diệu Quy để sắp xếp danh sách hồi hướng.",
+    "",
+    "Các khoản phát sinh sau đợt này con xin gửi bổ sung vào tối mai ạ.",
+    "",
+    "🌺 Sādhu Sādhu Anumodana",
+    "🌺 Idaṃ me puññaṃ nibbānassa paccayo hotu.",
+    "🌺 Buddhasāsanaṃ Ciraṃ Tiṭṭhatu.",
+  ].join("\n");
   return [
     `🌿 DANH SÁCH HÙN PHƯỚC NGÀY ${date(sentAt.toISOString()).replaceAll("/", ".")}`,
     ...(isMetta ? ["Cúng dường vật thực tới tăng đoàn"] : campaigns.map(campaign=>campaign.name)),
