@@ -1,11 +1,11 @@
 "use client";
 
-import { CircleCheck, Download, HeartHandshake, Info, Link2, Loader2, Search, X } from "lucide-react";
+import { CircleCheck, Copy, Download, HeartHandshake, Info, Link2, Loader2, Search, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCampaignData, PublicCampaignTransaction } from "@/lib/public-campaign";
-import { downloadElementAsPng } from "@/lib/download-element-image";
+import { copyElementAsPng, downloadElementAsPng } from "@/lib/download-element-image";
 import { normalizeTransferText } from "@/lib/text";
 import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
@@ -375,6 +375,7 @@ function PublicTransactionRow({
 
 export function TransactionReceiptModal({
   source = "public",
+  navigation,
   bankName,
   campaignName,
   campaignCode,
@@ -382,6 +383,7 @@ export function TransactionReceiptModal({
   onClose,
 }: {
   source?: "public" | "statement";
+  navigation?: { index: number; total: number; previous: () => void; next: () => void };
   bankName: string;
   campaignName: string;
   campaignCode: string;
@@ -390,6 +392,7 @@ export function TransactionReceiptModal({
 }) {
   const receiptRef = useRef<HTMLElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [copyNotice, setCopyNotice] = useState("");
   const meta = transactionMeta(transaction);
 
   useEffect(() => {
@@ -433,6 +436,11 @@ export function TransactionReceiptModal({
             </button>
           </div>
 
+          {navigation ? <div data-image-export-ignore="true" className="mt-2 flex items-center justify-between gap-2 text-sm">
+            <button type="button" disabled={navigation.index === 0 || isDownloading} onClick={navigation.previous} className="min-h-10 rounded border px-3 disabled:opacity-40">Trước</button>
+            <span>Giao dịch {navigation.index + 1}/{navigation.total}</span>
+            <button type="button" disabled={navigation.index === navigation.total - 1 || isDownloading} onClick={navigation.next} className="min-h-10 rounded border px-3 disabled:opacity-40">Tiếp</button>
+          </div> : null}
           <div className="receipt-hero">
             <span className={`receipt-type ${meta.className}`}><CircleCheck className="h-3.5 w-3.5" />{meta.label}</span>
             <div className="receipt-amount" data-outflow={transaction.debitAmount > 0}>{money(meta.amount)}</div>
@@ -459,6 +467,14 @@ export function TransactionReceiptModal({
 
           <p className="receipt-footnote">{source === "statement" ? "Thông tin trích từ sao kê tài khoản" : "Thông tin trích từ danh sách giao dịch công khai"}</p>
 
+          {copyNotice ? <p role="status" data-image-export-ignore="true" className="mt-2 text-center text-xs leading-5">{copyNotice}</p> : null}
+          <button type="button" data-image-export-ignore="true" disabled={isDownloading} className="receipt-download" onClick={async () => {
+            if (!receiptRef.current) return;
+            setIsDownloading(true); setCopyNotice("");
+            try { await copyElementAsPng(receiptRef.current); setCopyNotice("Đã copy ảnh giao dịch này. Mở Zalo để dán ảnh."); }
+            catch { setCopyNotice("Chưa copy được ảnh trên thiết bị này. Vui lòng bấm Tải ảnh giao dịch."); }
+            finally { setIsDownloading(false); }
+          }}>{isDownloading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Copy className="h-4 w-4"/>}Copy ảnh giao dịch</button>
           <button
             type="button"
             data-image-export-ignore="true"

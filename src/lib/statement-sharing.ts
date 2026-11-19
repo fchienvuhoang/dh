@@ -1,3 +1,4 @@
+import type { PublicCampaignTransaction } from "@/lib/public-campaign";
 import type { BankScope } from "@/lib/bank-scope";
 import { publicBankOrigin } from "@/lib/bank-scope";
 
@@ -8,6 +9,7 @@ export type SharedStatementRow = {
   creditAmount: number;
   debitAmount: number;
   campaigns: { code: string; name: string }[];
+  receipt?: { campaignName: string; campaignCode: string; transaction: PublicCampaignTransaction };
 };
 
 export function buildShareSummary(bank: BankScope, rows: SharedStatementRow[], sentAt = new Date()) {
