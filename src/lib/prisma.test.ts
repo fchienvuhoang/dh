@@ -10,7 +10,7 @@ test("recognizes pg pool acquisition timeouts including nested Prisma causes", a
   const response = apiError(error);
   assert.equal(response.status, 503);
   assert.equal(response.headers.get("Retry-After"), "3");
-  assert.match((await response.json()).error, /database/);
+  assert.match(((await response.json()) as {error:string}).error, /database/);
 });
 
 test("safe database reads recover from a transient acquisition failure", async () => {

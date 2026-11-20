@@ -1,3 +1,4 @@
+import { getPdfRuntime } from "@/lib/pdf-runtime";
 import { createHash } from "node:crypto";
 import type { ParsedStatement, StatementTransactionRow } from "@/lib/techcombank";
 
@@ -5,7 +6,7 @@ type PdfText = { s: string; x: number; y: number };
 const invalid = () => new Error("PDF MB thiếu dữ liệu hoặc tổng thu chi không khớp. Chưa nhập giao dịch nào.");
 
 export async function parseMbPdf(buffer: Buffer, password?: string): Promise<ParsedStatement | null> {
-  const { getDocument, Util } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const { getDocument, Util } = await getPdfRuntime();
   const task = getDocument({ data: new Uint8Array(buffer), password, useSystemFonts: true });
   try {
     const pdf = await task.promise;

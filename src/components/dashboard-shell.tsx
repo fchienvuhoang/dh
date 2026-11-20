@@ -2545,7 +2545,7 @@ function publicCampaignPath(code: string, bank?: string) {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  const json = await response.json().catch(() => ({}));
+  const json = await response.json().catch(() => ({})) as { error?: unknown };
   if (!response.ok) {
     throw new Error(typeof json.error === "string" ? json.error : "Request failed.");
   }

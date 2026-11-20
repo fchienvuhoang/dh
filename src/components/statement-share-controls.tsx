@@ -14,7 +14,7 @@ export function shareTime(value:string) {
 }
 
 async function readResponse(response:Response) {
-  const value=await response.json();
+  const value=await response.json() as {error?:string;sentAt:string;snapshot?:SharedStatementRow[]};
   if(!response.ok) throw new Error(value.error??"Không lưu được đợt gửi.");
   return value;
 }
