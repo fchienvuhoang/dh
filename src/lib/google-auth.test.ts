@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import assert from "node:assert/strict";
 import { test, mock } from "node:test";
-import { OAuth2Client } from "google-auth-library";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { NextRequest } from "next/server";
 import { GET as start } from "@/app/api/auth/google/route";
 import { GET as callback } from "@/app/api/auth/google/callback/route";
@@ -57,8 +57,23 @@ test("callback grants only the allowed verified identity with matching nonce", a
   let email = "fchienvuhoang@gmail.com";
   let nonce = flow.nonce;
   let verified = true;
-  const exchange = mock.method(OAuth2Client.prototype, "getToken", async () => ({ tokens: { id_token: "test-id-token" } }));
-  const verification = mock.method(OAuth2Client.prototype, "verifyIdToken", async () => ({ getPayload: () => ({ sub: "google-123", email, email_verified: verified, nonce }) }));
+  const keys = await generateKeyPair("RS256");
+  const jwk = { ...await exportJWK(keys.publicKey), kid: "test-google-key", alg: "RS256", use: "sig" };
+  let audience = process.env.GOOGLE_CLIENT_ID!;
+  const transport = mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url === "https://oauth2.googleapis.com/token") {
+      const body = new URLSearchParams(String(init?.body));
+      assert.equal(body.get("code_verifier"), flow.verifier);
+      assert.equal(body.get("grant_type"), "authorization_code");
+      const idToken = await new SignJWT({ email, email_verified: verified, nonce })
+        .setProtectedHeader({ alg: "RS256", kid: jwk.kid }).setSubject("google-123")
+        .setIssuer("https://accounts.google.com").setAudience(audience).setIssuedAt().setExpirationTime("5m").sign(keys.privateKey);
+      return Response.json({ id_token: idToken });
+    }
+    if (url === "https://www.googleapis.com/oauth2/v3/certs") return Response.json({ keys: [jwk] });
+    throw new Error("Unexpected authentication endpoint");
+  });
   const request = () => new NextRequest("http://localhost:3000/api/auth/google/callback?code=code&state=state", { headers: { cookie: `${GOOGLE_FLOW_COOKIE}=${cookie}` } });
   try {
     const accepted = await callback(request());
@@ -74,8 +89,11 @@ test("callback grants only the allowed verified identity with matching nonce", a
     nonce = flow.nonce;
     verified = false;
     assert.equal((await callback(request())).cookies.get("dhamma_admin_session"), undefined);
+    verified = true;
+    audience = "another-client.apps.googleusercontent.com";
+    assert.equal((await callback(request())).cookies.get("dhamma_admin_session"), undefined);
   } finally {
-    exchange.mock.restore(); verification.mock.restore();
+    transport.mock.restore();
   }
 });
 

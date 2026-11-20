@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_SESSION_COOKIE, getAdminSessionMaxAge, safeRedirectPath } from "@/lib/auth";
-import { getGoogleAuthConfig, googleClient } from "@/lib/google-auth";
+import { getGoogleAuthConfig, exchangeGoogleCode, verifyGoogleIdentity } from "@/lib/google-auth";
 import { GOOGLE_FLOW_COOKIE, isAllowedGoogleEmail, readGoogleToken, signGoogleToken } from "@/lib/google-session";
 
 export const runtime = "nodejs";
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     response.headers.set("Referrer-Policy", "no-referrer");
     return response;
   };
+  let stage = "state";
   try {
     const token = request.cookies.get(GOOGLE_FLOW_COOKIE)?.value;
     const code = request.nextUrl.searchParams.get("code");
@@ -24,19 +25,22 @@ export async function GET(request: NextRequest) {
     if (!token || !code || !state || request.nextUrl.searchParams.has("error")) throw new Error("Invalid callback");
     const flow = await readGoogleToken(token, "google-flow");
     if (flow.state !== state || typeof flow.verifier !== "string" || typeof flow.nonce !== "string") throw new Error("Invalid state");
-    const client = googleClient();
-    const { tokens } = await client.getToken({ code, codeVerifier: flow.verifier });
-    if (!tokens.id_token) throw new Error("Missing ID token");
-    const ticket = await client.verifyIdToken({ idToken: tokens.id_token, audience: getGoogleAuthConfig().clientId });
-    const identity = ticket.getPayload();
-    if (!identity?.sub || !identity.email_verified || (identity as unknown as { nonce?: string }).nonce !== flow.nonce) throw new Error("Invalid identity");
+    stage = "token-exchange";
+    const idToken = await exchangeGoogleCode(code, flow.verifier);
+    stage = "identity-verification";
+    const identity = await verifyGoogleIdentity(idToken);
+    stage = "identity-claims";
+    if (!identity?.sub || identity.email_verified !== true || (identity as unknown as { nonce?: string }).nonce !== flow.nonce) throw new Error("Invalid identity");
     if (!isAllowedGoogleEmail(identity.email)) return finish("/dang-nhap?error=google_access_denied");
     const response = finish(safeRedirectPath(flow.next));
     response.cookies.set(ADMIN_SESSION_COOKIE, await signGoogleToken({ provider: "google", sub: identity.sub, email: identity.email.toLowerCase() }, "admin", getAdminSessionMaxAge()), {
       httpOnly: true, secure: origin.startsWith("https:"), sameSite: "lax", path: "/", maxAge: getAdminSessionMaxAge(),
     });
     return response;
-  } catch {
+  } catch (error) {
+    const response = error && typeof error === "object" && "response" in error ? error.response as {status?: number;data?: {error?: string}} : undefined;
+    const code = response?.data?.error;
+    console.error("Google SSO callback failed", { stage, name: error instanceof Error ? error.name : "Unknown", status: response?.status, code: typeof code === "string" && /^[a-z_]+$/.test(code) ? code : undefined });
     return finish("/dang-nhap?error=google_failed");
   }
 }

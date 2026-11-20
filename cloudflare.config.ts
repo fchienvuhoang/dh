@@ -6,6 +6,7 @@ export default defineConfig({
     name: "dhamma",
     workersDev: true,
     previewUrls: false,
+    observability: { enabled: true },
     triggers: [
       triggers.fetch({ pattern: "dhamma-group.danasangha.org/*", zone: "danasangha.org" }),
       triggers.fetch({ pattern: "metta.danasangha.org/*", zone: "danasangha.org" }),
