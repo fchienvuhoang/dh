@@ -25,27 +25,25 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { filterShareRows } from "@/lib/statement-sharing";
+import { DashboardRefresh, useDashboardRefresh, useDashboardResource } from "@/components/dashboard-rest";
+import type { TransactionPage } from "@/lib/dashboard-transactions";
 import { TransactionReceiptModal } from "@/components/public-campaign-view";
 import { StatementShareControls, shareTime } from "@/components/statement-share-controls";
 import type { BankScope } from "@/lib/bank-scope";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type React from "react";
 import type {
   ShareBatchSummary,
   CampaignSummary,
   DashboardData,
-  DashboardState,
   TransactionSummary,
 } from "@/lib/dashboard";
 import { buildCampaignStatement, buildCombinedCampaignStatement, formatTp04ExpenseDescription, selectedStatementCampaigns, shortVietnamDate } from "@/lib/campaign-statement";
 import { normalizeTransferText, splitKeywords } from "@/lib/text";
 import { TRANSFER_BILLS_ENABLED } from "@/lib/features";
 
-type Props = {
-  state: DashboardState;
-};
+type Props = { bank: BankScope };
 
 type ImportResponse = {
   fileName: string;
@@ -134,15 +132,28 @@ const selectionStatusPriority = {
   COMPLETED: 2,
 };
 
-export function DashboardShell({ state }: Props) {
-  if (!state.ok) {
-    return <SetupScreen state={state} />;
-  }
-
-  return <Dashboard data={state.data} />;
+export function DashboardShell({ bank }: Props) {
+  const [revision, setRevision] = useState(0);
+  const refresh = useCallback(() => setRevision(value => value + 1), []);
+  const overview = useDashboardResource<DashboardData>(`/api/dashboard/overview?bank=${bank}`, revision, 0, true);
+  return <DashboardRefresh.Provider value={refresh}>
+    {overview.data ? <Dashboard data={overview.data} revision={revision} overviewError={overview.error}/> : <div className="min-h-screen bg-[#f7f7f4] p-6"><h1 className="text-xl font-semibold">Quản lý thiện pháp và sao kê</h1><ResourceStatus loading={overview.loading} error={overview.error} onRetry={refresh}/></div>}
+  </DashboardRefresh.Provider>;
 }
 
-function Dashboard({ data }: { data: DashboardData }) {
+function ResourceStatus({ loading, error, onRetry }: { loading: boolean; error?: string; onRetry: () => void }) {
+  if (loading) return <p role="status" className="flex items-center gap-2 py-6 text-sm text-zinc-600"><Loader2 className="h-4 w-4 animate-spin"/>Đang tải dữ liệu…</p>;
+  if (error) return <div role="alert" className="my-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}<button type="button" onClick={onRetry} className="ml-3 min-h-10 rounded border border-rose-300 bg-white px-3 font-semibold">Thử lại</button></div>;
+  return null;
+}
+
+function TransactionPagination({ data, onPage }: { data: TransactionPage; onPage: (page: number) => void }) {
+  const pages = Math.max(1, Math.ceil(data.total / data.pageSize));
+  return <div className="my-3 flex flex-wrap items-center justify-between gap-2 text-sm text-zinc-600"><span>{data.total ? (data.page-1)*data.pageSize+1 : 0}–{Math.min(data.page*data.pageSize,data.total)} / {data.total.toLocaleString("vi-VN")} giao dịch</span><div className="flex items-center gap-2"><button type="button" disabled={data.page<=1} onClick={()=>onPage(data.page-1)} className="min-h-10 rounded border bg-white px-3 disabled:opacity-40">Trước</button><span>Trang {data.page}/{pages}</span><button type="button" disabled={data.page>=pages} onClick={()=>onPage(data.page+1)} className="min-h-10 rounded border bg-white px-3 disabled:opacity-40">Tiếp</button></div></div>;
+}
+
+function Dashboard({ data, revision, overviewError }: { data: DashboardData; revision: number; overviewError?: string }) {
+  const refreshData = useDashboardRefresh();
   const router = useRouter();
   const [mainTab, setMainTab] = useState<"overview" | "transactions">("overview");
   const [activeTab, setActiveTab] = useState("all");
@@ -160,29 +171,14 @@ function Dashboard({ data }: { data: DashboardData }) {
   const [allocationTransaction, setAllocationTransaction] = useState<TransactionSummary | null>(null);
   const [refundTransaction, setRefundTransaction] = useState<TransactionSummary | null>(null);
 
-  const filteredTransactions = useMemo(() => {
-    const normalizedQuery = normalizeTransferText(query);
-
-    return data.transactions.filter((transaction) => {
-      const matchesTab =
-        activeTab === "all" ||
-        (activeTab === "unmatched" && !transaction.campaign && transaction.allocations.length === 0) ||
-        transaction.campaign?.id === activeTab ||
-        transaction.allocations.some((allocation) => allocation.campaign.id === activeTab);
-
-      if (!matchesTab) {
-        return false;
-      }
-
-      if (!normalizedQuery) {
-        return true;
-      }
-
-      return normalizeTransferText(
-        `${transaction.description} ${transaction.detail} ${transaction.campaign?.name ?? ""} ${transaction.allocations.map((allocation) => allocation.campaign.name).join(" ")}`,
-      ).includes(normalizedQuery);
-    }).sort(compareTransactionNewestFirst);
-  }, [activeTab, data.transactions, query]);
+  const [shareFilter, setShareFilter] = useState<"unshared" | "shared" | "all">("unshared");
+  const [page, setPage] = useState(1);
+  const [debitPage, setDebitPage] = useState(1);
+  const parameters = new URLSearchParams({ bank: data.selectedBank, campaign: activeTab, q: query, share: shareFilter, page: String(page) });
+  const statement = useDashboardResource<TransactionPage>(mainTab === "transactions" ? `/api/dashboard/transactions?${parameters}` : null, revision, query ? 250 : 0, true);
+  const debits = useDashboardResource<TransactionPage>(mainTab === "overview" ? `/api/dashboard/transactions?bank=${data.selectedBank}&kind=debit&page=${debitPage}` : null, revision, 0, true);
+  const changeCampaign = (tab: string) => { setActiveTab(tab); setPage(1); };
+  const changeShare = (filter: "unshared" | "shared" | "all") => { setShareFilter(filter); setPage(1); };
 
   async function handleImport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -203,7 +199,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       setImportResult(json);
       setMessage(`Đã import ${json.insertedRows}/${json.totalRows} giao dịch mới.`);
       form.reset();
-      router.refresh();
+      refreshData();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -231,7 +227,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       setMessage(`Đã tạo thiện pháp ${payload.code}.`);
       form.reset();
       setCampaignModal(null);
-      router.refresh();
+      refreshData();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -257,7 +253,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       );
       setMessage(`Đã cập nhật thiện pháp ${payload.code}.`);
       setCampaignModal(null);
-      router.refresh();
+      refreshData();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -289,7 +285,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       );
       setMessage(`Đã xóa thiện pháp ${campaign.code}.`);
       setCampaignModal(null);
-      router.refresh();
+      refreshData();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -309,7 +305,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       setMessage(
         `Đã phân loại lại ${result.totalRows} giao dịch: ${result.matchedRows} khớp, ${result.unmatchedRows} chưa khớp.`,
       );
-      router.refresh();
+      refreshData();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -334,7 +330,7 @@ function Dashboard({ data }: { data: DashboardData }) {
           body: JSON.stringify({ campaignId, ...(outflowType ? { outflowType } : {}) }),
         }),
       );
-      router.refresh();
+      refreshData();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -358,7 +354,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       setMessage(
         `Đã gán ${result.updatedCount.toLocaleString("vi-VN")} giao dịch vào thiện pháp ${result.campaignCode}.`,
       );
-      router.refresh();
+      refreshData();
       return true;
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -383,7 +379,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       );
       setMessage("Đã chia giao dịch cho các thiện pháp.");
       setAllocationTransaction(null);
-      router.refresh();
+      refreshData();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -409,7 +405,7 @@ function Dashboard({ data }: { data: DashboardData }) {
       );
       setMessage("Đã liên kết khoản hoàn với khoản nhận ban đầu.");
       setRefundTransaction(null);
-      router.refresh();
+      refreshData();
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -420,7 +416,7 @@ function Dashboard({ data }: { data: DashboardData }) {
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/dang-nhap");
-    router.refresh();
+    refreshData();
   }
 
   return (
@@ -526,10 +522,10 @@ function Dashboard({ data }: { data: DashboardData }) {
                 <Plus className="h-4 w-4" />
                 Thêm thiện pháp
               </button>
-              <button type="button" onClick={() => { setMainTab("transactions"); setActiveTab("unmatched"); setQuery(""); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100">
+              <button type="button" onClick={() => { setMainTab("transactions"); changeCampaign("unmatched"); setQuery(""); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100">
                 <Tags className="h-4 w-4" />Chọn nhiều giao dịch để gán
               </button>
-              <button type="button" onClick={() => { setMainTab("transactions"); setActiveTab("all"); setQuery(""); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-900 hover:bg-sky-100"><Copy className="h-4 w-4"/>Chuẩn bị danh sách gửi nhóm</button>
+              <button type="button" onClick={() => { setMainTab("transactions"); changeCampaign("all"); setQuery(""); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-900 hover:bg-sky-100"><Copy className="h-4 w-4"/>Chuẩn bị danh sách gửi nhóm</button>
               {importResult ? (
                 <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
                   <div className="flex items-center gap-2 font-medium">
@@ -549,6 +545,7 @@ function Dashboard({ data }: { data: DashboardData }) {
           </div>
         </Panel>
 
+        <ResourceStatus loading={false} error={overviewError} onRetry={refreshData}/>
         <section className="space-y-5">
           <div className="flex gap-2 rounded-md border border-zinc-200 bg-white p-1">
             <MainTabButton
@@ -591,14 +588,17 @@ function Dashboard({ data }: { data: DashboardData }) {
 
               <Panel>
                 <PanelTitle icon={ArrowUpFromLine} title="Danh sách khoản chi từ sao kê" />
+                <ResourceStatus loading={debits.loading} error={debits.error} onRetry={refreshData}/>
+                {debits.data ? <>
+                <TransactionPagination data={debits.data} onPage={setDebitPage}/>
                 <DebitTransactionTable
                   bank={data.selectedBank}
-                  transactions={data.debitTransactions}
+                  transactions={debits.data.transactions}
                   campaigns={data.campaigns}
                   pendingTransactionId={pendingTransactionId}
                   onAssign={assignTransaction}
                   onLinkRefund={setRefundTransaction}
-                />
+                /></> : null}
               </Panel>
             </>
           ) : (
@@ -609,7 +609,7 @@ function Dashboard({ data }: { data: DashboardData }) {
                   <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                   <input
                     value={query}
-                    onChange={(event) => setQuery(event.target.value)}
+                    onChange={(event) => { setQuery(event.target.value); setPage(1); }}
                     placeholder="Tìm nội dung, mã giao dịch..."
                     className="w-full rounded-md border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
                   />
@@ -620,14 +620,14 @@ function Dashboard({ data }: { data: DashboardData }) {
                 <TabButton
                   active={activeTab === "all"}
                   count={data.overview.transactionCount}
-                  onClick={() => setActiveTab("all")}
+                  onClick={() => changeCampaign("all")}
                 >
                   Tất cả
                 </TabButton>
                 <TabButton
                   active={activeTab === "unmatched"}
                   count={data.overview.unmatchedCount}
-                  onClick={() => setActiveTab("unmatched")}
+                  onClick={() => changeCampaign("unmatched")}
                 >
                   Chưa phân loại
                 </TabButton>
@@ -636,25 +636,33 @@ function Dashboard({ data }: { data: DashboardData }) {
                     key={campaign.id}
                     active={activeTab === campaign.id}
                     count={campaign.transactionCount}
-                    onClick={() => setActiveTab(campaign.id)}
+                    onClick={() => changeCampaign(campaign.id)}
                   >
                     {campaign.code}
                   </TabButton>
                 ))}
               </div>
 
+              <ResourceStatus loading={statement.loading} error={statement.error} onRetry={refreshData}/>
+              {statement.data ? <>
+              <TransactionPagination data={statement.data} onPage={setPage}/>
               <TransactionTable
                 bank={data.selectedBank}
                 shareBatches={data.shareBatches}
-                key={`${activeTab}:${normalizeTransferText(query)}`}
-                transactions={filteredTransactions}
+                key={`${activeTab}:${normalizeTransferText(query)}:${shareFilter}:${page}`}
+                transactions={statement.data.transactions}
+                shareFilter={shareFilter}
+                onShareFilter={changeShare}
+                shareCounts={statement.data.shareCounts}
                 campaigns={data.campaigns}
                 pendingTransactionId={pendingTransactionId}
-                isBulkAssigning={isBulkAssigning}
+                isBulkAssigning={isBulkAssigning || statement.loading}
                 onAssign={assignTransaction}
                 onBulkAssign={assignTransactions}
                 onSplit={setAllocationTransaction}
               />
+              <TransactionPagination data={statement.data} onPage={setPage}/>
+              </> : null}
             </Panel>
           )}
         </section>
@@ -694,6 +702,9 @@ function Dashboard({ data }: { data: DashboardData }) {
 function TransactionTable({
   bank,
   shareBatches,
+  shareFilter,
+  onShareFilter,
+  shareCounts,
   transactions,
   campaigns,
   pendingTransactionId,
@@ -704,6 +715,9 @@ function TransactionTable({
 }: {
   bank: BankScope;
   shareBatches: ShareBatchSummary[];
+  shareFilter: "unshared" | "shared" | "all";
+  onShareFilter: (filter: "unshared" | "shared" | "all") => void;
+  shareCounts: TransactionPage["shareCounts"];
   transactions: TransactionSummary[];
   campaigns: CampaignSummary[];
   pendingTransactionId: string | null;
@@ -713,9 +727,8 @@ function TransactionTable({
   onSplit: (transaction: TransactionSummary) => void;
 }) {
   const [isSharing, setIsSharing] = useState(false);
-  const [shareFilter, setShareFilter] = useState<"unshared" | "shared" | "all">("unshared");
   const busy = isBulkAssigning || isSharing;
-  const visibleTransactions = filterShareRows(transactions, shareFilter);
+  const visibleTransactions = transactions;
   const sortedCampaigns = sortCampaignsForSelection(campaigns);
   const [detailTransaction, setDetailTransaction] = useState<TransactionSummary | null>(null);
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<Set<string>>(new Set());
@@ -749,7 +762,7 @@ function TransactionTable({
 
   async function handleBulkAssign() {
     if (!bulkCampaignId || selectedTransactionIds.size === 0) return;
-    const saved = await onBulkAssign([...selectedTransactionIds], bulkCampaignId);
+    const saved = await onBulkAssign(visibleTransactions.filter(row => selectedTransactionIds.has(row.id)).map(row => row.id), bulkCampaignId);
     if (saved) {
       setSelectedTransactionIds(new Set());
       setBulkCampaignId("");
@@ -759,8 +772,8 @@ function TransactionTable({
   return (
     <>
       <div className="mt-3 flex flex-wrap gap-2" aria-label="Lọc theo trạng thái gửi danh sách">
-        {(["unshared", "shared", "all"] as const).map(filter => <button key={filter} type="button" disabled={busy} onClick={() => { setShareFilter(filter); setSelectedTransactionIds(new Set()); }} aria-pressed={shareFilter === filter} className={`rounded-md border px-3 py-2 text-xs font-semibold ${shareFilter === filter ? "border-sky-700 bg-sky-700 text-white" : "border-zinc-200 bg-white text-zinc-600"}`}>
-          {filter === "unshared" ? "Chưa gửi" : filter === "shared" ? "Đã gửi" : "Tất cả trạng thái"} ({filterShareRows(transactions, filter).length})
+        {(["unshared", "shared", "all"] as const).map(filter => <button key={filter} type="button" disabled={busy} onClick={() => { onShareFilter(filter); setSelectedTransactionIds(new Set()); }} aria-pressed={shareFilter === filter} className={`rounded-md border px-3 py-2 text-xs font-semibold ${shareFilter === filter ? "border-sky-700 bg-sky-700 text-white" : "border-zinc-200 bg-white text-zinc-600"}`}>
+          {filter === "unshared" ? "Chưa gửi" : filter === "shared" ? "Đã gửi" : "Tất cả trạng thái"} ({shareCounts[filter]})
         </button>)}
       </div>
       <StatementShareControls bank={bank} selected={visibleTransactions.filter(row => selectedTransactionIds.has(row.id))} batches={shareBatches} busy={busy} onBusyChange={setIsSharing} onRecorded={() => setSelectedTransactionIds(new Set())} />
@@ -775,10 +788,10 @@ function TransactionTable({
               onChange={toggleAllTransactions}
               className="h-5 w-5 shrink-0 rounded border-zinc-300 accent-emerald-600"
             />
-            Chọn tất cả kết quả
+            Chọn tất cả trên trang này
           </label>
           <span className="text-xs text-zinc-500">
-            Đã chọn {selectedTransactionIds.size.toLocaleString("vi-VN")} giao dịch
+            Đã chọn {visibleTransactions.filter(row => selectedTransactionIds.has(row.id)).length.toLocaleString("vi-VN")} giao dịch
           </span>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -832,7 +845,7 @@ function TransactionTable({
                   checked={allTransactionsSelected}
                   disabled={visibleTransactions.length === 0 || busy || pendingTransactionId !== null}
                   onChange={toggleAllTransactions}
-                  aria-label="Chọn tất cả giao dịch đang hiển thị"
+                  aria-label="Chọn tất cả giao dịch trên trang này"
                   className="h-5 w-5 shrink-0 rounded border-zinc-300 accent-emerald-600"
                 />
               </th>
@@ -1273,19 +1286,6 @@ function DebitTransactionTable({
   );
 }
 
-function compareTransactionNewestFirst(left: TransactionSummary, right: TransactionSummary) {
-  const dateDifference = new Date(right.transactionDate).getTime() - new Date(left.transactionDate).getTime();
-  if (dateDifference !== 0) {
-    return dateDifference;
-  }
-
-  const createdAtDifference = new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
-  if (createdAtDifference !== 0) {
-    return createdAtDifference;
-  }
-
-  return (right.statementRow ?? 0) - (left.statementRow ?? 0);
-}
 
 function FundSummaryTable({ data }: { data: DashboardData }) {
   const totalCampaignIncome = data.campaigns.reduce((sum, campaign) => sum + campaign.income, 0);
@@ -2324,30 +2324,6 @@ function CampaignModal({
             </div>
           </div>
         </form>
-      </div>
-    </div>
-  );
-}
-
-function SetupScreen({ state }: { state: Exclude<DashboardState, { ok: true }> }) {
-  return (
-    <div className="min-h-screen bg-[#f7f7f4] px-4 py-8 text-zinc-950">
-      <div className="mx-auto max-w-3xl rounded-md border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="mt-1 h-5 w-5 text-amber-600" />
-          <div>
-            <h1 className="text-xl font-semibold">Cần cấu hình PostgreSQL</h1>
-            <p className="mt-2 text-sm leading-6 text-zinc-600">{state.message}</p>
-          </div>
-        </div>
-        <div className="mt-5 space-y-3 text-sm">
-          <pre className="overflow-x-auto rounded-md bg-zinc-950 p-4 text-zinc-50">
-            <code>{'DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=verify-full"'}</code>
-          </pre>
-          <pre className="overflow-x-auto rounded-md bg-zinc-100 p-4 text-zinc-800">
-            <code>{"pnpm db:generate\npnpm db:push\npnpm db:seed\npnpm dev"}</code>
-          </pre>
-        </div>
       </div>
     </div>
   );

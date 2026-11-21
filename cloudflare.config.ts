@@ -1,4 +1,4 @@
-import { bindings, defineConfig, defineWorker } from "cf/config";
+import { bindings, defineConfig, defineWorker, triggers } from "cf/config";
 
 export default defineConfig({
   worker: defineWorker({
@@ -9,8 +9,10 @@ export default defineConfig({
     observability: { enabled: true },
     // Workers Paid is required for SSR, Prisma query compilation and PDF imports.
     limits: { cpuMs: 30_000 },
-    domains: ["dhamma-group.danasangha.org", "metta.danasangha.org"],
-    triggers: [],
+    triggers: [
+      triggers.fetch({ pattern: "dhamma-group.danasangha.org/*", zone: "danasangha.org" }),
+      triggers.fetch({ pattern: "metta.danasangha.org/*", zone: "danasangha.org" }),
+    ],
     entrypoint: "./src/cloudflare-worker.ts",
     compatibilityDate: "2026-11-20",
     assets: {
@@ -19,7 +21,7 @@ export default defineConfig({
       runWorkerFirst: ["/*", "!/_next/static/*", "!/*/_next/static/*", "!/assets/*", "!/icons/*", "!/splash/*"],
     },
     env: {
-      VINEXT_KV_CACHE: bindings.kv(),
+      VINEXT_KV_CACHE: bindings.kv({ id: "7d426dbfa89940f7953119ed9e469fd2" }),
       DATABASE_URL: bindings.secret(),
       GOOGLE_CLIENT_ID: bindings.secret(),
       GOOGLE_CLIENT_SECRET: bindings.secret(),

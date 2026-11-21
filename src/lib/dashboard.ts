@@ -228,64 +228,8 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
           allocations: { none: {} },
         },
       }),
-      prisma.bankTransaction.findMany({
-        where: bankWhere,
-        include: {
-          shareBatch: { select: { id: true, sentAt: true } },
-          campaign: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
-            },
-          },
-          allocations: {
-            include: { campaign: { select: { id: true, code: true, name: true } } },
-            orderBy: { createdAt: "asc" },
-          },
-          refundLinks: {
-            include: {
-              originalTransaction: {
-                select: { id: true, transactionDate: true, description: true, creditAmount: true },
-              },
-            },
-            orderBy: { createdAt: "asc" },
-          },
-        },
-        orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
-      }),
-      prisma.bankTransaction.findMany({
-        where: {
-          ...bankWhere,
-          debitAmount: {
-            gt: 0,
-          },
-        },
-        include: {
-          shareBatch: { select: { id: true, sentAt: true } },
-          campaign: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
-            },
-          },
-          allocations: {
-            include: { campaign: { select: { id: true, code: true, name: true } } },
-            orderBy: { createdAt: "asc" },
-          },
-          refundLinks: {
-            include: {
-              originalTransaction: {
-                select: { id: true, transactionDate: true, description: true, creditAmount: true },
-              },
-            },
-            orderBy: { createdAt: "asc" },
-          },
-        },
-        orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }, { statementRow: "desc" }],
-        take: 500,
-      }),
+      Promise.resolve([] as TransactionSummary[]),
+      Promise.resolve([] as TransactionSummary[]),
       prisma.bankAccount.findMany({
         where: { bankName: bank },
         orderBy: { updatedAt: "desc" },
@@ -400,68 +344,8 @@ async function getDashboardStateAttempt(attempt: number, bank: BankScope): Promi
           currentBalance: decimalToNumber(account.currentBalance),
         })),
         campaigns: campaignSummaries,
-        transactions: transactions.map((transaction) => ({
-          shareBatch: transaction.shareBatch ? { id: transaction.shareBatch.id, sentAt: transaction.shareBatch.sentAt.toISOString() } : null,
-          id: transaction.id,
-          transactionDate: transaction.transactionDate.toISOString(),
-          createdAt: transaction.createdAt.toISOString(),
-          statementRow: transaction.statementRow,
-          description: transaction.description,
-          detail: transaction.detail,
-          debitAmount: decimalToNumber(transaction.debitAmount),
-          creditAmount: decimalToNumber(transaction.creditAmount),
-          outflowType: transaction.outflowType,
-          balanceAfter:
-            transaction.balanceAfter == null ? null : decimalToNumber(transaction.balanceAfter),
-          matchedKeyword: transaction.matchedKeyword,
-          classificationStatus: transaction.classificationStatus,
-          campaign: transaction.campaign,
-          allocations: transaction.allocations.map((allocation) => ({
-            id: allocation.id,
-            amount: decimalToNumber(allocation.amount),
-            campaign: allocation.campaign,
-          })),
-          refundLinks: transaction.refundLinks.map((link) => ({
-            id: link.id,
-            amount: decimalToNumber(link.amount),
-            originalTransaction: {
-              ...link.originalTransaction,
-              transactionDate: link.originalTransaction.transactionDate.toISOString(),
-              creditAmount: decimalToNumber(link.originalTransaction.creditAmount),
-            },
-          })),
-        })),
-        debitTransactions: debitTransactions.map((transaction) => ({
-          shareBatch: transaction.shareBatch ? { id: transaction.shareBatch.id, sentAt: transaction.shareBatch.sentAt.toISOString() } : null,
-          id: transaction.id,
-          transactionDate: transaction.transactionDate.toISOString(),
-          createdAt: transaction.createdAt.toISOString(),
-          statementRow: transaction.statementRow,
-          description: transaction.description,
-          detail: transaction.detail,
-          debitAmount: decimalToNumber(transaction.debitAmount),
-          creditAmount: decimalToNumber(transaction.creditAmount),
-          outflowType: transaction.outflowType,
-          balanceAfter:
-            transaction.balanceAfter == null ? null : decimalToNumber(transaction.balanceAfter),
-          matchedKeyword: transaction.matchedKeyword,
-          classificationStatus: transaction.classificationStatus,
-          campaign: transaction.campaign,
-          allocations: transaction.allocations.map((allocation) => ({
-            id: allocation.id,
-            amount: decimalToNumber(allocation.amount),
-            campaign: allocation.campaign,
-          })),
-          refundLinks: transaction.refundLinks.map((link) => ({
-            id: link.id,
-            amount: decimalToNumber(link.amount),
-            originalTransaction: {
-              ...link.originalTransaction,
-              transactionDate: link.originalTransaction.transactionDate.toISOString(),
-              creditAmount: decimalToNumber(link.originalTransaction.creditAmount),
-            },
-          })),
-        })),
+        transactions,
+        debitTransactions,
         shareBatches: shareBatches.map(batch => ({ ...batch, sentAt: batch.sentAt.toISOString(), voidedAt: batch.voidedAt?.toISOString() ?? null, totalCredit: Number(batch.totalCredit), totalDebit: Number(batch.totalDebit) })),
         latestImport: latestImport
           ? {
