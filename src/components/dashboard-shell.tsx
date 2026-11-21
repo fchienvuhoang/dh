@@ -1,6 +1,7 @@
 "use client";
 
 import { publicBankOrigin } from "@/lib/bank-scope";
+import { AppLoading } from "@/components/app-loading";
 
 import {
   AlertCircle,
@@ -137,7 +138,13 @@ export function DashboardShell({ bank }: Props) {
   const refresh = useCallback(() => setRevision(value => value + 1), []);
   const overview = useDashboardResource<DashboardData>(`/api/dashboard/overview?bank=${bank}`, revision, 0, true);
   return <DashboardRefresh.Provider value={refresh}>
-    {overview.data ? <Dashboard data={overview.data} revision={revision} overviewError={overview.error}/> : <div className="min-h-screen bg-[#f7f7f4] p-6"><h1 className="text-xl font-semibold">Quản lý thiện pháp và sao kê</h1><ResourceStatus loading={overview.loading} error={overview.error} onRetry={refresh}/></div>}
+    {overview.data ? <Dashboard data={overview.data} revision={revision} overviewError={overview.error}/> : overview.loading ? (
+      <AppLoading branded={bank !== "MBBANK"} caption="Đang tải dữ liệu quản trị…" />
+    ) : (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f7f4] p-6">
+        <div className="w-full max-w-md"><h1 className="text-xl font-semibold">Quản lý thiện pháp và sao kê</h1><ResourceStatus loading={false} error={overview.error} onRetry={refresh}/></div>
+      </main>
+    )}
   </DashboardRefresh.Provider>;
 }
 

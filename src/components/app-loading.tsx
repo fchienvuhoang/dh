@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-export function AppLoading({ branded = true }: { branded?: boolean }) {
+export function AppLoading({ branded = true, caption = "Đang tải, xin chờ một chút…" }: { branded?: boolean; caption?: string }) {
   const [slow, setSlow] = useState(false);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export function AppLoading({ branded = true }: { branded?: boolean }) {
         <p className="app-loading-title">Dhamma Group</p>
       </> : null}
       <span className="app-loading-spinner" aria-hidden="true" />
-      <p className="app-loading-caption">Đang tải, xin chờ một chút…</p>
+      <p className="app-loading-caption">{caption}</p>
       {slow ? (
         <div>
           <p className="app-loading-caption">Kết nối đang chậm hoặc trang chưa tải được.</p>
