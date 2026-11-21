@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Generated service-worker build identity
 /public/pwa-version.js
+/dist/
+.vinext/
+.cloudflare/

@@ -1,3 +1,4 @@
+import { getPdfRuntime } from "@/lib/pdf-runtime";
 import { createHash } from "node:crypto";
 import { parseTechcombankMatrix, type ParsedStatement } from "@/lib/techcombank";
 import { normalizeTransferText } from "@/lib/text";
@@ -6,7 +7,7 @@ type PdfText = { str: string; x: number; y: number };
 const unsupported = "Chưa đọc được đầy đủ bố cục PDF này. Vui lòng dùng bản Excel hoặc gửi PDF mẫu để bổ sung định dạng; chưa có giao dịch nào được nhập.";
 
 export async function parseTechcombankPdf(buffer: Buffer, password?: string): Promise<ParsedStatement> {
-  const { getDocument, Util } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const { getDocument, Util } = await getPdfRuntime();
   const task = getDocument({
     data: new Uint8Array(buffer),
     password,

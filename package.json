@@ -14,13 +14,20 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "node prisma/seed.mjs",
-    "test:auth": "tsx --test src/lib/google-auth.test.ts"
+    "test:auth": "tsx --test src/lib/google-auth.test.ts",
+    "dev:vinext": "prisma generate && vite dev --port 3001",
+    "build:vinext": "node scripts/prepare-pwa.mjs && prisma generate && vite build",
+    "start:vinext": "vite preview",
+    "deploy:vinext": "pnpm run build:vinext && node scripts/deploy-cloudflare.mjs",
+    "typecheck:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json",
+    "deploy:cloudflare": "pnpm run deploy:vinext"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^1.1.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@thednp/dommatrix": "^3.1.4",
     "@vercel/functions": "^3.9.5",
+    "@vinext/cloudflare": "^1.4.0",
     "@zip.js/zip.js": "^2.24.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
@@ -32,22 +39,30 @@
     "next": "16.2.10",
     "pdfjs-dist": "^6.5.438",
     "pg": "^8.22.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-server-dom-webpack": "^19.3.1",
+    "vinext": "^1.4.6",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "2.0.0-rc.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitejs/plugin-rsc": "^0.5.39",
+    "cf": "1.0.0-rc.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
-  }
+    "typescript": "^5",
+    "vite": "8.3.0"
+  },
+  "type": "module"
 }
