@@ -1,5 +1,4 @@
 import { attachDatabasePool } from "@vercel/functions";
-import { databaseContext } from "@/lib/database-context";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
@@ -46,8 +45,7 @@ export function getPrisma(): PrismaClient {
     throw new DatabaseNotConfiguredError();
   }
 
-  const requestContext = databaseContext.getStore();
-  const connections = requestContext ?? globalForPrisma;
+  const connections = globalForPrisma;
   const pool = connections.databasePool ?? new Pool({
     connectionString: normalizeDatabaseSslUrl(getDatabaseUrl()),
     max: getDatabasePoolMax(),
@@ -62,7 +60,7 @@ export function getPrisma(): PrismaClient {
   if (!connections.databasePool) {
     // Vercel pauses function instances between requests. Registering the pool
     // prevents idle sockets from becoming stale while an instance is suspended.
-    if (!requestContext) attachDatabasePool(pool);
+    attachDatabasePool(pool);
     connections.databasePool = pool;
   }
 
